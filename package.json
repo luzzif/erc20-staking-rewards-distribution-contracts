@@ -1,0 +1,29 @@
+{
+    "name": "@swapr/lp-staker",
+    "version": "0.1.0",
+    "description": "Generic ERC20 tokens staker contracts to bootstrap staking campaigns (liquidity mining etc).",
+    "scripts": {
+        "lint:code": "eslint \"test/**/*.js\"",
+        "lint:prettier": "prettier -l test/**/*.js",
+        "lint:commit-message": "commitlint -e",
+        "lint": "yarn lint:code && yarn lint:prettier",
+        "test": "hardhat test",
+        "compile": "hardhat compile"
+    },
+    "author": "Federico Luzzi <fedeluzzi00@gmail.com>",
+    "license": "GPL-3.0",
+    "devDependencies": {
+        "@commitlint/cli": "^11.0.0",
+        "@commitlint/config-conventional": "^11.0.0",
+        "@nomiclabs/hardhat-truffle5": "^2.0.0",
+        "@nomiclabs/hardhat-web3": "^2.0.0",
+        "@openzeppelin/contracts": "^3.2.0",
+        "babel-eslint": "^10.1.0",
+        "bignumber.js": "^9.0.1",
+        "chai": "^4.2.0",
+        "eslint": "^7.13.0",
+        "hardhat": "^2.0.3",
+        "husky": "^4.3.0",
+        "prettier": "^2.1.2"
+    }
+}
