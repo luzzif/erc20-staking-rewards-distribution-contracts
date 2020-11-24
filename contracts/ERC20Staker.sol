@@ -8,7 +8,6 @@ import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 
 
-// TODO: add function to recover untouched rewards
 contract ERC20Staker {
     using SafeMath for uint256;
     using SafeERC20 for ERC20;
@@ -20,12 +19,14 @@ contract ERC20Staker {
     uint256 public stakedLpTokensAmount;
     uint256 public rewardsAmount;
     uint256 public rewardsPerBlock;
+    uint256 public rewardsPerLpToken;
     uint256 public startingBlock;
     uint256 public endingBlock;
     bool public initialized;
+    uint256 public lastConsolidationBlock;
 
-    mapping(address => uint256) public lastConsolidationBlock;
     mapping(address => uint256) public lpTokensBalance;
+    mapping(address => uint256) public rewardPerLpTokenInLastPeriod;
     mapping(address => uint256) public earnedRewards;
     mapping(address => uint256) public claimedRewards;
 
@@ -92,11 +93,7 @@ contract ERC20Staker {
 
     function stake(uint256 _amount) external onlyInitialized onlyStarted {
         require(_amount > 0, "ERC20Staker: staked amount is 0");
-        if (lpTokensBalance[msg.sender] == 0) {
-            lastConsolidationBlock[msg.sender] = block.number;
-        } else {
-            consolidateReward();
-        }
+        consolidateReward();
         lpToken.safeTransferFrom(msg.sender, address(this), _amount);
         lpTokensBalance[msg.sender] = lpTokensBalance[msg.sender].add(_amount);
         stakedLpTokensAmount = stakedLpTokensAmount.add(_amount);
@@ -131,23 +128,31 @@ contract ERC20Staker {
     }
 
     function consolidateReward() public onlyInitialized onlyStarted {
-        uint256 _lastConsolidationBlock = lastConsolidationBlock[msg.sender];
-        if (
-            _lastConsolidationBlock == block.number || stakedLpTokensAmount == 0
-        ) {
-            return;
+        uint256 _consolidationBlock = block.number <= endingBlock
+            ? block.number - 1
+            : endingBlock;
+        if (stakedLpTokensAmount == 0) {
+            rewardsPerLpToken = 0;
+            lastConsolidationBlock = _consolidationBlock;
+        } else {
+            rewardsPerLpToken = rewardsPerLpToken.add(
+                _consolidationBlock
+                    .sub(lastConsolidationBlock)
+                    .mul(rewardsPerBlock)
+                    .mul(rewardsTokenMultiplier)
+                    .div(stakedLpTokensAmount)
+            );
         }
-        uint256 _consolidationBlock = Math.min(block.number, endingBlock);
-        uint256 _rewardInCurrentPeriod = _consolidationBlock
-            .sub(_lastConsolidationBlock)
-            .mul(lpTokensBalance[msg.sender])
-            .mul(rewardsPerBlock.div(rewardsTokenMultiplier))
-            .div(stakedLpTokensAmount)
-            .mul(rewardsTokenMultiplier);
+        uint256 _rewardInCurrentPeriod = lpTokensBalance[msg.sender]
+            .mul(
+            rewardsPerLpToken.sub(rewardPerLpTokenInLastPeriod[msg.sender])
+        )
+            .div(rewardsTokenMultiplier);
         earnedRewards[msg.sender] = earnedRewards[msg.sender].add(
             _rewardInCurrentPeriod
         );
-        lastConsolidationBlock[msg.sender] = _consolidationBlock;
+        rewardPerLpTokenInLastPeriod[msg.sender] = rewardsPerLpToken;
+        lastConsolidationBlock = _consolidationBlock;
     }
 
     modifier onlyDxDao() {
@@ -174,11 +179,6 @@ contract ERC20Staker {
     }
 
     modifier onlyStaker() {
-        require(lpTokensBalance[msg.sender] > 0, "ERC20Staker: not a staker");
-        _;
-    }
-
-    modifier updateReward() {
         require(lpTokensBalance[msg.sender] > 0, "ERC20Staker: not a staker");
         _;
     }

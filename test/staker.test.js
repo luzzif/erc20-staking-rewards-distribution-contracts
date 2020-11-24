@@ -1,26 +1,28 @@
+const { contract } = require("hardhat");
 const { expect } = require("chai");
 const { toWei } = require("./utils/conversion");
 const { artifacts, web3 } = require("hardhat");
-const { default: BigNumber } = require("bignumber.js");
-
-BigNumber.config({
-    DECIMAL_PLACES: 0,
-    ROUNDING_MODE: BigNumber.ROUND_FLOOR,
-});
+const BN = require("bn.js");
 
 const ERC20Staker = artifacts.require("ERC20Staker.sol");
 const ERC20PresetMinterPauser = artifacts.require(
     "ERC20PresetMinterPauser.json"
 );
 
-// eslint-disable-next-line no-undef
+// Maximum variance allowed between expected values and actual ones.
+// Mainly accounts for division between integers, and associated rounding.
+const MAXIMUM_VARIANCE = new BN("100"); // 100 wei
+
 contract("ERC20Staker", (accounts) => {
-    const dxDaoAvatarAddress = accounts[1];
-    const firstStakerAddress = accounts[0];
-    const secondStakerAddress = accounts[2];
+    const [
+        firstStakerAddress,
+        dxDaoAvatarAddress,
+        secondStakerAddress,
+        thirdStakerAddress,
+    ] = accounts;
     const zeroAddress = "0x0000000000000000000000000000000000000000";
 
-    let erc20StakerInstance, rewardsTokenInstance, lpTokenInstance;
+    let erc20StakerInstance, rewardsTokenInstance, stakedTokenInstance;
 
     beforeEach(async () => {
         erc20StakerInstance = await ERC20Staker.new(dxDaoAvatarAddress);
@@ -28,7 +30,10 @@ contract("ERC20Staker", (accounts) => {
             "Rewards token",
             "REW"
         );
-        lpTokenInstance = await ERC20PresetMinterPauser.new("LP token", "LPT");
+        stakedTokenInstance = await ERC20PresetMinterPauser.new(
+            "Staked token",
+            "STKD"
+        );
     });
 
     describe("initialization", () => {
@@ -36,7 +41,7 @@ contract("ERC20Staker", (accounts) => {
             try {
                 await erc20StakerInstance.initialize(
                     zeroAddress,
-                    lpTokenInstance.address,
+                    stakedTokenInstance.address,
                     await toWei("1", rewardsTokenInstance),
                     await web3.eth.getBlockNumber(),
                     10
@@ -51,7 +56,7 @@ contract("ERC20Staker", (accounts) => {
             try {
                 await erc20StakerInstance.initialize(
                     zeroAddress,
-                    lpTokenInstance.address,
+                    stakedTokenInstance.address,
                     await toWei("1", rewardsTokenInstance),
                     await web3.eth.getBlockNumber(),
                     10,
@@ -87,7 +92,7 @@ contract("ERC20Staker", (accounts) => {
             try {
                 await erc20StakerInstance.initialize(
                     rewardsTokenInstance.address,
-                    lpTokenInstance.address,
+                    stakedTokenInstance.address,
                     0,
                     await web3.eth.getBlockNumber(),
                     10,
@@ -105,7 +110,7 @@ contract("ERC20Staker", (accounts) => {
             try {
                 await erc20StakerInstance.initialize(
                     rewardsTokenInstance.address,
-                    lpTokenInstance.address,
+                    stakedTokenInstance.address,
                     await toWei("1", rewardsTokenInstance),
                     await web3.eth.getBlockNumber(),
                     10,
@@ -123,7 +128,7 @@ contract("ERC20Staker", (accounts) => {
             try {
                 await erc20StakerInstance.initialize(
                     rewardsTokenInstance.address,
-                    lpTokenInstance.address,
+                    stakedTokenInstance.address,
                     await toWei("1", rewardsTokenInstance),
                     (await web3.eth.getBlockNumber()) + 10,
                     0,
@@ -141,7 +146,7 @@ contract("ERC20Staker", (accounts) => {
             try {
                 await erc20StakerInstance.initialize(
                     rewardsTokenInstance.address,
-                    lpTokenInstance.address,
+                    stakedTokenInstance.address,
                     await toWei("1", rewardsTokenInstance),
                     (await web3.eth.getBlockNumber()) + 10,
                     10,
@@ -163,7 +168,7 @@ contract("ERC20Staker", (accounts) => {
             );
             await erc20StakerInstance.initialize(
                 rewardsTokenInstance.address,
-                lpTokenInstance.address,
+                stakedTokenInstance.address,
                 rewardsAmount,
                 startingBlock,
                 blocksDuration,
@@ -182,7 +187,7 @@ contract("ERC20Staker", (accounts) => {
                 rewardsTokenInstance.address
             );
             expect(await erc20StakerInstance.lpToken()).to.be.equal(
-                lpTokenInstance.address
+                stakedTokenInstance.address
             );
             expect(
                 (await erc20StakerInstance.rewardsAmount()).toString()
@@ -193,14 +198,14 @@ contract("ERC20Staker", (accounts) => {
             const campaignStartingBlock = await erc20StakerInstance.startingBlock();
             const campaignEndingBlock = await erc20StakerInstance.endingBlock();
             expect(
-                new BigNumber(campaignEndingBlock.toString())
-                    .minus(campaignStartingBlock.toString())
+                new BN(campaignEndingBlock.toString())
+                    .sub(new BN(campaignStartingBlock.toString()))
                     .toString()
             ).to.be.equal(blocksDuration.toString());
             expect(
                 (await erc20StakerInstance.rewardsPerBlock()).toString()
             ).to.be.equal(
-                new BigNumber(rewardsAmount).div(blocksDuration).toFixed(0)
+                new BN(rewardsAmount).div(new BN(blocksDuration)).toString()
             );
         });
 
@@ -213,7 +218,7 @@ contract("ERC20Staker", (accounts) => {
             try {
                 await erc20StakerInstance.initialize(
                     rewardsTokenInstance.address,
-                    lpTokenInstance.address,
+                    stakedTokenInstance.address,
                     rewardsAmount,
                     (await web3.eth.getBlockNumber()) + 10,
                     15,
@@ -221,7 +226,7 @@ contract("ERC20Staker", (accounts) => {
                 );
                 await erc20StakerInstance.initialize(
                     rewardsTokenInstance.address,
-                    lpTokenInstance.address,
+                    stakedTokenInstance.address,
                     rewardsAmount,
                     (await web3.eth.getBlockNumber()) + 1083,
                     102994,
@@ -257,7 +262,7 @@ contract("ERC20Staker", (accounts) => {
                 );
                 await erc20StakerInstance.initialize(
                     rewardsTokenInstance.address,
-                    lpTokenInstance.address,
+                    stakedTokenInstance.address,
                     rewardsAmount,
                     (await web3.eth.getBlockNumber()) + 2,
                     15,
@@ -281,7 +286,7 @@ contract("ERC20Staker", (accounts) => {
                 );
                 await erc20StakerInstance.initialize(
                     rewardsTokenInstance.address,
-                    lpTokenInstance.address,
+                    stakedTokenInstance.address,
                     rewardsAmount,
                     (await web3.eth.getBlockNumber()) + 2,
                     15,
@@ -306,7 +311,7 @@ contract("ERC20Staker", (accounts) => {
             );
             await erc20StakerInstance.initialize(
                 rewardsTokenInstance.address,
-                lpTokenInstance.address,
+                stakedTokenInstance.address,
                 rewardsAmount,
                 (await web3.eth.getBlockNumber()) + 3,
                 15,
@@ -342,8 +347,8 @@ contract("ERC20Staker", (accounts) => {
             const campaignStartingBlock = await erc20StakerInstance.startingBlock();
             const campaignEndingBlock = await erc20StakerInstance.endingBlock();
             expect(
-                new BigNumber(campaignEndingBlock.toString())
-                    .minus(campaignStartingBlock.toString())
+                new BN(campaignEndingBlock.toString())
+                    .sub(new BN(campaignStartingBlock.toString()))
                     .toString()
             ).to.be.equal("0");
             expect(
@@ -359,7 +364,7 @@ contract("ERC20Staker", (accounts) => {
             );
             await erc20StakerInstance.initialize(
                 rewardsTokenInstance.address,
-                lpTokenInstance.address,
+                stakedTokenInstance.address,
                 rewardsAmount,
                 (await web3.eth.getBlockNumber()) + 3,
                 15,
@@ -373,7 +378,7 @@ contract("ERC20Staker", (accounts) => {
             );
             await erc20StakerInstance.initialize(
                 rewardsTokenInstance.address,
-                lpTokenInstance.address,
+                stakedTokenInstance.address,
                 rewardsAmount,
                 (await web3.eth.getBlockNumber()) + 3,
                 100,
@@ -403,14 +408,14 @@ contract("ERC20Staker", (accounts) => {
                 );
                 await erc20StakerInstance.initialize(
                     rewardsTokenInstance.address,
-                    lpTokenInstance.address,
+                    stakedTokenInstance.address,
                     rewardsAmount,
                     (await web3.eth.getBlockNumber()) + 20,
                     15,
                     { from: dxDaoAvatarAddress }
                 );
                 await erc20StakerInstance.stake(
-                    await toWei("1", lpTokenInstance)
+                    await toWei("1", stakedTokenInstance)
                 );
                 throw new Error("should have failed");
             } catch (error) {
@@ -427,7 +432,7 @@ contract("ERC20Staker", (accounts) => {
                 );
                 await erc20StakerInstance.initialize(
                     rewardsTokenInstance.address,
-                    lpTokenInstance.address,
+                    stakedTokenInstance.address,
                     rewardsAmount,
                     (await web3.eth.getBlockNumber()) + 1,
                     15,
@@ -451,14 +456,14 @@ contract("ERC20Staker", (accounts) => {
                 );
                 await erc20StakerInstance.initialize(
                     rewardsTokenInstance.address,
-                    lpTokenInstance.address,
+                    stakedTokenInstance.address,
                     rewardsAmount,
                     (await web3.eth.getBlockNumber()) + 1,
                     15,
                     { from: dxDaoAvatarAddress }
                 );
                 await erc20StakerInstance.stake(
-                    await toWei("1", lpTokenInstance)
+                    await toWei("1", stakedTokenInstance)
                 );
                 throw new Error("should have failed");
             } catch (error) {
@@ -475,11 +480,14 @@ contract("ERC20Staker", (accounts) => {
                     erc20StakerInstance.address,
                     rewardsAmount
                 );
-                const stakedAmount = await toWei("1", lpTokenInstance);
-                await lpTokenInstance.mint(firstStakerAddress, stakedAmount);
+                const stakedAmount = await toWei("1", stakedTokenInstance);
+                await stakedTokenInstance.mint(
+                    firstStakerAddress,
+                    stakedAmount
+                );
                 await erc20StakerInstance.initialize(
                     rewardsTokenInstance.address,
-                    lpTokenInstance.address,
+                    stakedTokenInstance.address,
                     rewardsAmount,
                     (await web3.eth.getBlockNumber()) + 1,
                     15,
@@ -501,11 +509,14 @@ contract("ERC20Staker", (accounts) => {
                     erc20StakerInstance.address,
                     rewardsAmount
                 );
-                const stakedAmount = await toWei("1", lpTokenInstance);
-                await lpTokenInstance.mint(firstStakerAddress, stakedAmount);
+                const stakedAmount = await toWei("1", stakedTokenInstance);
+                await stakedTokenInstance.mint(
+                    firstStakerAddress,
+                    stakedAmount
+                );
                 await erc20StakerInstance.initialize(
                     rewardsTokenInstance.address,
-                    lpTokenInstance.address,
+                    stakedTokenInstance.address,
                     rewardsAmount,
                     (await web3.eth.getBlockNumber()) + 1,
                     15,
@@ -526,15 +537,15 @@ contract("ERC20Staker", (accounts) => {
                 erc20StakerInstance.address,
                 rewardsAmount
             );
-            const stakedAmount = await toWei("1", lpTokenInstance);
-            await lpTokenInstance.mint(firstStakerAddress, stakedAmount);
-            await lpTokenInstance.approve(
+            const stakedAmount = await toWei("1", stakedTokenInstance);
+            await stakedTokenInstance.mint(firstStakerAddress, stakedAmount);
+            await stakedTokenInstance.approve(
                 erc20StakerInstance.address,
                 stakedAmount
             );
             await erc20StakerInstance.initialize(
                 rewardsTokenInstance.address,
-                lpTokenInstance.address,
+                stakedTokenInstance.address,
                 rewardsAmount,
                 (await web3.eth.getBlockNumber()) + 1,
                 15,
@@ -564,16 +575,16 @@ contract("ERC20Staker", (accounts) => {
             const campaignStartingBlock = (await web3.eth.getBlockNumber()) + 3;
             await erc20StakerInstance.initialize(
                 rewardsTokenInstance.address,
-                lpTokenInstance.address,
+                stakedTokenInstance.address,
                 rewardsAmount,
                 campaignStartingBlock,
-                20,
+                10,
                 { from: dxDaoAvatarAddress }
             );
 
-            const stakedAmount = await toWei("20", lpTokenInstance);
-            await lpTokenInstance.mint(firstStakerAddress, stakedAmount);
-            await lpTokenInstance.approve(
+            const stakedAmount = await toWei("20", stakedTokenInstance);
+            await stakedTokenInstance.mint(firstStakerAddress, stakedAmount);
+            await stakedTokenInstance.approve(
                 erc20StakerInstance.address,
                 stakedAmount,
                 { from: firstStakerAddress }
@@ -581,10 +592,10 @@ contract("ERC20Staker", (accounts) => {
             await erc20StakerInstance.stake(stakedAmount, {
                 from: firstStakerAddress,
             });
-            const startingBlock = await web3.eth.getBlockNumber();
+            const startingBlock = (await web3.eth.getBlockNumber()) - 1;
 
             // spam dummy txs to make blocks flow
-            for (let i = 0; i < 20; i++) {
+            for (let i = 0; i < 10; i++) {
                 await rewardsTokenInstance.mint(dxDaoAvatarAddress, 1);
             }
 
@@ -596,33 +607,33 @@ contract("ERC20Staker", (accounts) => {
                 firstStakerAddress
             );
             expect(firstStakerRewardsTokenBalance.toString()).to.equal(
-                new BigNumber(rewardPerBlock.toString())
-                    .times(stakingDuration)
+                new BN(rewardPerBlock.toString())
+                    .mul(new BN(stakingDuration))
                     .toString()
             );
         });
 
-        it("should succeed in claiming two rewards if two LP stake exactly the same amount at different times", async () => {
-            const rewardsAmount = await toWei("100", rewardsTokenInstance);
+        it("should succeed in claiming two rewards if two LPs stake exactly the same amount at different times", async () => {
+            const rewardsAmount = await toWei("10", rewardsTokenInstance);
             await rewardsTokenInstance.mint(
                 erc20StakerInstance.address,
                 rewardsAmount
             );
-            const campaignStartingBlock = (await web3.eth.getBlockNumber()) + 1;
+            const campaignStartingBlock = (await web3.eth.getBlockNumber()) + 3;
             await erc20StakerInstance.initialize(
                 rewardsTokenInstance.address,
-                lpTokenInstance.address,
+                stakedTokenInstance.address,
                 rewardsAmount,
                 campaignStartingBlock,
                 10,
                 { from: dxDaoAvatarAddress }
             );
 
-            const stakedAmount = await toWei("20", lpTokenInstance);
+            const stakedAmount = await toWei("10", stakedTokenInstance);
 
             // first staker stakes
-            await lpTokenInstance.mint(firstStakerAddress, stakedAmount);
-            await lpTokenInstance.approve(
+            await stakedTokenInstance.mint(firstStakerAddress, stakedAmount);
+            await stakedTokenInstance.approve(
                 erc20StakerInstance.address,
                 stakedAmount,
                 { from: firstStakerAddress }
@@ -630,11 +641,17 @@ contract("ERC20Staker", (accounts) => {
             await erc20StakerInstance.stake(stakedAmount, {
                 from: firstStakerAddress,
             });
-            const firstStakerStartingBlock = await web3.eth.getBlockNumber();
+            const firstStakerStartingBlock =
+                (await web3.eth.getBlockNumber()) - 1;
+
+            // spam dummy txs to make blocks flow
+            for (let i = 0; i < 2; i++) {
+                await rewardsTokenInstance.mint(dxDaoAvatarAddress, 1);
+            }
 
             // second staker stakes
-            await lpTokenInstance.mint(secondStakerAddress, stakedAmount);
-            await lpTokenInstance.approve(
+            await stakedTokenInstance.mint(secondStakerAddress, stakedAmount);
+            await stakedTokenInstance.approve(
                 erc20StakerInstance.address,
                 stakedAmount,
                 { from: secondStakerAddress }
@@ -642,68 +659,347 @@ contract("ERC20Staker", (accounts) => {
             await erc20StakerInstance.stake(stakedAmount, {
                 from: secondStakerAddress,
             });
-            const secondStakerStartingBlock = await web3.eth.getBlockNumber();
 
             // spam dummy txs to make blocks flow
             for (let i = 0; i < 10; i++) {
                 await rewardsTokenInstance.mint(dxDaoAvatarAddress, 1);
             }
 
-            const rewardPerBlock = await erc20StakerInstance.rewardsPerBlock();
             const campaignEndingBlock = await erc20StakerInstance.endingBlock();
-            const firstStakerDuration =
+            const rewardPerBlock = await erc20StakerInstance.rewardsPerBlock();
+            const firstStakerLockupDuration =
                 campaignEndingBlock - firstStakerStartingBlock;
-            const secondStakerDuration =
-                campaignEndingBlock - secondStakerStartingBlock;
+            expect(firstStakerLockupDuration.toString()).to.be.equal("10");
+
+            // the first staker had all of the rewards for 5 blocks and half of them for 5
+            const expectedFirstStakerReward = new BN(rewardPerBlock)
+                .mul(new BN("5"))
+                .add(new BN(rewardPerBlock).mul(new BN("5")).div(new BN("2")));
 
             await erc20StakerInstance.claim({ from: firstStakerAddress });
             const firstStakerRewardsTokenBalance = await rewardsTokenInstance.balanceOf(
                 firstStakerAddress
             );
+            expect(firstStakerRewardsTokenBalance.toString()).to.be.equal(
+                expectedFirstStakerReward.toString()
+            );
+
+            // the second staker had half of the rewards for 5 blocks
+            const expectedSecondStakerReward = new BN(rewardPerBlock)
+                .mul(new BN("5"))
+                .div(new BN("2"));
 
             await erc20StakerInstance.claim({ from: secondStakerAddress });
             const secondStakerRewardsTokenBalance = await rewardsTokenInstance.balanceOf(
                 secondStakerAddress
             );
-
-            // first staker had 3 full blocks of being the only staker and 4 with a 50/50 weight.
-            expect(firstStakerRewardsTokenBalance.toString()).to.equal(
-                new BigNumber(rewardPerBlock)
-                    .dividedBy(2)
-                    .times(firstStakerDuration)
-                    .toString()
-            );
-
-            // second staker had 4 blocks of 50/50 weight.
-            expect(secondStakerRewardsTokenBalance.toString()).to.equal(
-                new BigNumber(rewardPerBlock)
-                    .dividedBy(2)
-                    .times(secondStakerDuration)
-                    .toString()
-            );
-
-            const givenOutRewards = firstStakerRewardsTokenBalance.add(
-                secondStakerRewardsTokenBalance
-            );
-
-            expect(
-                (
-                    await erc20StakerInstance.earnedRewards(firstStakerAddress)
-                ).toString()
-            ).to.be.equal(firstStakerRewardsTokenBalance.toString());
-            expect(
-                (
-                    await erc20StakerInstance.earnedRewards(secondStakerAddress)
-                ).toString()
-            ).to.be.equal(secondStakerRewardsTokenBalance.toString());
-
-            const untouchedReward = await rewardsTokenInstance.balanceOf(
-                erc20StakerInstance.address
-            );
-
-            expect(untouchedReward.toString()).to.be.equal(
-                new BigNumber(rewardsAmount).minus(givenOutRewards).toString()
+            expect(secondStakerRewardsTokenBalance.toString()).to.be.equal(
+                expectedSecondStakerReward.toString()
             );
         });
+
+        it("should succeed in claiming three rewards if three LPs stake exactly the same amount at different times", async () => {
+            const rewardsAmount = await toWei("10", rewardsTokenInstance);
+            await rewardsTokenInstance.mint(
+                erc20StakerInstance.address,
+                rewardsAmount
+            );
+            const campaignStartingBlock = (await web3.eth.getBlockNumber()) + 3;
+            await erc20StakerInstance.initialize(
+                rewardsTokenInstance.address,
+                stakedTokenInstance.address,
+                rewardsAmount,
+                campaignStartingBlock,
+                12,
+                { from: dxDaoAvatarAddress }
+            );
+
+            const stakedAmount = await toWei("10", stakedTokenInstance);
+
+            // first staker stakes
+            await stakedTokenInstance.mint(firstStakerAddress, stakedAmount);
+            await stakedTokenInstance.approve(
+                erc20StakerInstance.address,
+                stakedAmount,
+                { from: firstStakerAddress }
+            );
+            await erc20StakerInstance.stake(stakedAmount, {
+                from: firstStakerAddress,
+            });
+            const firstStakerStartingBlock =
+                (await web3.eth.getBlockNumber()) - 1;
+
+            // spam dummy txs to make blocks flow
+            for (let i = 0; i < 3; i++) {
+                await rewardsTokenInstance.mint(dxDaoAvatarAddress, 1);
+            }
+
+            // second staker stakes
+            await stakedTokenInstance.mint(secondStakerAddress, stakedAmount);
+            await stakedTokenInstance.approve(
+                erc20StakerInstance.address,
+                stakedAmount,
+                { from: secondStakerAddress }
+            );
+            await erc20StakerInstance.stake(stakedAmount, {
+                from: secondStakerAddress,
+            });
+            const secondStakerStartingBlock =
+                (await web3.eth.getBlockNumber()) - 1;
+
+            // third staker stakes
+            await stakedTokenInstance.mint(thirdStakerAddress, stakedAmount);
+            await stakedTokenInstance.approve(
+                erc20StakerInstance.address,
+                stakedAmount,
+                { from: thirdStakerAddress }
+            );
+            await erc20StakerInstance.stake(stakedAmount, {
+                from: thirdStakerAddress,
+            });
+            const thirdStakerStartingBlock =
+                (await web3.eth.getBlockNumber()) - 1;
+
+            // spam dummy txs to make blocks flow
+            for (let i = 0; i < 5; i++) {
+                await rewardsTokenInstance.mint(dxDaoAvatarAddress, 1);
+            }
+
+            const campaignEndingBlock = await erc20StakerInstance.endingBlock();
+            const firstStakerLockupDuration =
+                campaignEndingBlock - firstStakerStartingBlock;
+            expect(firstStakerLockupDuration.toString()).to.be.equal("12");
+            const secondStakerLockupDuration =
+                campaignEndingBlock - secondStakerStartingBlock;
+            expect(secondStakerLockupDuration.toString()).to.be.equal("6");
+            const thirdStakerLockupDuration =
+                campaignEndingBlock - thirdStakerStartingBlock;
+            expect(thirdStakerLockupDuration.toString()).to.be.equal("3");
+
+            const rewardPerBlock = await erc20StakerInstance.rewardsPerBlock();
+
+            // the first staker had all of the rewards for 6 blocks,
+            // and half of them for 3, and a third of them for 3
+            const expectedFirstStakerReward = rewardPerBlock
+                .mul(new BN("6"))
+                .add(rewardPerBlock.mul(new BN("3")).div(new BN("2")))
+                .add(rewardPerBlock.mul(new BN("3")).div(new BN("3")));
+
+            await erc20StakerInstance.claim({ from: firstStakerAddress });
+            const firstStakerRewardsTokenBalance = await rewardsTokenInstance.balanceOf(
+                firstStakerAddress
+            );
+            expect(firstStakerRewardsTokenBalance).to.be.close(
+                expectedFirstStakerReward,
+                MAXIMUM_VARIANCE
+            );
+
+            // the second staker had half of the rewards for 3 blocks and a third for 3 blocks
+            const expectedSecondStakerReward = rewardPerBlock
+                .mul(new BN("3"))
+                .div(new BN("2"))
+                .add(rewardPerBlock.mul(new BN("3")).div(new BN("3")));
+
+            await erc20StakerInstance.claim({ from: secondStakerAddress });
+            const secondStakerRewardsTokenBalance = await rewardsTokenInstance.balanceOf(
+                secondStakerAddress
+            );
+            expect(secondStakerRewardsTokenBalance).to.be.close(
+                expectedSecondStakerReward,
+                MAXIMUM_VARIANCE
+            );
+
+            // the third staker had a third of the rewards for 3 blocks
+            const expectedThirdStakerReward = rewardPerBlock
+                .mul(new BN("3"))
+                .div(new BN("3"));
+
+            await erc20StakerInstance.claim({ from: thirdStakerAddress });
+            const thirdStakerRewardsTokenBalance = await rewardsTokenInstance.balanceOf(
+                thirdStakerAddress
+            );
+            expect(thirdStakerRewardsTokenBalance).to.be.close(
+                expectedThirdStakerReward,
+                MAXIMUM_VARIANCE
+            );
+        });
+
+        it("should succeed in claiming one rewards if an LPs stakes when the distribution has already started", async () => {
+            const rewardsAmount = await toWei("10", rewardsTokenInstance);
+            await rewardsTokenInstance.mint(
+                erc20StakerInstance.address,
+                rewardsAmount
+            );
+            const campaignStartingBlock = (await web3.eth.getBlockNumber()) + 1;
+            await erc20StakerInstance.initialize(
+                rewardsTokenInstance.address,
+                stakedTokenInstance.address,
+                rewardsAmount,
+                campaignStartingBlock,
+                10,
+                { from: dxDaoAvatarAddress }
+            );
+
+            // spam dummy txs to make blocks flow
+            for (let i = 0; i < 4; i++) {
+                await rewardsTokenInstance.mint(dxDaoAvatarAddress, 1);
+            }
+
+            // first staker stakes
+            const stakedAmount = await toWei("10", stakedTokenInstance);
+            await stakedTokenInstance.mint(firstStakerAddress, stakedAmount);
+            await stakedTokenInstance.approve(
+                erc20StakerInstance.address,
+                stakedAmount,
+                { from: firstStakerAddress }
+            );
+            // should start staking from the 7th block onwards
+            await erc20StakerInstance.stake(stakedAmount, {
+                from: firstStakerAddress,
+            });
+            const stakingStartingBlock = (await web3.eth.getBlockNumber()) - 1;
+
+            // spam dummy txs to make blocks flow
+            for (let i = 0; i < 10; i++) {
+                await rewardsTokenInstance.mint(dxDaoAvatarAddress, 1);
+            }
+
+            const campaignEndingBlock = await erc20StakerInstance.endingBlock();
+            const lockupDuration = campaignEndingBlock.sub(
+                new BN(stakingStartingBlock)
+            );
+            // from 7th block (included) to the tenth (included)
+            expect(lockupDuration.toString()).to.be.equal("4");
+
+            const rewardPerBlock = await erc20StakerInstance.rewardsPerBlock();
+            const expectedReward = rewardPerBlock.mul(new BN("4"));
+
+            await erc20StakerInstance.claim({ from: firstStakerAddress });
+            const rewardsTokenBalance = await rewardsTokenInstance.balanceOf(
+                firstStakerAddress
+            );
+            expect(rewardsTokenBalance).to.be.close(
+                expectedReward,
+                MAXIMUM_VARIANCE
+            );
+        });
+
+        it("should succeed in claiming one rewards if an LPs stakes at the last distribution block", async () => {
+            const rewardsAmount = await toWei("10", rewardsTokenInstance);
+            await rewardsTokenInstance.mint(
+                erc20StakerInstance.address,
+                rewardsAmount
+            );
+            const campaignStartingBlock = (await web3.eth.getBlockNumber()) + 1;
+            await erc20StakerInstance.initialize(
+                rewardsTokenInstance.address,
+                stakedTokenInstance.address,
+                rewardsAmount,
+                campaignStartingBlock,
+                10,
+                { from: dxDaoAvatarAddress }
+            );
+
+            // spam dummy txs to make blocks flow
+            for (let i = 0; i < 7; i++) {
+                await rewardsTokenInstance.mint(dxDaoAvatarAddress, 1);
+            }
+
+            // first staker stakes
+            const stakedAmount = await toWei("10", stakedTokenInstance);
+            await stakedTokenInstance.mint(firstStakerAddress, stakedAmount);
+            await stakedTokenInstance.approve(
+                erc20StakerInstance.address,
+                stakedAmount,
+                { from: firstStakerAddress }
+            );
+            await erc20StakerInstance.stake(stakedAmount, {
+                from: firstStakerAddress,
+            });
+            const stakingStartingBlock = (await web3.eth.getBlockNumber()) - 1;
+
+            // spam dummy txs to make blocks flow
+            for (let i = 0; i < 2; i++) {
+                await rewardsTokenInstance.mint(dxDaoAvatarAddress, 1);
+            }
+
+            const campaignEndingBlock = await erc20StakerInstance.endingBlock();
+            const lockupDuration = campaignEndingBlock.sub(
+                new BN(stakingStartingBlock)
+            );
+            expect(lockupDuration.toString()).to.be.equal("1");
+
+            const rewardPerBlock = await erc20StakerInstance.rewardsPerBlock();
+            const expectedReward = rewardPerBlock.mul(new BN("1"));
+
+            await erc20StakerInstance.claim({ from: firstStakerAddress });
+            const rewardsTokenBalance = await rewardsTokenInstance.balanceOf(
+                firstStakerAddress
+            );
+            expect(rewardsTokenBalance).to.be.close(
+                expectedReward,
+                MAXIMUM_VARIANCE
+            );
+        });
+
+        it("should succeed in claiming one rewards if two LPs stake at the last distribution block", async () => {
+            const rewardsAmount = await toWei("10", rewardsTokenInstance);
+            await rewardsTokenInstance.mint(
+                erc20StakerInstance.address,
+                rewardsAmount
+            );
+            const campaignStartingBlock = (await web3.eth.getBlockNumber()) + 1;
+            await erc20StakerInstance.initialize(
+                rewardsTokenInstance.address,
+                stakedTokenInstance.address,
+                rewardsAmount,
+                campaignStartingBlock,
+                10,
+                { from: dxDaoAvatarAddress }
+            );
+
+            // spam dummy txs to make blocks flow
+            for (let i = 0; i < 7; i++) {
+                await rewardsTokenInstance.mint(dxDaoAvatarAddress, 1);
+            }
+
+            // first staker stakes
+            const stakedAmount = await toWei("10", stakedTokenInstance);
+            await stakedTokenInstance.mint(firstStakerAddress, stakedAmount);
+            await stakedTokenInstance.approve(
+                erc20StakerInstance.address,
+                stakedAmount,
+                { from: firstStakerAddress }
+            );
+            await erc20StakerInstance.stake(stakedAmount, {
+                from: firstStakerAddress,
+            });
+            const stakingStartingBlock = (await web3.eth.getBlockNumber()) - 1;
+
+            // spam dummy txs to make blocks flow
+            for (let i = 0; i < 2; i++) {
+                await rewardsTokenInstance.mint(dxDaoAvatarAddress, 1);
+            }
+
+            const campaignEndingBlock = await erc20StakerInstance.endingBlock();
+            const lockupDuration = campaignEndingBlock.sub(
+                new BN(stakingStartingBlock)
+            );
+            expect(lockupDuration.toString()).to.be.equal("1");
+
+            const rewardPerBlock = await erc20StakerInstance.rewardsPerBlock();
+            const expectedReward = rewardPerBlock.mul(new BN("1"));
+
+            await erc20StakerInstance.claim({ from: firstStakerAddress });
+            const rewardsTokenBalance = await rewardsTokenInstance.balanceOf(
+                firstStakerAddress
+            );
+            expect(rewardsTokenBalance).to.be.close(
+                expectedReward,
+                MAXIMUM_VARIANCE
+            );
+        });
+
+        // TODO: add a test where a staker stakes at the last block
     });
 });
