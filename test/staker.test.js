@@ -20,6 +20,7 @@ const ERC20Staker = artifacts.require("ERC20Staker.sol");
 const ERC20PresetMinterPauser = artifacts.require(
     "ERC20PresetMinterPauser.json"
 );
+const HighDecimalsERC20 = artifacts.require("HighDecimalsERC20.json");
 
 // Maximum variance allowed between expected values and actual ones.
 // Mainly to account for division between integers, and associated rounding.
@@ -35,7 +36,10 @@ contract("ERC20Staker", (accounts) => {
     ] = accounts;
     const zeroAddress = "0x0000000000000000000000000000000000000000";
 
-    let erc20StakerInstance, rewardsTokenInstance, stakableTokenInstance;
+    let erc20StakerInstance,
+        rewardsTokenInstance,
+        stakableTokenInstance,
+        highDecimalsTokenInstance;
 
     beforeEach(async () => {
         erc20StakerInstance = await ERC20Staker.new(dxDaoAvatarAddress);
@@ -47,6 +51,7 @@ contract("ERC20Staker", (accounts) => {
             "Staked token",
             "STKD"
         );
+        highDecimalsTokenInstance = await HighDecimalsERC20.new();
     });
 
     describe("initialization", () => {
@@ -164,6 +169,24 @@ contract("ERC20Staker", (accounts) => {
             }
         });
 
+        it("should fail when passing 1 as blocks duration", async () => {
+            try {
+                await initializeDistribution({
+                    from: dxDaoAvatarAddress,
+                    erc20Staker: erc20StakerInstance,
+                    stakableToken: stakableTokenInstance,
+                    rewardsToken: rewardsTokenInstance,
+                    rewardsAmount: 1,
+                    duration: 1,
+                });
+                throw new Error("should have failed");
+            } catch (error) {
+                expect(error.message).to.contain(
+                    "ERC20Staker: invalid block duration"
+                );
+            }
+        });
+
         it("should fail when the rewards amount has not been sent to the contract", async () => {
             try {
                 await initializeDistribution({
@@ -178,6 +201,24 @@ contract("ERC20Staker", (accounts) => {
                 throw new Error("should have failed");
             } catch (error) {
                 expect(error.message).to.contain("ERC20Staker: funds required");
+            }
+        });
+
+        it("should fail when the rewards token has more than 18 decimals (avoid overflow)", async () => {
+            try {
+                await initializeDistribution({
+                    from: dxDaoAvatarAddress,
+                    erc20Staker: erc20StakerInstance,
+                    stakableToken: stakableTokenInstance,
+                    rewardsToken: highDecimalsTokenInstance,
+                    rewardsAmount: 10,
+                    duration: 10,
+                });
+                throw new Error("should have failed");
+            } catch (error) {
+                expect(error.message).to.contain(
+                    "ERC20Staker: more than 18 decimals for reward token"
+                );
             }
         });
 

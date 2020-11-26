@@ -67,9 +67,14 @@ contract ERC20Staker {
 
         rewardsToken = ERC20(_rewardsTokenAddress);
         lpToken = ERC20(_lpTokenAddress);
-        // FIXME: can this overflow?
+        uint256 rewardsTokenDecimals = rewardsToken.decimals();
+        // avoid overflow by constraining the rewards token decimals to a maximum of 18
+        require(
+            rewardsTokenDecimals <= 18,
+            "ERC20Staker: more than 18 decimals for reward token"
+        );
         rewardsTokenMultiplier = uint256(1).mul(
-            uint256(10)**uint256(rewardsToken.decimals())
+            uint256(10)**uint256(rewardsTokenDecimals)
         );
         rewardsAmount = _rewardsAmount;
         startingBlock = _startingBlock;
