@@ -227,7 +227,7 @@ contract("ERC20Staker", (accounts) => {
                     stakableToken: stakableTokenInstance,
                     rewardsToken: rewardsTokenInstance,
                     rewardsAmount: 1,
-                    duration: 1,
+                    duration: 2,
                 });
                 await initializeDistribution({
                     from: dxDaoAvatarAddress,
@@ -235,7 +235,7 @@ contract("ERC20Staker", (accounts) => {
                     stakableToken: stakableTokenInstance,
                     rewardsToken: rewardsTokenInstance,
                     rewardsAmount: 1,
-                    duration: 1,
+                    duration: 2,
                 });
                 throw new Error("should have failed");
             } catch (error) {
@@ -266,7 +266,7 @@ contract("ERC20Staker", (accounts) => {
                     stakableToken: stakableTokenInstance,
                     rewardsToken: rewardsTokenInstance,
                     rewardsAmount: 1,
-                    duration: 1,
+                    duration: 2,
                 });
                 await erc20StakerInstance.cancel({ from: firstStakerAddress });
                 throw new Error("should have failed");
@@ -283,7 +283,7 @@ contract("ERC20Staker", (accounts) => {
                     stakableToken: stakableTokenInstance,
                     rewardsToken: rewardsTokenInstance,
                     rewardsAmount: 1,
-                    duration: 1,
+                    duration: 2,
                 });
                 await erc20StakerInstance.cancel({ from: dxDaoAvatarAddress });
                 throw new Error("should have failed");
@@ -302,10 +302,10 @@ contract("ERC20Staker", (accounts) => {
                 stakableToken: stakableTokenInstance,
                 rewardsToken: rewardsTokenInstance,
                 rewardsAmount,
-                duration: 1,
+                duration: 2,
                 // a block in the far future so that we can cancel when
                 // the distribution has not yet started
-                startingBlock: 100,
+                startingBlock: 1000,
             });
             await erc20StakerInstance.cancel({ from: dxDaoAvatarAddress });
 
@@ -348,10 +348,10 @@ contract("ERC20Staker", (accounts) => {
                 stakableToken: stakableTokenInstance,
                 rewardsToken: rewardsTokenInstance,
                 rewardsAmount,
-                duration: 1,
+                duration: 2,
                 // a block in the far future so that we can cancel when
                 // the distribution has not yet started
-                startingBlock: 100,
+                startingBlock: 1000,
             });
             await erc20StakerInstance.cancel({ from: dxDaoAvatarAddress });
             // resending funds since the ones sent before have been sent back
@@ -361,7 +361,7 @@ contract("ERC20Staker", (accounts) => {
                 stakableToken: stakableTokenInstance,
                 rewardsToken: rewardsTokenInstance,
                 rewardsAmount,
-                duration: 1,
+                duration: 2,
             });
         });
     });
@@ -386,8 +386,8 @@ contract("ERC20Staker", (accounts) => {
                     stakableToken: stakableTokenInstance,
                     rewardsToken: rewardsTokenInstance,
                     rewardsAmount: 1,
-                    duration: 1,
-                    startingBlock: 100,
+                    duration: 2,
+                    startingBlock: 1000,
                 });
                 await erc20StakerInstance.stake(0);
                 throw new Error("should have failed");
@@ -404,7 +404,7 @@ contract("ERC20Staker", (accounts) => {
                     stakableToken: stakableTokenInstance,
                     rewardsToken: rewardsTokenInstance,
                     rewardsAmount: 1,
-                    duration: 1,
+                    duration: 2,
                 });
                 await erc20StakerInstance.stake(0);
                 throw new Error("should have failed");
@@ -423,7 +423,7 @@ contract("ERC20Staker", (accounts) => {
                     stakableToken: stakableTokenInstance,
                     rewardsToken: rewardsTokenInstance,
                     rewardsAmount: 1,
-                    duration: 1,
+                    duration: 2,
                 });
                 await erc20StakerInstance.stake(1);
                 throw new Error("should have failed");
@@ -449,7 +449,7 @@ contract("ERC20Staker", (accounts) => {
                     stakableToken: stakableTokenInstance,
                     rewardsToken: rewardsTokenInstance,
                     rewardsAmount: 1,
-                    duration: 1,
+                    duration: 2,
                 });
                 await erc20StakerInstance.stake(1);
                 throw new Error("should have failed");
@@ -477,7 +477,7 @@ contract("ERC20Staker", (accounts) => {
                     stakableToken: stakableTokenInstance,
                     rewardsToken: rewardsTokenInstance,
                     rewardsAmount: 1,
-                    duration: 1,
+                    duration: 2,
                 });
                 await erc20StakerInstance.stake(2);
                 throw new Error("should have failed");
@@ -502,7 +502,7 @@ contract("ERC20Staker", (accounts) => {
                 stakableToken: stakableTokenInstance,
                 rewardsToken: rewardsTokenInstance,
                 rewardsAmount: await toWei(1, rewardsTokenInstance),
-                duration: 1,
+                duration: 2,
             });
             await erc20StakerInstance.stake(stakedAmount);
             expect(
@@ -514,7 +514,7 @@ contract("ERC20Staker", (accounts) => {
         });
     });
 
-    describe.only("withdrawing", () => {
+    describe("withdrawing", () => {
         it("should fail when initialization has not been done", async () => {
             try {
                 await erc20StakerInstance.withdraw(0);
@@ -535,7 +535,7 @@ contract("ERC20Staker", (accounts) => {
                     rewardsToken: rewardsTokenInstance,
                     rewardsAmount: 1,
                     duration: 2,
-                    startingBlock: 100,
+                    startingBlock: 1000,
                 });
                 await erc20StakerInstance.withdraw(0);
                 throw new Error("should have failed");
@@ -990,7 +990,101 @@ contract("ERC20Staker", (accounts) => {
             ).to.be.equalBn(rewardPerBlock, MAXIMUM_VARIANCE);
         });
 
-        it.only("should succeed in claiming two rewards if two stakers both stake at the last valid distribution block", async () => {
+        it("should succeed in claiming two rewards if two stakers stake exactly the same amount at different times, and then the first staker withdraws a portion of his stake", async () => {
+            const stakedAmount = await toWei(10, stakableTokenInstance);
+            const duration = new BN(10);
+            await initializeStaker({
+                erc20StakerInstance,
+                stakableTokenInstance,
+                stakerAddress: firstStakerAddress,
+                stakableAmount: stakedAmount,
+            });
+            await initializeStaker({
+                erc20StakerInstance,
+                stakableTokenInstance,
+                stakerAddress: secondStakerAddress,
+                stakableAmount: stakedAmount,
+            });
+            const rewardsAmount = await toWei(10, rewardsTokenInstance);
+            const campaignStartingBlock = await initializeDistribution({
+                from: dxDaoAvatarAddress,
+                erc20Staker: erc20StakerInstance,
+                stakableToken: stakableTokenInstance,
+                rewardsToken: rewardsTokenInstance,
+                rewardsAmount,
+                duration,
+            });
+
+            const firstStakerStartingBlock = await stake(
+                erc20StakerInstance,
+                firstStakerAddress,
+                stakedAmount
+            );
+
+            await mineBlocks(4);
+
+            const secondStakerStartingBlock = await stake(
+                erc20StakerInstance,
+                secondStakerAddress,
+                stakedAmount
+            );
+
+            await mineBlocks(2);
+
+            const firstStakerWithdrawingBlock = await withdraw(
+                erc20StakerInstance,
+                firstStakerAddress,
+                stakedAmount.div(new BN(2))
+            );
+
+            await mineBlocks(2);
+
+            const campaignEndingBlock = await erc20StakerInstance.endingBlock();
+            expect(
+                campaignEndingBlock.sub(campaignStartingBlock)
+            ).to.be.equalBn(duration);
+
+            // first staker staked for 10 blocks
+            expect(
+                campaignEndingBlock.sub(firstStakerStartingBlock)
+            ).to.be.equalBn(new BN(10));
+            // first staker withdrew at block 8
+            expect(
+                firstStakerWithdrawingBlock.sub(campaignStartingBlock)
+            ).to.be.equalBn(new BN(8));
+            // second staker staked for 5 blocks
+            expect(
+                campaignEndingBlock.sub(secondStakerStartingBlock)
+            ).to.be.equalBn(new BN(5));
+
+            const rewardPerBlock = rewardsAmount.div(duration);
+            // the first staker had all of the rewards for 5 blocks, half of them for 3, and a third for 2
+            const expectedFirstStakerReward = rewardPerBlock
+                .mul(new BN(5))
+                .add(rewardPerBlock.mul(new BN(3)).div(new BN(2)))
+                .add(rewardPerBlock.mul(new BN(2)).div(new BN(3)));
+            // the second staker had half of the rewards for 3 blocks and two thirds for 2
+            const expectedSecondStakerReward = rewardPerBlock
+                .div(new BN(2))
+                .mul(new BN(3))
+                .add(
+                    rewardPerBlock.mul(new BN(2)).mul(new BN(2)).div(new BN(3))
+                );
+
+            // first staker claim and rewards balance check
+            await erc20StakerInstance.claim({ from: firstStakerAddress });
+            expect(
+                await rewardsTokenInstance.balanceOf(firstStakerAddress)
+            ).to.be.closeBn(expectedFirstStakerReward, MAXIMUM_VARIANCE);
+
+            // second staker claim and rewards balance check
+            await erc20StakerInstance.claim({ from: secondStakerAddress });
+            expect(
+                await rewardsTokenInstance.balanceOf(secondStakerAddress)
+            ).to.be.closeBn(expectedSecondStakerReward, MAXIMUM_VARIANCE);
+        });
+
+        it("should succeed in claiming two rewards if two stakers both stake at the last valid distribution block", async () => {
             const stakedAmount = await toWei(10, stakableTokenInstance);
             const duration = new BN(10);
             await initializeStaker({
