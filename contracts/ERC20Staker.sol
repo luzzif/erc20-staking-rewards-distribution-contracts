@@ -51,8 +51,8 @@ contract ERC20Staker {
         );
         require(_rewardsAmount > 0, "ERC20Staker: 0 rewards amount");
         require(
-            _startingBlock >= block.number,
-            "ERC20Staker: starting block lower than current"
+            _startingBlock > block.number,
+            "ERC20Staker: starting block lower or equal than current"
         );
         require(_blocksDuration > 0, "ERC20Staker: invalid block duration");
         require(
@@ -91,7 +91,12 @@ contract ERC20Staker {
         initialized = false;
     }
 
-    function stake(uint256 _amount) external onlyInitialized onlyStarted {
+    function stake(uint256 _amount)
+        external
+        onlyInitialized
+        onlyStarted
+        onlyUnended
+    {
         require(_amount > 0, "ERC20Staker: staked amount is 0");
         consolidateReward();
         lpToken.safeTransferFrom(msg.sender, address(this), _amount);
@@ -128,9 +133,8 @@ contract ERC20Staker {
     }
 
     function consolidateReward() public onlyInitialized onlyStarted {
-        uint256 _consolidationBlock = block.number <= endingBlock
-            ? block.number - 1
-            : endingBlock;
+        // The consolidation period lasts from the staking block inclusive to the current block exclusive.
+        uint256 _consolidationBlock = Math.min(block.number, endingBlock) - 1;
         if (stakedLpTokensAmount == 0) {
             rewardsPerLpToken = 0;
             lastConsolidationBlock = _consolidationBlock;
@@ -172,7 +176,15 @@ contract ERC20Staker {
 
     modifier onlyStarted() {
         require(
-            initialized && block.number > startingBlock,
+            initialized && block.number >= startingBlock,
+            "ERC20Staker: not started"
+        );
+        _;
+    }
+
+    modifier onlyUnended() {
+        require(
+            initialized && block.number < endingBlock,
             "ERC20Staker: not started"
         );
         _;

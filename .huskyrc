@@ -1,6 +1,6 @@
 {
     "hooks": {
-        "pre-commit": "yarn lint && yarn test",
+        "pre-commit": "yarn lint && yarn test:ganache",
         "commit-msg": "yarn lint:commit-message"
     }
 }
