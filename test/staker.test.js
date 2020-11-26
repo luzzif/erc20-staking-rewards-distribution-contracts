@@ -833,7 +833,7 @@ contract("ERC20Staker", (accounts) => {
             ).to.be.equalBn(rewardPerBlock, MAXIMUM_VARIANCE);
         });
 
-        it("should succeed in claiming two rewards if two stakers both stake at the last valid distribution block", async () => {
+        it.only("should succeed in claiming two rewards if two stakers both stake at the last valid distribution block", async () => {
             const stakedAmount = await toWei(10, stakableTokenInstance);
             const duration = new BN(10);
             await initializeStaker({
@@ -866,7 +866,7 @@ contract("ERC20Staker", (accounts) => {
                 (await erc20StakerInstance.endingBlock()).toNumber()
             );
 
-            await mineBlocks(9);
+            await mineBlocks(8);
 
             console.log(
                 "block after fast-forward",

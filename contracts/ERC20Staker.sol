@@ -185,7 +185,7 @@ contract ERC20Staker {
     modifier onlyUnended() {
         require(
             initialized && block.number < endingBlock,
-            "ERC20Staker: not started"
+            "ERC20Staker: already ended"
         );
         _;
     }
