@@ -68,3 +68,9 @@ exports.stake = async (
         return new BN((await web3.eth.getBlockNumber()) + 1);
     }
 };
+
+exports.withdraw = async (erc20StakerInstance, from, amount) => {
+    await erc20StakerInstance.withdraw(amount, { from });
+    // return the block in which the stake operation was performed
+    return new BN(await web3.eth.getBlockNumber());
+};

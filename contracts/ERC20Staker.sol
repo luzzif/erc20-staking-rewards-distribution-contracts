@@ -54,7 +54,11 @@ contract ERC20Staker {
             _startingBlock > block.number,
             "ERC20Staker: starting block lower or equal than current"
         );
-        require(_blocksDuration > 0, "ERC20Staker: invalid block duration");
+        // duration needs to be more than one block since the distribution
+        // lasts from the starting block inclusive to the ending block exclusive.
+        // If the duration is 1, the ending block becomes the next one, so no
+        // one would be able to stake anything.
+        require(_blocksDuration > 1, "ERC20Staker: invalid block duration");
         require(
             ERC20(_rewardsTokenAddress).balanceOf(address(this)) >=
                 _rewardsAmount,
@@ -104,19 +108,15 @@ contract ERC20Staker {
         stakedLpTokensAmount = stakedLpTokensAmount.add(_amount);
     }
 
-    function withdraw(uint256 _amount)
-        external
-        onlyInitialized
-        onlyStarted
-        onlyStaker
-    {
-        require(_amount > 0, "ERC20Staker: withdrawn amount greater than 0");
+    function withdraw(uint256 _amount) external onlyInitialized onlyStarted {
+        require(_amount > 0, "ERC20Staker: withdrawn amount is 0");
+        require(lpTokensBalance[msg.sender] > 0, "ERC20Staker: not a staker");
         require(
             _amount < lpTokensBalance[msg.sender],
-            "ERC20Staker: withdrawn amount greater than current stake"
+            "ERC20Staker: withdrawn amount greater than stake"
         );
         consolidateReward();
-        lpToken.safeTransferFrom(address(this), msg.sender, _amount);
+        lpToken.safeTransfer(msg.sender, _amount);
         lpTokensBalance[msg.sender] = lpTokensBalance[msg.sender].sub(_amount);
         stakedLpTokensAmount = stakedLpTokensAmount.sub(_amount);
     }
@@ -187,11 +187,6 @@ contract ERC20Staker {
             initialized && block.number < endingBlock,
             "ERC20Staker: already ended"
         );
-        _;
-    }
-
-    modifier onlyStaker() {
-        require(lpTokensBalance[msg.sender] > 0, "ERC20Staker: not a staker");
         _;
     }
 }
