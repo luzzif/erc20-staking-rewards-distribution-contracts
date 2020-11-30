@@ -30,7 +30,7 @@ const ZERO_BN = new BN(0);
 contract("ERC20Staker", (accounts) => {
     const [
         firstStakerAddress,
-        dxDaoAvatarAddress,
+        ownerAddress,
         secondStakerAddress,
         thirdStakerAddress,
     ] = accounts;
@@ -42,7 +42,7 @@ contract("ERC20Staker", (accounts) => {
         highDecimalsTokenInstance;
 
     beforeEach(async () => {
-        erc20StakerInstance = await ERC20Staker.new(dxDaoAvatarAddress);
+        erc20StakerInstance = await ERC20Staker.new({ from: ownerAddress });
         rewardsTokenInstance = await ERC20PresetMinterPauser.new(
             "Rewards token",
             "REW"
@@ -55,7 +55,7 @@ contract("ERC20Staker", (accounts) => {
     });
 
     describe("initialization", () => {
-        it("should fail when called by a non-DXdao address", async () => {
+        it("should fail when not called by the owner", async () => {
             try {
                 await initializeDistribution({
                     from: firstStakerAddress,
@@ -68,14 +68,16 @@ contract("ERC20Staker", (accounts) => {
                 });
                 throw new Error("should have failed");
             } catch (error) {
-                expect(error.message).to.contain("ERC20Staker: not DXdao");
+                expect(error.message).to.contain(
+                    "Ownable: caller is not the owner"
+                );
             }
         });
 
         it("should fail when passing a 0-address rewards token", async () => {
             try {
                 await initializeDistribution({
-                    from: dxDaoAvatarAddress,
+                    from: ownerAddress,
                     erc20Staker: erc20StakerInstance,
                     stakableToken: stakableTokenInstance,
                     rewardsToken: { address: zeroAddress },
@@ -95,7 +97,7 @@ contract("ERC20Staker", (accounts) => {
         it("should fail when passing a 0-address stakable token", async () => {
             try {
                 await initializeDistribution({
-                    from: dxDaoAvatarAddress,
+                    from: ownerAddress,
                     erc20Staker: erc20StakerInstance,
                     stakableToken: { address: zeroAddress },
                     rewardsToken: rewardsTokenInstance,
@@ -107,7 +109,7 @@ contract("ERC20Staker", (accounts) => {
                 throw new Error("should have failed");
             } catch (error) {
                 expect(error.message).to.contain(
-                    "ERC20Staker: 0 address as LP token"
+                    "ERC20Staker: 0 address as stakable token"
                 );
             }
         });
@@ -115,7 +117,7 @@ contract("ERC20Staker", (accounts) => {
         it("should fail when passing 0 as a rewards amount", async () => {
             try {
                 await initializeDistribution({
-                    from: dxDaoAvatarAddress,
+                    from: ownerAddress,
                     erc20Staker: erc20StakerInstance,
                     stakableToken: stakableTokenInstance,
                     rewardsToken: rewardsTokenInstance,
@@ -135,7 +137,7 @@ contract("ERC20Staker", (accounts) => {
             try {
                 await mineBlocks(10);
                 await initializeDistribution({
-                    from: dxDaoAvatarAddress,
+                    from: ownerAddress,
                     erc20Staker: erc20StakerInstance,
                     stakableToken: stakableTokenInstance,
                     rewardsToken: rewardsTokenInstance,
@@ -154,7 +156,7 @@ contract("ERC20Staker", (accounts) => {
         it("should fail when passing 0 as blocks duration", async () => {
             try {
                 await initializeDistribution({
-                    from: dxDaoAvatarAddress,
+                    from: ownerAddress,
                     erc20Staker: erc20StakerInstance,
                     stakableToken: stakableTokenInstance,
                     rewardsToken: rewardsTokenInstance,
@@ -172,7 +174,7 @@ contract("ERC20Staker", (accounts) => {
         it("should fail when passing 1 as blocks duration", async () => {
             try {
                 await initializeDistribution({
-                    from: dxDaoAvatarAddress,
+                    from: ownerAddress,
                     erc20Staker: erc20StakerInstance,
                     stakableToken: stakableTokenInstance,
                     rewardsToken: rewardsTokenInstance,
@@ -190,7 +192,7 @@ contract("ERC20Staker", (accounts) => {
         it("should fail when the rewards amount has not been sent to the contract", async () => {
             try {
                 await initializeDistribution({
-                    from: dxDaoAvatarAddress,
+                    from: ownerAddress,
                     erc20Staker: erc20StakerInstance,
                     stakableToken: stakableTokenInstance,
                     rewardsToken: rewardsTokenInstance,
@@ -207,7 +209,7 @@ contract("ERC20Staker", (accounts) => {
         it("should fail when the rewards token has more than 18 decimals (avoid overflow)", async () => {
             try {
                 await initializeDistribution({
-                    from: dxDaoAvatarAddress,
+                    from: ownerAddress,
                     erc20Staker: erc20StakerInstance,
                     stakableToken: stakableTokenInstance,
                     rewardsToken: highDecimalsTokenInstance,
@@ -226,7 +228,7 @@ contract("ERC20Staker", (accounts) => {
             const rewardsAmount = new BN(await toWei(10, rewardsTokenInstance));
             const duration = new BN(10);
             const campaignStartingBlock = await initializeDistribution({
-                from: dxDaoAvatarAddress,
+                from: ownerAddress,
                 erc20Staker: erc20StakerInstance,
                 stakableToken: stakableTokenInstance,
                 rewardsToken: rewardsTokenInstance,
@@ -243,7 +245,7 @@ contract("ERC20Staker", (accounts) => {
             expect(await erc20StakerInstance.rewardsToken()).to.be.equal(
                 rewardsTokenInstance.address
             );
-            expect(await erc20StakerInstance.lpToken()).to.be.equal(
+            expect(await erc20StakerInstance.stakableToken()).to.be.equal(
                 stakableTokenInstance.address
             );
             expect(await erc20StakerInstance.rewardsAmount()).to.be.equalBn(
@@ -263,7 +265,7 @@ contract("ERC20Staker", (accounts) => {
         it("should fail when trying to initialize a second time", async () => {
             try {
                 await initializeDistribution({
-                    from: dxDaoAvatarAddress,
+                    from: ownerAddress,
                     erc20Staker: erc20StakerInstance,
                     stakableToken: stakableTokenInstance,
                     rewardsToken: rewardsTokenInstance,
@@ -271,7 +273,7 @@ contract("ERC20Staker", (accounts) => {
                     duration: 2,
                 });
                 await initializeDistribution({
-                    from: dxDaoAvatarAddress,
+                    from: ownerAddress,
                     erc20Staker: erc20StakerInstance,
                     stakableToken: stakableTokenInstance,
                     rewardsToken: rewardsTokenInstance,
@@ -299,10 +301,10 @@ contract("ERC20Staker", (accounts) => {
             }
         });
 
-        it("should fail when not called by DXdao", async () => {
+        it("should fail when not called by the owner", async () => {
             try {
                 await initializeDistribution({
-                    from: dxDaoAvatarAddress,
+                    from: ownerAddress,
                     erc20Staker: erc20StakerInstance,
                     stakableToken: stakableTokenInstance,
                     rewardsToken: rewardsTokenInstance,
@@ -312,21 +314,23 @@ contract("ERC20Staker", (accounts) => {
                 await erc20StakerInstance.cancel({ from: firstStakerAddress });
                 throw new Error("should have failed");
             } catch (error) {
-                expect(error.message).to.contain("ERC20Staker: not DXdao");
+                expect(error.message).to.contain(
+                    "Ownable: caller is not the owner"
+                );
             }
         });
 
         it("should fail when the program has already started", async () => {
             try {
                 await initializeDistribution({
-                    from: dxDaoAvatarAddress,
+                    from: ownerAddress,
                     erc20Staker: erc20StakerInstance,
                     stakableToken: stakableTokenInstance,
                     rewardsToken: rewardsTokenInstance,
                     rewardsAmount: 1,
                     duration: 2,
                 });
-                await erc20StakerInstance.cancel({ from: dxDaoAvatarAddress });
+                await erc20StakerInstance.cancel({ from: ownerAddress });
                 throw new Error("should have failed");
             } catch (error) {
                 expect(error.message).to.contain(
@@ -338,7 +342,7 @@ contract("ERC20Staker", (accounts) => {
         it("should succeed in the right conditions", async () => {
             const rewardsAmount = await toWei(10, rewardsTokenInstance);
             await initializeDistribution({
-                from: dxDaoAvatarAddress,
+                from: ownerAddress,
                 erc20Staker: erc20StakerInstance,
                 stakableToken: stakableTokenInstance,
                 rewardsToken: rewardsTokenInstance,
@@ -348,7 +352,7 @@ contract("ERC20Staker", (accounts) => {
                 // the distribution has not yet started
                 startingBlock: 1000,
             });
-            await erc20StakerInstance.cancel({ from: dxDaoAvatarAddress });
+            await erc20StakerInstance.cancel({ from: ownerAddress });
 
             expect(await erc20StakerInstance.initialized()).to.be.false;
             expect(
@@ -357,12 +361,12 @@ contract("ERC20Staker", (accounts) => {
                 )
             ).to.be.equalBn(ZERO_BN);
             expect(
-                await rewardsTokenInstance.balanceOf(dxDaoAvatarAddress)
+                await rewardsTokenInstance.balanceOf(ownerAddress)
             ).to.be.equalBn(rewardsAmount);
             expect(await erc20StakerInstance.rewardsToken()).to.be.equal(
                 zeroAddress
             );
-            expect(await erc20StakerInstance.lpToken()).to.be.equal(
+            expect(await erc20StakerInstance.stakableToken()).to.be.equal(
                 zeroAddress
             );
             expect(await erc20StakerInstance.rewardsAmount()).to.be.equalBn(
@@ -384,7 +388,7 @@ contract("ERC20Staker", (accounts) => {
         it("should allow for a second initialization on success", async () => {
             const rewardsAmount = await toWei(10, rewardsTokenInstance);
             await initializeDistribution({
-                from: dxDaoAvatarAddress,
+                from: ownerAddress,
                 erc20Staker: erc20StakerInstance,
                 stakableToken: stakableTokenInstance,
                 rewardsToken: rewardsTokenInstance,
@@ -394,10 +398,10 @@ contract("ERC20Staker", (accounts) => {
                 // the distribution has not yet started
                 startingBlock: 1000,
             });
-            await erc20StakerInstance.cancel({ from: dxDaoAvatarAddress });
+            await erc20StakerInstance.cancel({ from: ownerAddress });
             // resending funds since the ones sent before have been sent back
             await initializeDistribution({
-                from: dxDaoAvatarAddress,
+                from: ownerAddress,
                 erc20Staker: erc20StakerInstance,
                 stakableToken: stakableTokenInstance,
                 rewardsToken: rewardsTokenInstance,
@@ -422,7 +426,7 @@ contract("ERC20Staker", (accounts) => {
         it("should fail when program has not yet started", async () => {
             try {
                 await initializeDistribution({
-                    from: dxDaoAvatarAddress,
+                    from: ownerAddress,
                     erc20Staker: erc20StakerInstance,
                     stakableToken: stakableTokenInstance,
                     rewardsToken: rewardsTokenInstance,
@@ -440,7 +444,7 @@ contract("ERC20Staker", (accounts) => {
         it("should fail when trying to stake 0", async () => {
             try {
                 await initializeDistribution({
-                    from: dxDaoAvatarAddress,
+                    from: ownerAddress,
                     erc20Staker: erc20StakerInstance,
                     stakableToken: stakableTokenInstance,
                     rewardsToken: rewardsTokenInstance,
@@ -459,7 +463,7 @@ contract("ERC20Staker", (accounts) => {
         it("should fail when the staker has not enough balance", async () => {
             try {
                 await initializeDistribution({
-                    from: dxDaoAvatarAddress,
+                    from: ownerAddress,
                     erc20Staker: erc20StakerInstance,
                     stakableToken: stakableTokenInstance,
                     rewardsToken: rewardsTokenInstance,
@@ -485,7 +489,7 @@ contract("ERC20Staker", (accounts) => {
                     setAllowance: false,
                 });
                 await initializeDistribution({
-                    from: dxDaoAvatarAddress,
+                    from: ownerAddress,
                     erc20Staker: erc20StakerInstance,
                     stakableToken: stakableTokenInstance,
                     rewardsToken: rewardsTokenInstance,
@@ -513,7 +517,7 @@ contract("ERC20Staker", (accounts) => {
                 // don't set the correct allowance
                 await stakableTokenInstance.mint(firstStakerAddress, 1);
                 await initializeDistribution({
-                    from: dxDaoAvatarAddress,
+                    from: ownerAddress,
                     erc20Staker: erc20StakerInstance,
                     stakableToken: stakableTokenInstance,
                     rewardsToken: rewardsTokenInstance,
@@ -538,7 +542,7 @@ contract("ERC20Staker", (accounts) => {
                 stakableAmount: stakedAmount,
             });
             await initializeDistribution({
-                from: dxDaoAvatarAddress,
+                from: ownerAddress,
                 erc20Staker: erc20StakerInstance,
                 stakableToken: stakableTokenInstance,
                 rewardsToken: rewardsTokenInstance,
@@ -547,10 +551,10 @@ contract("ERC20Staker", (accounts) => {
             });
             await erc20StakerInstance.stake(stakedAmount);
             expect(
-                await erc20StakerInstance.lpTokensBalance(firstStakerAddress)
+                await erc20StakerInstance.stakedTokensOf(firstStakerAddress)
             ).to.be.equalBn(stakedAmount);
             expect(
-                await erc20StakerInstance.stakedLpTokensAmount()
+                await erc20StakerInstance.stakedTokensAmount()
             ).to.be.equalBn(stakedAmount);
         });
     });
@@ -570,7 +574,7 @@ contract("ERC20Staker", (accounts) => {
         it("should fail when the distribution has not yet started", async () => {
             try {
                 await initializeDistribution({
-                    from: dxDaoAvatarAddress,
+                    from: ownerAddress,
                     erc20Staker: erc20StakerInstance,
                     stakableToken: stakableTokenInstance,
                     rewardsToken: rewardsTokenInstance,
@@ -594,7 +598,7 @@ contract("ERC20Staker", (accounts) => {
                     stakableAmount: 1,
                 });
                 await initializeDistribution({
-                    from: dxDaoAvatarAddress,
+                    from: ownerAddress,
                     erc20Staker: erc20StakerInstance,
                     stakableToken: stakableTokenInstance,
                     rewardsToken: rewardsTokenInstance,
@@ -620,7 +624,7 @@ contract("ERC20Staker", (accounts) => {
                     stakableAmount: 1,
                 });
                 await initializeDistribution({
-                    from: dxDaoAvatarAddress,
+                    from: ownerAddress,
                     erc20Staker: erc20StakerInstance,
                     stakableToken: stakableTokenInstance,
                     rewardsToken: rewardsTokenInstance,
@@ -646,7 +650,7 @@ contract("ERC20Staker", (accounts) => {
                 stakableAmount: stakedAmount,
             });
             await initializeDistribution({
-                from: dxDaoAvatarAddress,
+                from: ownerAddress,
                 erc20Staker: erc20StakerInstance,
                 stakableToken: stakableTokenInstance,
                 rewardsToken: rewardsTokenInstance,
@@ -655,7 +659,7 @@ contract("ERC20Staker", (accounts) => {
             });
             await erc20StakerInstance.stake(stakedAmount);
             expect(
-                await erc20StakerInstance.lpTokensBalance(firstStakerAddress)
+                await erc20StakerInstance.stakedTokensOf(firstStakerAddress)
             ).to.be.equalBn(stakedAmount);
             await withdraw(
                 erc20StakerInstance,
@@ -663,10 +667,10 @@ contract("ERC20Staker", (accounts) => {
                 stakedAmount.div(new BN(2))
             );
             expect(
-                await erc20StakerInstance.lpTokensBalance(firstStakerAddress)
+                await erc20StakerInstance.stakedTokensOf(firstStakerAddress)
             ).to.be.equalBn(stakedAmount.div(new BN(2)));
             expect(
-                await erc20StakerInstance.stakedLpTokensAmount()
+                await erc20StakerInstance.stakedTokensAmount()
             ).to.be.equalBn(stakedAmount.div(new BN(2)));
             expect(
                 await stakableTokenInstance.balanceOf(firstStakerAddress)
@@ -682,7 +686,7 @@ contract("ERC20Staker", (accounts) => {
                 stakableAmount: stakedAmount,
             });
             await initializeDistribution({
-                from: dxDaoAvatarAddress,
+                from: ownerAddress,
                 erc20Staker: erc20StakerInstance,
                 stakableToken: stakableTokenInstance,
                 rewardsToken: rewardsTokenInstance,
@@ -691,15 +695,15 @@ contract("ERC20Staker", (accounts) => {
             });
             await erc20StakerInstance.stake(stakedAmount);
             expect(
-                await erc20StakerInstance.lpTokensBalance(firstStakerAddress)
+                await erc20StakerInstance.stakedTokensOf(firstStakerAddress)
             ).to.be.equalBn(stakedAmount);
             await mineBlocks(10);
             await erc20StakerInstance.withdraw(stakedAmount.div(new BN(2)));
             expect(
-                await erc20StakerInstance.lpTokensBalance(firstStakerAddress)
+                await erc20StakerInstance.stakedTokensOf(firstStakerAddress)
             ).to.be.equalBn(stakedAmount.div(new BN(2)));
             expect(
-                await erc20StakerInstance.stakedLpTokensAmount()
+                await erc20StakerInstance.stakedTokensAmount()
             ).to.be.equalBn(stakedAmount.div(new BN(2)));
             expect(
                 await stakableTokenInstance.balanceOf(firstStakerAddress)
@@ -717,7 +721,7 @@ contract("ERC20Staker", (accounts) => {
                 stakableAmount: stakedAmount,
             });
             await initializeDistribution({
-                from: dxDaoAvatarAddress,
+                from: ownerAddress,
                 erc20Staker: erc20StakerInstance,
                 stakableToken: stakableTokenInstance,
                 rewardsToken: rewardsTokenInstance,
@@ -762,7 +766,7 @@ contract("ERC20Staker", (accounts) => {
             });
             const rewardsAmount = await toWei(10, rewardsTokenInstance);
             const campaignStartingBlock = await initializeDistribution({
-                from: dxDaoAvatarAddress,
+                from: ownerAddress,
                 erc20Staker: erc20StakerInstance,
                 stakableToken: stakableTokenInstance,
                 rewardsToken: rewardsTokenInstance,
@@ -846,7 +850,7 @@ contract("ERC20Staker", (accounts) => {
             });
             const rewardsAmount = await toWei(10, rewardsTokenInstance);
             const campaignStartingBlock = await initializeDistribution({
-                from: dxDaoAvatarAddress,
+                from: ownerAddress,
                 erc20Staker: erc20StakerInstance,
                 stakableToken: stakableTokenInstance,
                 rewardsToken: rewardsTokenInstance,
@@ -950,7 +954,7 @@ contract("ERC20Staker", (accounts) => {
             });
             const rewardsAmount = await toWei(10, rewardsTokenInstance);
             const campaignStartingBlock = await initializeDistribution({
-                from: dxDaoAvatarAddress,
+                from: ownerAddress,
                 erc20Staker: erc20StakerInstance,
                 stakableToken: stakableTokenInstance,
                 rewardsToken: rewardsTokenInstance,
@@ -999,7 +1003,7 @@ contract("ERC20Staker", (accounts) => {
             });
             const rewardsAmount = await toWei(10, rewardsTokenInstance);
             const campaignStartingBlock = await initializeDistribution({
-                from: dxDaoAvatarAddress,
+                from: ownerAddress,
                 erc20Staker: erc20StakerInstance,
                 stakableToken: stakableTokenInstance,
                 rewardsToken: rewardsTokenInstance,
@@ -1048,7 +1052,7 @@ contract("ERC20Staker", (accounts) => {
             });
             const rewardsAmount = await toWei(10, rewardsTokenInstance);
             const campaignStartingBlock = await initializeDistribution({
-                from: dxDaoAvatarAddress,
+                from: ownerAddress,
                 erc20Staker: erc20StakerInstance,
                 stakableToken: stakableTokenInstance,
                 rewardsToken: rewardsTokenInstance,
@@ -1142,7 +1146,7 @@ contract("ERC20Staker", (accounts) => {
             });
             const rewardsAmount = await toWei(10, rewardsTokenInstance);
             const campaignStartingBlock = await initializeDistribution({
-                from: dxDaoAvatarAddress,
+                from: ownerAddress,
                 erc20Staker: erc20StakerInstance,
                 stakableToken: stakableTokenInstance,
                 rewardsToken: rewardsTokenInstance,
