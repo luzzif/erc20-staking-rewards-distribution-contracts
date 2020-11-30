@@ -30,6 +30,18 @@ contract ERC20Staker is Ownable {
     mapping(address => uint256) public earnedRewards;
     mapping(address => uint256) public claimedRewards;
 
+    event Initialized(
+        address rewardsTokenAddress,
+        address stakableTokenAddress,
+        uint256 rewardsAmount,
+        uint256 startingBlock,
+        uint256 blocksDuration
+    );
+    event Canceled();
+    event Staked(address indexed staker, uint256 amount);
+    event Withdrawn(address indexed withdrawer, uint256 amount);
+    event Claimed(address indexed claimer, uint256 amount);
+
     function initialize(
         address _rewardsTokenAddress,
         address _stakableTokenAddress,
@@ -78,6 +90,13 @@ contract ERC20Staker is Ownable {
         rewardsPerBlock = _rewardsAmount.div(_blocksDuration);
 
         initialized = true;
+        emit Initialized(
+            _rewardsTokenAddress,
+            _stakableTokenAddress,
+            _rewardsAmount,
+            _startingBlock,
+            _blocksDuration
+        );
     }
 
     function cancel() external onlyInitialized onlyOwner {
@@ -94,6 +113,7 @@ contract ERC20Staker is Ownable {
         endingBlock = 0;
         rewardsPerBlock = 0;
         initialized = false;
+        emit Canceled();
     }
 
     function stake(uint256 _amount)
@@ -107,6 +127,7 @@ contract ERC20Staker is Ownable {
         stakableToken.safeTransferFrom(msg.sender, address(this), _amount);
         stakedTokensOf[msg.sender] = stakedTokensOf[msg.sender].add(_amount);
         stakedTokensAmount = stakedTokensAmount.add(_amount);
+        emit Staked(msg.sender, _amount);
     }
 
     function withdraw(uint256 _amount) external onlyInitialized onlyStarted {
@@ -120,6 +141,7 @@ contract ERC20Staker is Ownable {
         stakableToken.safeTransfer(msg.sender, _amount);
         stakedTokensOf[msg.sender] = stakedTokensOf[msg.sender].sub(_amount);
         stakedTokensAmount = stakedTokensAmount.sub(_amount);
+        emit Withdrawn(msg.sender, _amount);
     }
 
     function claim() external onlyInitialized onlyStarted {
@@ -131,6 +153,7 @@ contract ERC20Staker is Ownable {
         claimedRewards[msg.sender] = claimedRewards[msg.sender].add(
             _pendingRewards
         );
+        emit Claimed(msg.sender, _pendingRewards);
     }
 
     function consolidateReward() public onlyInitialized onlyStarted {

@@ -7,7 +7,7 @@
         "lint:prettier": "prettier -l test/**/*.js",
         "lint:commit-message": "commitlint -e",
         "lint": "yarn lint:code & yarn lint:prettier",
-        "test:ganache": "hardhat --network ganache test",
+        "test": "hardhat --network ganache test",
         "coverage": "hardhat coverage",
         "compile": "hardhat compile"
     },
