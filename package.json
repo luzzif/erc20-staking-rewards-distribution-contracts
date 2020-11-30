@@ -8,7 +8,7 @@
         "lint:commit-message": "commitlint -e",
         "lint": "yarn lint:code & yarn lint:prettier",
         "test": "hardhat --network ganache test",
-        "coverage": "hardhat coverage",
+        "coverage": "hardhat --network coverage coverage",
         "compile": "hardhat compile"
     },
     "author": "Federico Luzzi <fedeluzzi00@gmail.com>",
