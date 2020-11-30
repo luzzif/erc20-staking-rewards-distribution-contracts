@@ -1,7 +1,7 @@
 const { contract } = require("hardhat");
 const { expect } = require("chai");
 const { toWei } = require("./utils/conversion");
-const { artifacts, web3 } = require("hardhat");
+const { artifacts } = require("hardhat");
 const BN = require("bn.js");
 const {
     stopMining,
@@ -1149,70 +1149,35 @@ contract("ERC20Staker", (accounts) => {
                 rewardsAmount,
                 duration,
             });
-            console.log(
-                "campaign starting block",
-                campaignStartingBlock.toNumber()
-            );
-            console.log(
-                "campaign ending block",
-                (await erc20StakerInstance.endingBlock()).toNumber()
-            );
 
-            await mineBlocks(8);
-
-            console.log(
-                "block after fast-forward",
-                await web3.eth.getBlockNumber()
-            );
-            console.log(
-                "currently processing block",
-                (await web3.eth.getBlockNumber()) + 1
-            );
-            console.log(
-                "ending block",
-                (await erc20StakerInstance.endingBlock()).toString()
-            );
+            await mineBlocks(9);
 
             await stopMining();
-            console.log("staking for first staker");
             const firstStakerStartingBlock = await stake(
                 erc20StakerInstance,
                 firstStakerAddress,
                 stakedAmount,
                 false
             );
-            console.log("staking for second staker");
             const secondStakerStartingBlock = await stake(
                 erc20StakerInstance,
                 secondStakerAddress,
                 stakedAmount,
                 false
             );
-            await startMining();
             await mineBlock();
-            console.log(
-                "first staker starting block",
-                firstStakerStartingBlock.toNumber()
-            );
-            console.log(
-                "second staker starting block",
-                firstStakerStartingBlock.toNumber()
-            );
-            console.log(
-                "current block number after mining the block",
-                await web3.eth.getBlockNumber()
-            );
+            await startMining();
 
             const campaignEndingBlock = await erc20StakerInstance.endingBlock();
             expect(
                 campaignEndingBlock.sub(campaignStartingBlock)
             ).to.be.equalBn(duration);
-            /* expect(
+            expect(
                 campaignEndingBlock.sub(firstStakerStartingBlock)
             ).to.be.equalBn(new BN(1));
             expect(
                 campaignEndingBlock.sub(secondStakerStartingBlock)
-            ).to.be.equalBn(new BN(1)); */
+            ).to.be.equalBn(new BN(1));
 
             const rewardPerBlock = rewardsAmount.div(duration);
             // the first staker had half of the rewards for 1 block
@@ -1222,25 +1187,15 @@ contract("ERC20Staker", (accounts) => {
 
             // first staker claim and rewards balance check
             await erc20StakerInstance.claim({ from: firstStakerAddress });
-            console.log(
-                (
-                    await rewardsTokenInstance.balanceOf(firstStakerAddress)
-                ).toString()
-            );
-            /* expect(
+            expect(
                 await rewardsTokenInstance.balanceOf(firstStakerAddress)
-            ).to.be.equalBn(expectedFirstStakerReward); */
+            ).to.be.equalBn(expectedFirstStakerReward);
 
             // second staker claim and rewards balance check
             await erc20StakerInstance.claim({ from: secondStakerAddress });
-            console.log(
-                (
-                    await rewardsTokenInstance.balanceOf(secondStakerAddress)
-                ).toString()
-            );
-            /* expect(
+            expect(
                 await rewardsTokenInstance.balanceOf(secondStakerAddress)
-            ).to.be.equalBn(expectedSecondStakerReward); */
+            ).to.be.equalBn(expectedSecondStakerReward);
         });
     });
 });

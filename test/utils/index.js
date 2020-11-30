@@ -63,9 +63,17 @@ exports.stake = async (
         // return the block in which the stake operation was performed
         return new BN(await web3.eth.getBlockNumber());
     } else {
-        erc20StakerInstance.stake(amount, { from }).on("receipt", console.log);
         // The transaction will be included in the next block, so we have to add 1
-        return new BN((await web3.eth.getBlockNumber()) + 1);
+        const blockNumber = new BN((await web3.eth.getBlockNumber()) + 1);
+        // Make sure the transaction has actually been queued before returning
+        return new Promise((resolve, reject) => {
+            erc20StakerInstance
+                .stake(amount, { from })
+                .on("transactionHash", () => {
+                    resolve(blockNumber);
+                })
+                .on("error", reject);
+        });
     }
 };
 

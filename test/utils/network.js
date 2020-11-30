@@ -2,7 +2,7 @@ const { web3 } = require("hardhat");
 
 exports.stopMining = async () => {
     return new Promise((resolve, reject) => {
-        web3.eth.currentProvider.send({ method: "miner_stop" }, (error) => {
+        web3.currentProvider.send({ method: "miner_stop" }, (error) => {
             if (error) {
                 console.log("error stopping instamining");
                 return reject(error);
