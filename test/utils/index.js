@@ -77,8 +77,26 @@ exports.stake = async (
     }
 };
 
-exports.withdraw = async (erc20StakerInstance, from, amount) => {
-    await erc20StakerInstance.withdraw(amount, { from });
-    // return the block in which the stake operation was performed
-    return new BN(await web3.eth.getBlockNumber());
+exports.withdraw = async (
+    erc20StakerInstance,
+    from,
+    amount,
+    waitForReceipt = true
+) => {
+    if (waitForReceipt) {
+        await erc20StakerInstance.withdraw(amount, { from });
+        return new BN(await web3.eth.getBlockNumber());
+    } else {
+        // The transaction will be included in the next block, so we have to add 1
+        const blockNumber = new BN((await web3.eth.getBlockNumber()) + 1);
+        // Make sure the transaction has actually been queued before returning
+        return new Promise((resolve, reject) => {
+            erc20StakerInstance
+                .withdraw(amount, { from })
+                .on("transactionHash", () => {
+                    resolve(blockNumber);
+                })
+                .on("error", reject);
+        });
+    }
 };

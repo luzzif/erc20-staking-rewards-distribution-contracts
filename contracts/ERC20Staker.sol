@@ -134,7 +134,7 @@ contract ERC20Staker is Ownable {
         require(_amount > 0, "ERC20Staker: withdrawn amount is 0");
         require(stakedTokensOf[msg.sender] > 0, "ERC20Staker: not a staker");
         require(
-            _amount < stakedTokensOf[msg.sender],
+            _amount <= stakedTokensOf[msg.sender],
             "ERC20Staker: withdrawn amount greater than stake"
         );
         consolidateReward();
