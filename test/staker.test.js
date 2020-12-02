@@ -1256,7 +1256,7 @@ contract("ERC20Staker", (accounts) => {
             ).to.be.equalBn(rewardsAmount);
         });
 
-        it.only("should succeed in claiming two rewards if two staker respectively stake and withdraw at the same block", async () => {
+        it("should succeed in claiming two rewards if two staker respectively stake and withdraw at the same block", async () => {
             const stakedAmount = await toWei(10, stakableTokenInstance);
             const duration = new BN(10);
             await initializeStaker({
