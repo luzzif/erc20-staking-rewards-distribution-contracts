@@ -1,5 +1,5 @@
 {
-    "name": "@swapr/lp-staker",
+    "name": "erc20-staker",
     "version": "0.1.0",
     "description": "Generic ERC20 tokens staker contracts to bootstrap staking campaigns (liquidity mining etc).",
     "scripts": {
@@ -8,6 +8,7 @@
         "lint:commit-message": "commitlint -e",
         "lint": "yarn lint:code & yarn lint:prettier",
         "test": "hardhat --network ganache test",
+        "test:hardhat": "hardhat test",
         "coverage": "hardhat --network coverage coverage",
         "compile": "hardhat compile"
     },
