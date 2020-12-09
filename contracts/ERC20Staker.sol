@@ -24,6 +24,7 @@ contract ERC20Staker is Ownable {
     uint256 public endingBlock;
     bool public initialized;
     uint256 public lastConsolidationBlock;
+    uint256 public recoverableUnassignedRewards;
 
     mapping(address => uint256) public stakedTokensOf;
     mapping(address => uint256) public consolidatedRewardsPerStakedToken;
@@ -41,6 +42,7 @@ contract ERC20Staker is Ownable {
     event Staked(address indexed staker, uint256 amount);
     event Withdrawn(address indexed withdrawer, uint256 amount);
     event Claimed(address indexed claimer, uint256 amount);
+    event Recovered(uint256 amount);
 
     function initialize(
         address _rewardsTokenAddress,
@@ -87,6 +89,7 @@ contract ERC20Staker is Ownable {
         rewardsAmount = _rewardsAmount;
         startingBlock = _startingBlock;
         endingBlock = startingBlock + _blocksDuration;
+        lastConsolidationBlock = startingBlock;
         rewardsPerBlock = _rewardsAmount.div(_blocksDuration);
 
         initialized = true;
@@ -111,9 +114,17 @@ contract ERC20Staker is Ownable {
         rewardsAmount = 0;
         startingBlock = 0;
         endingBlock = 0;
+        lastConsolidationBlock = 0;
         rewardsPerBlock = 0;
         initialized = false;
         emit Canceled();
+    }
+
+    function recoverUnassignedRewards() external onlyInitialized onlyStarted {
+        consolidateReward();
+        rewardsToken.safeTransfer(owner(), recoverableUnassignedRewards);
+        emit Recovered(recoverableUnassignedRewards);
+        recoverableUnassignedRewards = 0;
     }
 
     function stake(uint256 _amount)
@@ -158,26 +169,38 @@ contract ERC20Staker is Ownable {
 
     function consolidateReward() public onlyInitialized onlyStarted {
         // The consolidation period lasts from the staking block inclusive to the current block exclusive.
-        uint256 _consolidationBlock = Math.min(block.number, endingBlock) - 1;
+        uint256 _consolidationBlock = Math.min(block.number, endingBlock);
+        uint256 _lastPeriodDuration = _consolidationBlock.sub(
+            lastConsolidationBlock
+        );
         if (stakedTokensAmount == 0) {
+            // If the current staked tokens amount is zero, there have been unassigned rewards in the last period.
+            // We add them to any previous one so that they can be claimed back by the contract's owner.
+            recoverableUnassignedRewards = recoverableUnassignedRewards.add(
+                _lastPeriodDuration.mul(rewardsPerBlock)
+            );
             rewardsPerStakedToken = 0;
             lastConsolidationBlock = _consolidationBlock;
         } else {
             rewardsPerStakedToken = rewardsPerStakedToken.add(
-                _consolidationBlock
-                    .sub(lastConsolidationBlock)
+                _lastPeriodDuration
                     .mul(rewardsPerBlock)
                     .mul(rewardsTokenMultiplier)
                     .div(stakedTokensAmount)
             );
         }
-        uint256 _rewardInCurrentPeriod = stakedTokensOf[msg.sender]
-            .mul(
-            rewardsPerStakedToken.sub(
-                consolidatedRewardsPerStakedToken[msg.sender]
+        // avoids subtraction overflow. If the rewards per staked tokens are 0,
+        // the rewards in current period must be 0 by definition, no need to
+        // perform subtraction risking overflow.
+        uint256 _rewardInCurrentPeriod = rewardsPerStakedToken > 0
+            ? stakedTokensOf[msg.sender]
+                .mul(
+                rewardsPerStakedToken.sub(
+                    consolidatedRewardsPerStakedToken[msg.sender]
+                )
             )
-        )
-            .div(rewardsTokenMultiplier);
+                .div(rewardsTokenMultiplier)
+            : 0;
         earnedRewards[msg.sender] = earnedRewards[msg.sender].add(
             _rewardInCurrentPeriod
         );
