@@ -1,5 +1,40 @@
 const BN = require("bn.js");
 const { web3 } = require("hardhat");
+const { artifacts } = require("hardhat");
+
+const ERC20Staker = artifacts.require("ERC20Staker.sol");
+const ERC20PresetMinterPauser = artifacts.require(
+    "ERC20PresetMinterPauser.json"
+);
+const HighDecimalsERC20 = artifacts.require("HighDecimalsERC20.json");
+
+exports.getTestContext = async () => {
+    const [
+        firstStakerAddress,
+        ownerAddress,
+        secondStakerAddress,
+        thirdStakerAddress,
+    ] = await web3.eth.getAccounts();
+
+    return {
+        erc20StakerInstance: await ERC20Staker.new({
+            from: ownerAddress,
+        }),
+        rewardsTokenInstance: await ERC20PresetMinterPauser.new(
+            "Rewards token",
+            "REW"
+        ),
+        stakableTokenInstance: await ERC20PresetMinterPauser.new(
+            "Staked token",
+            "STKD"
+        ),
+        highDecimalsTokenInstance: await HighDecimalsERC20.new(),
+        firstStakerAddress,
+        ownerAddress,
+        secondStakerAddress,
+        thirdStakerAddress,
+    };
+};
 
 exports.initializeStaker = async ({
     erc20StakerInstance,
@@ -23,28 +58,33 @@ exports.initializeStaker = async ({
 exports.initializeDistribution = async ({
     from,
     erc20Staker,
-    stakableToken,
-    rewardsToken,
-    rewardsAmount,
+    stakableTokens,
+    rewardTokens,
+    rewardAmounts,
     duration,
     startingBlock,
     fund = true,
 }) => {
+    if (rewardTokens.length !== rewardAmounts.length) {
+        throw new Error("reward tokens and amounts need to be the same length");
+    }
     if (fund) {
-        await rewardsToken.mint(erc20Staker.address, rewardsAmount);
+        for (let i = 0; i < rewardTokens.length; i++) {
+            await rewardTokens[i].mint(erc20Staker.address, rewardAmounts[i]);
+        }
     }
     // if not specified, the distribution starts from the next block.
     // getBlockNumber returns the number of the last mined block.
-    // The next one will contain out initialization transaction, so
+    // The next one will contain our initialization transaction, so
     // the starting block has to be 2 blocks from the latest mined block.
     const campaignStartingBlock =
         startingBlock >= 0
             ? startingBlock
             : new BN((await web3.eth.getBlockNumber()) + 2);
     await erc20Staker.initialize(
-        rewardsToken.address,
-        stakableToken.address,
-        rewardsAmount,
+        rewardTokens.map((instance) => instance.address),
+        stakableTokens.map((instance) => instance.address),
+        rewardAmounts,
         campaignStartingBlock,
         duration,
         { from }
@@ -55,11 +95,11 @@ exports.initializeDistribution = async ({
 exports.stake = async (
     erc20StakerInstance,
     from,
-    amount,
+    amounts,
     waitForReceipt = true
 ) => {
     if (waitForReceipt) {
-        await erc20StakerInstance.stake(amount, { from });
+        await erc20StakerInstance.stake(amounts, { from });
         // return the block in which the stake operation was performed
         return new BN(await web3.eth.getBlockNumber());
     } else {
@@ -68,7 +108,7 @@ exports.stake = async (
         // Make sure the transaction has actually been queued before returning
         return new Promise((resolve, reject) => {
             erc20StakerInstance
-                .stake(amount, { from })
+                .stake(amounts, { from })
                 .on("transactionHash", () => {
                     resolve(blockNumber);
                 })
@@ -80,11 +120,11 @@ exports.stake = async (
 exports.withdraw = async (
     erc20StakerInstance,
     from,
-    amount,
+    amounts,
     waitForReceipt = true
 ) => {
     if (waitForReceipt) {
-        await erc20StakerInstance.withdraw(amount, { from });
+        await erc20StakerInstance.withdraw(amounts, { from });
         return new BN(await web3.eth.getBlockNumber());
     } else {
         // The transaction will be included in the next block, so we have to add 1
@@ -92,7 +132,7 @@ exports.withdraw = async (
         // Make sure the transaction has actually been queued before returning
         return new Promise((resolve, reject) => {
             erc20StakerInstance
-                .withdraw(amount, { from })
+                .withdraw(amounts, { from })
                 .on("transactionHash", () => {
                     resolve(blockNumber);
                 })
