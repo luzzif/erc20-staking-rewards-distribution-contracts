@@ -68,8 +68,12 @@ exports.initializeDistribution = async ({
     duration,
     startingBlock,
     fund = true,
+    skipRewardTokensAmountsConsistenyCheck,
 }) => {
-    if (rewardTokens.length !== rewardAmounts.length) {
+    if (
+        !skipRewardTokensAmountsConsistenyCheck &&
+        rewardTokens.length !== rewardAmounts.length
+    ) {
         throw new Error("reward tokens and amounts need to be the same length");
     }
     if (fund) {

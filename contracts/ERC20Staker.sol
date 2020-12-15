@@ -72,11 +72,9 @@ contract ERC20Staker is Ownable {
         require(_blocksDuration > 1, "ERC20Staker: invalid block duration");
         require(
             _rewardTokenAddresses.length == _rewardAmounts.length,
-            "ERC20Staker: given reward token addresses and amounts length do not match"
+            "ERC20Staker: inconsistent reward token/amount arrays length"
         );
 
-        // Will later be used to check if only 0 rewards have been passed
-        uint256 _totalRewards = 0;
         // Initializing reward tokens and amounts
         for (uint32 _i = 0; _i < _rewardTokenAddresses.length; _i++) {
             address _rewardTokenAddress = _rewardTokenAddresses[_i];
@@ -86,6 +84,7 @@ contract ERC20Staker is Ownable {
             );
             ERC20 _rewardToken = ERC20(_rewardTokenAddress);
             uint256 _rewardAmount = _rewardAmounts[_i];
+            require(_rewardAmount > 0, "ERC20Staker: no reward");
             require(
                 _rewardToken.balanceOf(address(this)) >= _rewardAmount,
                 "ERC20Staker: funds required"
@@ -105,9 +104,7 @@ contract ERC20Staker is Ownable {
                 _blocksDuration
             );
             rewardAmount[_rewardTokenAddress] = _rewardAmount;
-            _totalRewards += _rewardAmount;
         }
-        require(_totalRewards > 0, "ERC20Staker: no rewards");
 
         // Initializing stakable tokens
         for (uint32 _i = 0; _i < _stakableTokenAddresses.length; _i++) {

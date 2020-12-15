@@ -3,53 +3,66 @@ const { expect } = require("chai");
 const { ZERO_ADDRESS } = require("../../constants");
 const { initializeDistribution, getTestContext } = require("../../utils");
 const { toWei } = require("../../utils/conversion");
-const { mineBlocks } = require("../../utils/network");
 
-describe("ERC20Staker - Single reward/stakable token - Initialization", () => {
+describe("ERC20Staker - Multi rewards, single stakable token - Initialization", () => {
     let erc20StakerInstance,
-        rewardsTokenInstance,
+        firstRewardsTokenInstance,
+        secondRewardsTokenInstance,
         stakableTokenInstance,
         highDecimalsTokenInstance,
-        firstStakerAddress,
         ownerAddress;
 
     beforeEach(async () => {
         const testContext = await getTestContext();
         erc20StakerInstance = testContext.erc20StakerInstance;
-        rewardsTokenInstance = testContext.firstRewardsTokenInstance;
+        firstRewardsTokenInstance = testContext.firstRewardsTokenInstance;
+        secondRewardsTokenInstance = testContext.secondRewardsTokenInstance;
         stakableTokenInstance = testContext.stakableTokenInstance;
-        firstStakerAddress = testContext.firstStakerAddress;
         ownerAddress = testContext.ownerAddress;
         highDecimalsTokenInstance = testContext.highDecimalsTokenInstance;
     });
 
-    it("should fail when not called by the owner", async () => {
-        try {
-            await initializeDistribution({
-                from: firstStakerAddress,
-                erc20Staker: erc20StakerInstance,
-                stakableTokens: [stakableTokenInstance],
-                rewardTokens: [rewardsTokenInstance],
-                rewardAmounts: [1],
-                duration: 10,
-                startingBlock: 0,
-            });
-            throw new Error("should have failed");
-        } catch (error) {
-            expect(error.message).to.contain(
-                "Ownable: caller is not the owner"
-            );
-        }
-    });
-
-    it("should fail when passing a 0-address rewards token", async () => {
+    it("should fail when reward tokens/amounts arrays have inconsistent lengths", async () => {
         try {
             await initializeDistribution({
                 from: ownerAddress,
                 erc20Staker: erc20StakerInstance,
                 stakableTokens: [stakableTokenInstance],
-                rewardTokens: [{ address: ZERO_ADDRESS }],
+                rewardTokens: [
+                    firstRewardsTokenInstance,
+                    secondRewardsTokenInstance,
+                ],
                 rewardAmounts: [1],
+                duration: 10,
+                skipRewardTokensAmountsConsistenyCheck: true,
+                // skip funding to avoid errors that happen before the contract is actually called
+                fund: false,
+            });
+            throw new Error("should have failed");
+        } catch (error) {
+            expect(error.message).to.contain(
+                "ERC20Staker: inconsistent reward token/amount arrays length"
+            );
+        }
+    });
+
+    it("should fail when passing a 0-address second rewards token", async () => {
+        try {
+            // manual funding to avoid error on zero-address token
+            const rewardAmounts = [1, 1];
+            await firstRewardsTokenInstance.mint(
+                erc20StakerInstance.address,
+                rewardAmounts[0]
+            );
+            await initializeDistribution({
+                from: ownerAddress,
+                erc20Staker: erc20StakerInstance,
+                stakableTokens: [stakableTokenInstance],
+                rewardTokens: [
+                    firstRewardsTokenInstance,
+                    { address: ZERO_ADDRESS },
+                ],
+                rewardAmounts,
                 duration: 10,
                 fund: false,
             });
@@ -61,32 +74,17 @@ describe("ERC20Staker - Single reward/stakable token - Initialization", () => {
         }
     });
 
-    it("should fail when passing a 0-address stakable token", async () => {
-        try {
-            await initializeDistribution({
-                from: ownerAddress,
-                erc20Staker: erc20StakerInstance,
-                stakableTokens: [{ address: ZERO_ADDRESS }],
-                rewardTokens: [rewardsTokenInstance],
-                rewardAmounts: [1],
-                duration: 10,
-            });
-            throw new Error("should have failed");
-        } catch (error) {
-            expect(error.message).to.contain(
-                "ERC20Staker: 0 address as stakable token"
-            );
-        }
-    });
-
-    it("should fail when passing 0 as a rewards amount", async () => {
+    it("should fail when passing 0 as the first reward amount", async () => {
         try {
             await initializeDistribution({
                 from: ownerAddress,
                 erc20Staker: erc20StakerInstance,
                 stakableTokens: [stakableTokenInstance],
-                rewardTokens: [rewardsTokenInstance],
-                rewardAmounts: [0],
+                rewardTokens: [
+                    firstRewardsTokenInstance,
+                    secondRewardsTokenInstance,
+                ],
+                rewardAmounts: [0, 1],
                 duration: 10,
             });
             throw new Error("should have failed");
@@ -95,70 +93,36 @@ describe("ERC20Staker - Single reward/stakable token - Initialization", () => {
         }
     });
 
-    it("should fail when passing a lower or equal block as the starting one", async () => {
+    it("should fail when passing 0 as the second reward amount", async () => {
         try {
-            await mineBlocks(10);
             await initializeDistribution({
                 from: ownerAddress,
                 erc20Staker: erc20StakerInstance,
                 stakableTokens: [stakableTokenInstance],
-                rewardTokens: [rewardsTokenInstance],
-                rewardAmounts: [1],
+                rewardTokens: [
+                    firstRewardsTokenInstance,
+                    secondRewardsTokenInstance,
+                ],
+                rewardAmounts: [1, 0],
                 duration: 10,
-                startingBlock: 0,
             });
             throw new Error("should have failed");
         } catch (error) {
-            expect(error.message).to.contain(
-                "ERC20Staker: starting block lower or equal than current"
-            );
+            expect(error.message).to.contain("ERC20Staker: no reward");
         }
     });
 
-    it("should fail when passing 0 as blocks duration", async () => {
+    it("should fail when the second rewards amount has not been sent to the contract", async () => {
         try {
             await initializeDistribution({
                 from: ownerAddress,
                 erc20Staker: erc20StakerInstance,
                 stakableTokens: [stakableTokenInstance],
-                rewardTokens: [rewardsTokenInstance],
-                rewardAmounts: [1],
-                duration: 0,
-            });
-            throw new Error("should have failed");
-        } catch (error) {
-            expect(error.message).to.contain(
-                "ERC20Staker: invalid block duration"
-            );
-        }
-    });
-
-    it("should fail when passing 1 as blocks duration", async () => {
-        try {
-            await initializeDistribution({
-                from: ownerAddress,
-                erc20Staker: erc20StakerInstance,
-                stakableTokens: [stakableTokenInstance],
-                rewardTokens: [rewardsTokenInstance],
-                rewardAmounts: [1],
-                duration: 1,
-            });
-            throw new Error("should have failed");
-        } catch (error) {
-            expect(error.message).to.contain(
-                "ERC20Staker: invalid block duration"
-            );
-        }
-    });
-
-    it("should fail when the rewards amount has not been sent to the contract", async () => {
-        try {
-            await initializeDistribution({
-                from: ownerAddress,
-                erc20Staker: erc20StakerInstance,
-                stakableTokens: [stakableTokenInstance],
-                rewardTokens: [rewardsTokenInstance],
-                rewardAmounts: [10],
+                rewardTokens: [
+                    firstRewardsTokenInstance,
+                    secondRewardsTokenInstance,
+                ],
+                rewardAmounts: [10, 0],
                 duration: 10,
                 fund: false,
             });
@@ -168,14 +132,17 @@ describe("ERC20Staker - Single reward/stakable token - Initialization", () => {
         }
     });
 
-    it("should fail when the rewards token has more than 18 decimals (avoid overflow)", async () => {
+    it("should fail when the second rewards token has more than 18 decimals (avoid overflow)", async () => {
         try {
             await initializeDistribution({
                 from: ownerAddress,
                 erc20Staker: erc20StakerInstance,
                 stakableTokens: [stakableTokenInstance],
-                rewardTokens: [highDecimalsTokenInstance],
-                rewardAmounts: [10],
+                rewardTokens: [
+                    firstRewardsTokenInstance,
+                    highDecimalsTokenInstance,
+                ],
+                rewardAmounts: [10, 10],
                 duration: 10,
             });
             throw new Error("should have failed");
@@ -187,9 +154,15 @@ describe("ERC20Staker - Single reward/stakable token - Initialization", () => {
     });
 
     it("should succeed in the right conditions", async () => {
-        const rewardAmounts = [new BN(await toWei(10, rewardsTokenInstance))];
+        const rewardAmounts = [
+            new BN(await toWei(10, firstRewardsTokenInstance)),
+            new BN(await toWei(100, secondRewardsTokenInstance)),
+        ];
         const duration = new BN(10);
-        const rewardTokens = [rewardsTokenInstance];
+        const rewardTokens = [
+            firstRewardsTokenInstance,
+            secondRewardsTokenInstance,
+        ];
         const stakableTokens = [stakableTokenInstance];
         const campaignStartingBlock = await initializeDistribution({
             from: ownerAddress,
@@ -202,16 +175,15 @@ describe("ERC20Staker - Single reward/stakable token - Initialization", () => {
 
         expect(await erc20StakerInstance.initialized()).to.be.true;
         const onchainRewardTokens = await erc20StakerInstance.getRewardTokens();
-        expect(onchainRewardTokens).to.have.length(rewardTokens.length);
+        expect(onchainRewardTokens).to.have.length(2);
         expect(onchainRewardTokens[0]).to.be.equal(
-            rewardsTokenInstance.address
+            firstRewardsTokenInstance.address
+        );
+        expect(onchainRewardTokens[1]).to.be.equal(
+            secondRewardsTokenInstance.address
         );
         const onchainStakableTokens = await erc20StakerInstance.getStakableTokens();
-        for (let i = 0; i < stakableTokens.length; i++) {
-            expect(onchainStakableTokens[i]).to.be.equal(
-                stakableTokens[i].address
-            );
-        }
+        expect(onchainStakableTokens).to.have.length(1);
         for (let i = 0; i < rewardTokens.length; i++) {
             const rewardAmount = rewardAmounts[i];
             const rewardToken = rewardTokens[i];
@@ -246,16 +218,22 @@ describe("ERC20Staker - Single reward/stakable token - Initialization", () => {
                 from: ownerAddress,
                 erc20Staker: erc20StakerInstance,
                 stakableTokens: [stakableTokenInstance],
-                rewardTokens: [rewardsTokenInstance],
-                rewardAmounts: [1],
+                rewardTokens: [
+                    firstRewardsTokenInstance,
+                    secondRewardsTokenInstance,
+                ],
+                rewardAmounts: [1, 1],
                 duration: 2,
             });
             await initializeDistribution({
                 from: ownerAddress,
                 erc20Staker: erc20StakerInstance,
                 stakableTokens: [stakableTokenInstance],
-                rewardTokens: [rewardsTokenInstance],
-                rewardAmounts: [1],
+                rewardTokens: [
+                    firstRewardsTokenInstance,
+                    secondRewardsTokenInstance,
+                ],
+                rewardAmounts: [1, 1],
                 duration: 2,
             });
             throw new Error("should have failed");
