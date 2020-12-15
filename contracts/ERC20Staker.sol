@@ -1,4 +1,4 @@
-//SPDX-License-Identifier: GPL-3.0
+// SPDX-License-Identifier: GPL-3.0
 
 pragma solidity ^0.6.12;
 
@@ -46,11 +46,11 @@ contract ERC20Staker is Ownable {
     event Claimed(address indexed claimer, uint256[] amounts);
     event Recovered(uint256[] amounts);
 
-    function getRewardTokens() public view returns (ERC20[] memory) {
+    function getRewardTokens() external view returns (ERC20[] memory) {
         return rewardTokens;
     }
 
-    function getStakableTokens() public view returns (ERC20[] memory) {
+    function getStakableTokens() external view returns (ERC20[] memory) {
         return stakableTokens;
     }
 
