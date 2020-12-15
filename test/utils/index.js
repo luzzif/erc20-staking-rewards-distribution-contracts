@@ -20,9 +20,13 @@ exports.getTestContext = async () => {
         erc20StakerInstance: await ERC20Staker.new({
             from: ownerAddress,
         }),
-        rewardsTokenInstance: await ERC20PresetMinterPauser.new(
-            "Rewards token",
-            "REW"
+        firstRewardsTokenInstance: await ERC20PresetMinterPauser.new(
+            "Rewards token 1",
+            "REW1"
+        ),
+        secondRewardsTokenInstance: await ERC20PresetMinterPauser.new(
+            "Rewards token 2",
+            "REW2"
         ),
         stakableTokenInstance: await ERC20PresetMinterPauser.new(
             "Staked token",

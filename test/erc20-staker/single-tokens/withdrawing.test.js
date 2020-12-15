@@ -20,7 +20,7 @@ describe("ERC20Staker - Single reward/stakable token - Withdrawing", () => {
     beforeEach(async () => {
         const testContext = await getTestContext();
         erc20StakerInstance = testContext.erc20StakerInstance;
-        rewardsTokenInstance = testContext.rewardsTokenInstance;
+        rewardsTokenInstance = testContext.firstRewardsTokenInstance;
         stakableTokenInstance = testContext.stakableTokenInstance;
         firstStakerAddress = testContext.firstStakerAddress;
         ownerAddress = testContext.ownerAddress;
@@ -44,7 +44,7 @@ describe("ERC20Staker - Single reward/stakable token - Withdrawing", () => {
                 rewardTokens: [rewardsTokenInstance],
                 rewardAmounts: [1],
                 duration: 2,
-                startingBlock: 1000,
+                startingBlock: 100000,
             });
             await erc20StakerInstance.withdraw([0]);
             throw new Error("should have failed");
