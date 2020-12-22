@@ -1,44 +1,10 @@
 const BN = require("bn.js");
-const { web3 } = require("hardhat");
-const { artifacts } = require("hardhat");
-
-const ERC20Staker = artifacts.require("ERC20Staker.sol");
-const ERC20PresetMinterPauser = artifacts.require(
-    "ERC20PresetMinterPauser.json"
-);
-const HighDecimalsERC20 = artifacts.require("HighDecimalsERC20.json");
-
-exports.getTestContext = async () => {
-    const [
-        firstStakerAddress,
-        ownerAddress,
-        secondStakerAddress,
-        thirdStakerAddress,
-    ] = await web3.eth.getAccounts();
-
-    return {
-        erc20StakerInstance: await ERC20Staker.new({
-            from: ownerAddress,
-        }),
-        firstRewardsTokenInstance: await ERC20PresetMinterPauser.new(
-            "Rewards token 1",
-            "REW1"
-        ),
-        secondRewardsTokenInstance: await ERC20PresetMinterPauser.new(
-            "Rewards token 2",
-            "REW2"
-        ),
-        stakableTokenInstance: await ERC20PresetMinterPauser.new(
-            "Staked token",
-            "STKD"
-        ),
-        highDecimalsTokenInstance: await HighDecimalsERC20.new(),
-        firstStakerAddress,
-        ownerAddress,
-        secondStakerAddress,
-        thirdStakerAddress,
-    };
-};
+const {
+    getEvmTimestamp,
+    stopMining,
+    startMining,
+    mineBlock,
+} = require("./network");
 
 exports.initializeStaker = async ({
     erc20StakerInstance,
@@ -52,9 +18,7 @@ exports.initializeStaker = async ({
         await stakableTokenInstance.approve(
             erc20StakerInstance.address,
             stakableAmount,
-            {
-                from: stakerAddress,
-            }
+            { from: stakerAddress }
         );
     }
 };
@@ -66,7 +30,7 @@ exports.initializeDistribution = async ({
     rewardTokens,
     rewardAmounts,
     duration,
-    startingBlock,
+    startingTimestamp,
     fund = true,
     skipRewardTokensAmountsConsistenyCheck,
 }) => {
@@ -81,23 +45,28 @@ exports.initializeDistribution = async ({
             await rewardTokens[i].mint(erc20Staker.address, rewardAmounts[i]);
         }
     }
-    // if not specified, the distribution starts from the next block.
-    // getBlockNumber returns the number of the last mined block.
-    // The next one will contain our initialization transaction, so
-    // the starting block has to be 2 blocks from the latest mined block.
-    const campaignStartingBlock =
-        startingBlock >= 0
-            ? startingBlock
-            : new BN((await web3.eth.getBlockNumber()) + 2);
+    // if not specified, the distribution starts the next 10 second from now
+    const currentEvmTimestamp = await getEvmTimestamp();
+    const campaignStartingTimestamp =
+        startingTimestamp && startingTimestamp.gte(currentEvmTimestamp)
+            ? new BN(startingTimestamp)
+            : // defaults to 10 seconds in the future
+              currentEvmTimestamp.add(new BN(10));
+    const campaignEndingTimestamp = campaignStartingTimestamp.add(
+        new BN(duration)
+    );
     await erc20Staker.initialize(
         rewardTokens.map((instance) => instance.address),
         stakableTokens.map((instance) => instance.address),
         rewardAmounts,
-        campaignStartingBlock,
-        duration,
+        campaignStartingTimestamp,
+        campaignEndingTimestamp,
         { from }
     );
-    return campaignStartingBlock;
+    return {
+        startingTimestamp: campaignStartingTimestamp,
+        endingTimestamp: campaignEndingTimestamp,
+    };
 };
 
 exports.stake = async (
@@ -108,21 +77,37 @@ exports.stake = async (
 ) => {
     if (waitForReceipt) {
         await erc20StakerInstance.stake(amounts, { from });
-        // return the block in which the stake operation was performed
-        return new BN(await web3.eth.getBlockNumber());
     } else {
-        // The transaction will be included in the next block, so we have to add 1
-        const blockNumber = new BN((await web3.eth.getBlockNumber()) + 1);
         // Make sure the transaction has actually been queued before returning
         return new Promise((resolve, reject) => {
             erc20StakerInstance
                 .stake(amounts, { from })
-                .on("transactionHash", () => {
-                    resolve(blockNumber);
-                })
-                .on("error", reject);
+                .on("transactionHash", resolve)
+                .on("error", reject)
+                .then(resolve)
+                .catch(reject);
         });
     }
+};
+
+exports.stakeAtTimestamp = async (
+    erc20StakerInstance,
+    from,
+    amounts,
+    timestamp
+) => {
+    await stopMining();
+    // Make sure the transaction has actually been queued before returning
+    await new Promise((resolve, reject) => {
+        erc20StakerInstance
+            .stake(amounts, { from })
+            .on("transactionHash", resolve)
+            .on("error", reject)
+            .then(resolve)
+            .catch(reject);
+    });
+    await mineBlock(new BN(timestamp).toNumber());
+    await startMining();
 };
 
 exports.withdraw = async (
@@ -144,7 +129,29 @@ exports.withdraw = async (
                 .on("transactionHash", () => {
                     resolve(blockNumber);
                 })
-                .on("error", reject);
+                .on("error", reject)
+                .then(resolve)
+                .catch(reject);
         });
     }
+};
+
+exports.withdrawAtTimestamp = async (
+    erc20StakerInstance,
+    from,
+    amounts,
+    timestamp
+) => {
+    await stopMining();
+    // Make sure the transaction has actually been queued before returning
+    await new Promise((resolve, reject) => {
+        erc20StakerInstance
+            .withdraw(amounts, { from })
+            .on("transactionHash", resolve)
+            .on("error", reject)
+            .then(resolve)
+            .catch(reject);
+    });
+    await mineBlock(new BN(timestamp).toNumber());
+    await startMining();
 };

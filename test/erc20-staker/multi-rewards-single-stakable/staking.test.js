@@ -1,25 +1,39 @@
 const { expect } = require("chai");
-const { initializeDistribution, getTestContext } = require("../../utils");
+const { initializeDistribution, initializeStaker } = require("../../utils");
+const { fastForwardTo } = require("../../utils/network");
 
-describe("ERC20Staker - Multi rewards, single stakable token - Staking", () => {
+const ERC20Staker = artifacts.require("ERC20Staker");
+const FirstRewardERC20 = artifacts.require("FirstRewardERC20");
+const SecondRewardERC20 = artifacts.require("SecondRewardERC20");
+const FirstStakableERC20 = artifacts.require("FirstStakableERC20");
+
+contract("ERC20Staker - Multi rewards, single stakable token - Staking", () => {
     let erc20StakerInstance,
         firstRewardsTokenInstance,
         secondRewardsTokenInstance,
         stakableTokenInstance,
-        ownerAddress;
+        ownerAddress,
+        stakerAddress;
 
     beforeEach(async () => {
-        const testContext = await getTestContext();
-        erc20StakerInstance = testContext.erc20StakerInstance;
-        firstRewardsTokenInstance = testContext.firstRewardsTokenInstance;
-        secondRewardsTokenInstance = testContext.secondRewardsTokenInstance;
-        stakableTokenInstance = testContext.stakableTokenInstance;
-        ownerAddress = testContext.ownerAddress;
+        const accounts = await web3.eth.getAccounts();
+        ownerAddress = accounts[0];
+        erc20StakerInstance = await ERC20Staker.new({ from: ownerAddress });
+        firstRewardsTokenInstance = await FirstRewardERC20.new();
+        secondRewardsTokenInstance = await SecondRewardERC20.new();
+        stakableTokenInstance = await FirstStakableERC20.new();
+        stakerAddress = accounts[1];
     });
 
     it("should fail when given an amounts array of different length than the stakable tokens one", async () => {
         try {
-            await initializeDistribution({
+            await initializeStaker({
+                erc20StakerInstance,
+                stakableTokenInstance,
+                stakerAddress,
+                stakableAmount: 1,
+            });
+            const { startingTimestamp } = await initializeDistribution({
                 from: ownerAddress,
                 erc20Staker: erc20StakerInstance,
                 stakableTokens: [stakableTokenInstance],
@@ -30,7 +44,10 @@ describe("ERC20Staker - Multi rewards, single stakable token - Staking", () => {
                 rewardAmounts: [1, 1],
                 duration: 2,
             });
-            await erc20StakerInstance.stake([1, 10]);
+            await fastForwardTo({ timestamp: startingTimestamp });
+            await erc20StakerInstance.stake([1, 1], {
+                from: stakerAddress,
+            });
             throw new Error("should have failed");
         } catch (error) {
             expect(error.message).to.contain(

@@ -5,5 +5,10 @@
         "node": true,
         "es6": true,
         "mocha": true
+    },
+    "globals": {
+        "web3": "readonly",
+        "artifacts": "readonly",
+        "contract": "readonly"
     }
 }

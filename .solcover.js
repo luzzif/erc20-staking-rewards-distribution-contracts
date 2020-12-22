@@ -1,3 +1,3 @@
 module.exports = {
-    skipFiles: ["TestDependencies.sol"],
+    skipFiles: ["TestDependencies.sol", "DXTokenRegistry.sol"],
 };

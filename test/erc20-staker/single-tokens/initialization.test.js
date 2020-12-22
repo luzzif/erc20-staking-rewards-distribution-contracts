@@ -1,26 +1,31 @@
 const BN = require("bn.js");
 const { expect } = require("chai");
 const { ZERO_ADDRESS } = require("../../constants");
-const { initializeDistribution, getTestContext } = require("../../utils");
+const { initializeDistribution } = require("../../utils");
 const { toWei } = require("../../utils/conversion");
-const { mineBlocks } = require("../../utils/network");
+const { getEvmTimestamp, fastForwardTo } = require("../../utils/network");
 
-describe("ERC20Staker - Single reward/stakable token - Initialization", () => {
+const ERC20Staker = artifacts.require("ERC20Staker");
+const FirstRewardERC20 = artifacts.require("FirstRewardERC20");
+const FirstStakableERC20 = artifacts.require("FirstStakableERC20");
+const HighDecimalsERC20 = artifacts.require("HighDecimalsERC20");
+
+contract("ERC20Staker - Single reward/stakable token - Initialization", () => {
     let erc20StakerInstance,
         rewardsTokenInstance,
         stakableTokenInstance,
         highDecimalsTokenInstance,
-        firstStakerAddress,
-        ownerAddress;
+        ownerAddress,
+        firstStakerAddress;
 
     beforeEach(async () => {
-        const testContext = await getTestContext();
-        erc20StakerInstance = testContext.erc20StakerInstance;
-        rewardsTokenInstance = testContext.firstRewardsTokenInstance;
-        stakableTokenInstance = testContext.stakableTokenInstance;
-        firstStakerAddress = testContext.firstStakerAddress;
-        ownerAddress = testContext.ownerAddress;
-        highDecimalsTokenInstance = testContext.highDecimalsTokenInstance;
+        const accounts = await web3.eth.getAccounts();
+        erc20StakerInstance = await ERC20Staker.new();
+        rewardsTokenInstance = await FirstRewardERC20.new();
+        stakableTokenInstance = await FirstStakableERC20.new();
+        highDecimalsTokenInstance = await HighDecimalsERC20.new();
+        ownerAddress = accounts[0];
+        firstStakerAddress = accounts[1];
     });
 
     it("should fail when not called by the owner", async () => {
@@ -32,7 +37,6 @@ describe("ERC20Staker - Single reward/stakable token - Initialization", () => {
                 rewardTokens: [rewardsTokenInstance],
                 rewardAmounts: [1],
                 duration: 10,
-                startingBlock: 0,
             });
             throw new Error("should have failed");
         } catch (error) {
@@ -95,27 +99,45 @@ describe("ERC20Staker - Single reward/stakable token - Initialization", () => {
         }
     });
 
-    it("should fail when passing a lower or equal block as the starting one", async () => {
+    it("should fail when passing a lower starting timestamp than the current one", async () => {
         try {
-            await mineBlocks(10);
-            await initializeDistribution({
-                from: ownerAddress,
-                erc20Staker: erc20StakerInstance,
-                stakableTokens: [stakableTokenInstance],
-                rewardTokens: [rewardsTokenInstance],
-                rewardAmounts: [1],
-                duration: 10,
-                startingBlock: 0,
-            });
+            const currentEvmTimestamp = await getEvmTimestamp();
+            await erc20StakerInstance.initialize(
+                [rewardsTokenInstance.address],
+                [stakableTokenInstance.address],
+                [1],
+                currentEvmTimestamp.sub(new BN(10)),
+                currentEvmTimestamp.add(new BN(10)),
+                { from: ownerAddress }
+            );
             throw new Error("should have failed");
         } catch (error) {
             expect(error.message).to.contain(
-                "ERC20Staker: starting block lower or equal than current"
+                "ERC20Staker: starting timestamp lower or equal than current"
             );
         }
     });
 
-    it("should fail when passing 0 as blocks duration", async () => {
+    it("should fail when passing the same starting timestamp as the current one", async () => {
+        try {
+            const currentEvmTimestamp = await getEvmTimestamp();
+            await erc20StakerInstance.initialize(
+                [rewardsTokenInstance.address],
+                [stakableTokenInstance.address],
+                [1],
+                currentEvmTimestamp,
+                currentEvmTimestamp.add(new BN(10)),
+                { from: ownerAddress }
+            );
+            throw new Error("should have failed");
+        } catch (error) {
+            expect(error.message).to.contain(
+                "ERC20Staker: starting timestamp lower or equal than current"
+            );
+        }
+    });
+
+    it("should fail when passing 0 as seconds duration", async () => {
         try {
             await initializeDistribution({
                 from: ownerAddress,
@@ -128,25 +150,7 @@ describe("ERC20Staker - Single reward/stakable token - Initialization", () => {
             throw new Error("should have failed");
         } catch (error) {
             expect(error.message).to.contain(
-                "ERC20Staker: invalid block duration"
-            );
-        }
-    });
-
-    it("should fail when passing 1 as blocks duration", async () => {
-        try {
-            await initializeDistribution({
-                from: ownerAddress,
-                erc20Staker: erc20StakerInstance,
-                stakableTokens: [stakableTokenInstance],
-                rewardTokens: [rewardsTokenInstance],
-                rewardAmounts: [1],
-                duration: 1,
-            });
-            throw new Error("should have failed");
-        } catch (error) {
-            expect(error.message).to.contain(
-                "ERC20Staker: invalid block duration"
+                "ERC20Staker: invalid time duration"
             );
         }
     });
@@ -168,7 +172,7 @@ describe("ERC20Staker - Single reward/stakable token - Initialization", () => {
         }
     });
 
-    it("should fail when the rewards token has more than 18 decimals (avoid overflow)", async () => {
+    it("should fail when the rewards token has more than 18 decimals (avoids possible overflow)", async () => {
         try {
             await initializeDistribution({
                 from: ownerAddress,
@@ -191,7 +195,10 @@ describe("ERC20Staker - Single reward/stakable token - Initialization", () => {
         const duration = new BN(10);
         const rewardTokens = [rewardsTokenInstance];
         const stakableTokens = [stakableTokenInstance];
-        const campaignStartingBlock = await initializeDistribution({
+        const {
+            startingTimestamp,
+            endingTimestamp,
+        } = await initializeDistribution({
             from: ownerAddress,
             erc20Staker: erc20StakerInstance,
             stakableTokens,
@@ -199,6 +206,7 @@ describe("ERC20Staker - Single reward/stakable token - Initialization", () => {
             rewardAmounts,
             duration,
         });
+        await fastForwardTo(startingTimestamp);
 
         expect(await erc20StakerInstance.initialized()).to.be.true;
         const onchainRewardTokens = await erc20StakerInstance.getRewardTokens();
@@ -229,15 +237,16 @@ describe("ERC20Staker - Single reward/stakable token - Initialization", () => {
                 await erc20StakerInstance.rewardAmount(rewardToken.address)
             ).to.be.equalBn(rewardAmount);
             expect(
-                await erc20StakerInstance.rewardPerBlock(rewardToken.address)
+                await erc20StakerInstance.rewardPerSecond(rewardToken.address)
             ).to.be.equalBn(new BN(rewardAmount).div(duration));
         }
-        const onchainStartingBlock = await erc20StakerInstance.startingBlock();
-        expect(onchainStartingBlock).to.be.equalBn(campaignStartingBlock);
-        const onchainEndingBlock = await erc20StakerInstance.endingBlock();
-        expect(onchainEndingBlock.sub(campaignStartingBlock)).to.be.equalBn(
+        const onchainStartingTimestamp = await erc20StakerInstance.startingTimestamp();
+        expect(onchainStartingTimestamp).to.be.equalBn(startingTimestamp);
+        const onchainEndingTimestamp = await erc20StakerInstance.endingTimestamp();
+        expect(onchainEndingTimestamp.sub(startingTimestamp)).to.be.equalBn(
             duration
         );
+        expect(onchainEndingTimestamp).to.be.equalBn(endingTimestamp);
     });
 
     it("should fail when trying to initialize a second time", async () => {

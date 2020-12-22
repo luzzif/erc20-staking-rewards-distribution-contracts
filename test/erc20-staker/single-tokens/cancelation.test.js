@@ -1,22 +1,28 @@
+const BN = require("bn.js");
 const { expect } = require("chai");
 const { ZERO_BN } = require("../../constants");
-const { initializeDistribution, getTestContext } = require("../../utils");
+const { initializeDistribution } = require("../../utils");
 const { toWei } = require("../../utils/conversion");
+const { fastForwardTo, getEvmTimestamp } = require("../../utils/network");
 
-describe("ERC20Staker - Single reward/stakable token - Cancelation", () => {
+const ERC20Staker = artifacts.require("ERC20Staker");
+const FirstRewardERC20 = artifacts.require("FirstRewardERC20");
+const FirstStakableERC20 = artifacts.require("FirstStakableERC20");
+
+contract("ERC20Staker - Single reward/stakable token - Cancelation", () => {
     let erc20StakerInstance,
         rewardsTokenInstance,
         stakableTokenInstance,
-        firstStakerAddress,
-        ownerAddress;
+        ownerAddress,
+        stakerAddress;
 
     beforeEach(async () => {
-        const testContext = await getTestContext();
-        erc20StakerInstance = testContext.erc20StakerInstance;
-        rewardsTokenInstance = testContext.firstRewardsTokenInstance;
-        stakableTokenInstance = testContext.stakableTokenInstance;
-        firstStakerAddress = testContext.firstStakerAddress;
-        ownerAddress = testContext.ownerAddress;
+        const accounts = await web3.eth.getAccounts();
+        ownerAddress = accounts[0];
+        erc20StakerInstance = await ERC20Staker.new({ from: ownerAddress });
+        rewardsTokenInstance = await FirstRewardERC20.new();
+        stakableTokenInstance = await FirstStakableERC20.new();
+        stakerAddress = accounts[1];
     });
 
     it("should fail when initialization has not been done", async () => {
@@ -38,7 +44,7 @@ describe("ERC20Staker - Single reward/stakable token - Cancelation", () => {
                 rewardAmounts: [1],
                 duration: 2,
             });
-            await erc20StakerInstance.cancel({ from: firstStakerAddress });
+            await erc20StakerInstance.cancel({ from: stakerAddress });
             throw new Error("should have failed");
         } catch (error) {
             expect(error.message).to.contain(
@@ -49,7 +55,7 @@ describe("ERC20Staker - Single reward/stakable token - Cancelation", () => {
 
     it("should fail when the program has already started", async () => {
         try {
-            await initializeDistribution({
+            const { startingTimestamp } = await initializeDistribution({
                 from: ownerAddress,
                 erc20Staker: erc20StakerInstance,
                 stakableTokens: [stakableTokenInstance],
@@ -57,6 +63,7 @@ describe("ERC20Staker - Single reward/stakable token - Cancelation", () => {
                 rewardAmounts: [1],
                 duration: 2,
             });
+            await fastForwardTo({ timestamp: startingTimestamp });
             await erc20StakerInstance.cancel({ from: ownerAddress });
             throw new Error("should have failed");
         } catch (error) {
@@ -76,9 +83,8 @@ describe("ERC20Staker - Single reward/stakable token - Cancelation", () => {
             rewardTokens,
             rewardAmounts: [rewardsAmount],
             duration: 2,
-            // a block in the far future so that we can cancel when
-            // the distribution has not yet started
-            startingBlock: 1000,
+            // future timestamp
+            startingTimestamp: (await getEvmTimestamp()).add(new BN(60)),
         });
         await erc20StakerInstance.cancel({ from: ownerAddress });
 
@@ -101,15 +107,17 @@ describe("ERC20Staker - Single reward/stakable token - Cancelation", () => {
                 await erc20StakerInstance.rewardAmount(rewardToken.address)
             ).to.be.equalBn(ZERO_BN);
             expect(
-                await erc20StakerInstance.rewardPerBlock(rewardToken.address)
+                await erc20StakerInstance.rewardPerSecond(rewardToken.address)
             ).to.be.equalBn(ZERO_BN);
         }
-        expect(await erc20StakerInstance.startingBlock()).to.be.equalBn(
+        expect(await erc20StakerInstance.startingTimestamp()).to.be.equalBn(
             ZERO_BN
         );
-        expect(await erc20StakerInstance.endingBlock()).to.be.equalBn(ZERO_BN);
+        expect(await erc20StakerInstance.endingTimestamp()).to.be.equalBn(
+            ZERO_BN
+        );
         expect(
-            await erc20StakerInstance.lastConsolidationBlock()
+            await erc20StakerInstance.lastConsolidationTimestamp()
         ).to.be.equalBn(ZERO_BN);
         expect(await erc20StakerInstance.initialized()).to.be.false;
     });
@@ -123,9 +131,8 @@ describe("ERC20Staker - Single reward/stakable token - Cancelation", () => {
             rewardTokens: [rewardsTokenInstance],
             rewardAmounts: [rewardsAmount],
             duration: 2,
-            // a block in the far future so that we can cancel when
-            // the distribution has not yet started
-            startingBlock: 1000,
+            // far-future timestamp
+            startingTimestamp: (await getEvmTimestamp()).add(new BN(60)),
         });
         await erc20StakerInstance.cancel({ from: ownerAddress });
         // resending funds since the ones sent before have been sent back
