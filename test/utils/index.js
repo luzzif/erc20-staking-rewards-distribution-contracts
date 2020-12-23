@@ -7,7 +7,7 @@ const {
 } = require("./network");
 
 exports.initializeStaker = async ({
-    erc20StakerInstance,
+    erc20DistributionInstance,
     stakableTokenInstance,
     stakerAddress,
     stakableAmount,
@@ -16,7 +16,7 @@ exports.initializeStaker = async ({
     await stakableTokenInstance.mint(stakerAddress, stakableAmount);
     if (setAllowance) {
         await stakableTokenInstance.approve(
-            erc20StakerInstance.address,
+            erc20DistributionInstance.address,
             stakableAmount,
             { from: stakerAddress }
         );
@@ -25,7 +25,7 @@ exports.initializeStaker = async ({
 
 exports.initializeDistribution = async ({
     from,
-    erc20Staker,
+    erc20DistributionInstance,
     stakableTokens,
     rewardTokens,
     rewardAmounts,
@@ -42,7 +42,10 @@ exports.initializeDistribution = async ({
     }
     if (fund) {
         for (let i = 0; i < rewardTokens.length; i++) {
-            await rewardTokens[i].mint(erc20Staker.address, rewardAmounts[i]);
+            await rewardTokens[i].mint(
+                erc20DistributionInstance.address,
+                rewardAmounts[i]
+            );
         }
     }
     // if not specified, the distribution starts the next 10 second from now
@@ -55,7 +58,7 @@ exports.initializeDistribution = async ({
     const campaignEndingTimestamp = campaignStartingTimestamp.add(
         new BN(duration)
     );
-    await erc20Staker.initialize(
+    await erc20DistributionInstance.initialize(
         rewardTokens.map((instance) => instance.address),
         stakableTokens.map((instance) => instance.address),
         rewardAmounts,
@@ -70,17 +73,17 @@ exports.initializeDistribution = async ({
 };
 
 exports.stake = async (
-    erc20StakerInstance,
+    erc20DistributionInstance,
     from,
     amounts,
     waitForReceipt = true
 ) => {
     if (waitForReceipt) {
-        await erc20StakerInstance.stake(amounts, { from });
+        await erc20DistributionInstance.stake(amounts, { from });
     } else {
         // Make sure the transaction has actually been queued before returning
         return new Promise((resolve, reject) => {
-            erc20StakerInstance
+            erc20DistributionInstance
                 .stake(amounts, { from })
                 .on("transactionHash", resolve)
                 .on("error", reject)
@@ -91,7 +94,7 @@ exports.stake = async (
 };
 
 exports.stakeAtTimestamp = async (
-    erc20StakerInstance,
+    erc20DistributionInstance,
     from,
     amounts,
     timestamp
@@ -99,7 +102,7 @@ exports.stakeAtTimestamp = async (
     await stopMining();
     // Make sure the transaction has actually been queued before returning
     await new Promise((resolve, reject) => {
-        erc20StakerInstance
+        erc20DistributionInstance
             .stake(amounts, { from })
             .on("transactionHash", resolve)
             .on("error", reject)
@@ -111,24 +114,20 @@ exports.stakeAtTimestamp = async (
 };
 
 exports.withdraw = async (
-    erc20StakerInstance,
+    erc20DistributionInstance,
     from,
     amounts,
     waitForReceipt = true
 ) => {
     if (waitForReceipt) {
-        await erc20StakerInstance.withdraw(amounts, { from });
+        await erc20DistributionInstance.withdraw(amounts, { from });
         return new BN(await web3.eth.getBlockNumber());
     } else {
-        // The transaction will be included in the next block, so we have to add 1
-        const blockNumber = new BN((await web3.eth.getBlockNumber()) + 1);
         // Make sure the transaction has actually been queued before returning
         return new Promise((resolve, reject) => {
-            erc20StakerInstance
+            erc20DistributionInstance
                 .withdraw(amounts, { from })
-                .on("transactionHash", () => {
-                    resolve(blockNumber);
-                })
+                .on("transactionHash", resolve)
                 .on("error", reject)
                 .then(resolve)
                 .catch(reject);
@@ -137,7 +136,7 @@ exports.withdraw = async (
 };
 
 exports.withdrawAtTimestamp = async (
-    erc20StakerInstance,
+    erc20DistributionInstance,
     from,
     amounts,
     timestamp
@@ -145,7 +144,7 @@ exports.withdrawAtTimestamp = async (
     await stopMining();
     // Make sure the transaction has actually been queued before returning
     await new Promise((resolve, reject) => {
-        erc20StakerInstance
+        erc20DistributionInstance
             .withdraw(amounts, { from })
             .on("transactionHash", resolve)
             .on("error", reject)

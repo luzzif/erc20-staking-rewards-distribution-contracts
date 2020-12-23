@@ -17,12 +17,12 @@ const {
     getEvmTimestamp,
 } = require("../../utils/network");
 
-const ERC20Staker = artifacts.require("ERC20Staker");
+const ERC20Distribution = artifacts.require("ERC20Distribution");
 const FirstRewardERC20 = artifacts.require("FirstRewardERC20");
 const FirstStakableERC20 = artifacts.require("FirstStakableERC20");
 
-contract("ERC20Staker - Single reward/stakable token - Reward recovery", () => {
-    let erc20StakerInstance,
+contract("ERC20Distribution - Single reward/stakable token - Reward recovery", () => {
+    let erc20DistributionInstance,
         rewardsTokenInstance,
         stakableTokenInstance,
         ownerAddress,
@@ -32,7 +32,7 @@ contract("ERC20Staker - Single reward/stakable token - Reward recovery", () => {
     beforeEach(async () => {
         const accounts = await web3.eth.getAccounts();
         ownerAddress = accounts[0];
-        erc20StakerInstance = await ERC20Staker.new({ from: ownerAddress });
+        erc20DistributionInstance = await ERC20Distribution.new({ from: ownerAddress });
         rewardsTokenInstance = await FirstRewardERC20.new();
         stakableTokenInstance = await FirstStakableERC20.new();
         firstStakerAddress = accounts[1];
@@ -41,10 +41,10 @@ contract("ERC20Staker - Single reward/stakable token - Reward recovery", () => {
 
     it("should fail when the distribution is not initialized", async () => {
         try {
-            await erc20StakerInstance.recoverUnassignedRewards();
+            await erc20DistributionInstance.recoverUnassignedRewards();
             throw new Error("should have failed");
         } catch (error) {
-            expect(error.message).to.contain("ERC20Staker: not initialized");
+            expect(error.message).to.contain("ERC20Distribution: not initialized");
         }
     });
 
@@ -52,16 +52,16 @@ contract("ERC20Staker - Single reward/stakable token - Reward recovery", () => {
         try {
             await initializeDistribution({
                 from: ownerAddress,
-                erc20Staker: erc20StakerInstance,
+                erc20DistributionInstance,
                 stakableTokens: [stakableTokenInstance],
                 rewardTokens: [rewardsTokenInstance],
                 rewardAmounts: [1],
                 duration: 10,
             });
-            await erc20StakerInstance.recoverUnassignedRewards();
+            await erc20DistributionInstance.recoverUnassignedRewards();
             throw new Error("should have failed");
         } catch (error) {
-            expect(error.message).to.contain("ERC20Staker: not started");
+            expect(error.message).to.contain("ERC20Distribution: not started");
         }
     });
 
@@ -69,7 +69,7 @@ contract("ERC20Staker - Single reward/stakable token - Reward recovery", () => {
         const rewardsAmount = await toWei(100, rewardsTokenInstance);
         const { endingTimestamp } = await initializeDistribution({
             from: ownerAddress,
-            erc20Staker: erc20StakerInstance,
+            erc20DistributionInstance,
             stakableTokens: [stakableTokenInstance],
             rewardTokens: [rewardsTokenInstance],
             rewardAmounts: [rewardsAmount],
@@ -81,7 +81,7 @@ contract("ERC20Staker - Single reward/stakable token - Reward recovery", () => {
             await rewardsTokenInstance.balanceOf(ownerAddress)
         ).to.be.equalBn(ZERO_BN);
         await fastForwardTo({ timestamp: endingTimestamp });
-        await erc20StakerInstance.recoverUnassignedRewards();
+        await erc20DistributionInstance.recoverUnassignedRewards();
         expect(
             await rewardsTokenInstance.balanceOf(ownerAddress)
         ).to.be.equalBn(rewardsAmount);
@@ -91,19 +91,19 @@ contract("ERC20Staker - Single reward/stakable token - Reward recovery", () => {
         const rewardsAmount = await toWei(100, rewardsTokenInstance);
         const { endingTimestamp } = await initializeDistribution({
             from: ownerAddress,
-            erc20Staker: erc20StakerInstance,
+            erc20DistributionInstance,
             stakableTokens: [stakableTokenInstance],
             rewardTokens: [rewardsTokenInstance],
             rewardAmounts: [rewardsAmount],
             duration: 10,
         });
         await fastForwardTo({ timestamp: endingTimestamp });
-        await erc20StakerInstance.recoverUnassignedRewards();
+        await erc20DistributionInstance.recoverUnassignedRewards();
         expect(
             await rewardsTokenInstance.balanceOf(ownerAddress)
         ).to.be.equalBn(rewardsAmount);
         expect(
-            await erc20StakerInstance.recoverableUnassignedReward(
+            await erc20DistributionInstance.recoverableUnassignedReward(
                 rewardsTokenInstance.address
             )
         ).to.be.equalBn(ZERO_BN);
@@ -113,7 +113,7 @@ contract("ERC20Staker - Single reward/stakable token - Reward recovery", () => {
         const rewardsAmount = await toWei(100, rewardsTokenInstance);
         const { endingTimestamp } = await initializeDistribution({
             from: ownerAddress,
-            erc20Staker: erc20StakerInstance,
+            erc20DistributionInstance,
             stakableTokens: [stakableTokenInstance],
             rewardTokens: [rewardsTokenInstance],
             rewardAmounts: [rewardsAmount],
@@ -125,7 +125,7 @@ contract("ERC20Staker - Single reward/stakable token - Reward recovery", () => {
             await rewardsTokenInstance.balanceOf(ownerAddress)
         ).to.be.equalBn(ZERO_BN);
         await fastForwardTo({ timestamp: endingTimestamp });
-        await erc20StakerInstance.recoverUnassignedRewards({
+        await erc20DistributionInstance.recoverUnassignedRewards({
             from: secondStakerAddress,
         });
         expect(
@@ -139,7 +139,7 @@ contract("ERC20Staker - Single reward/stakable token - Reward recovery", () => {
     it("should recover half of the rewards when only one staker joined for half of the duration", async () => {
         const rewardsAmount = await toWei(100, rewardsTokenInstance);
         await initializeStaker({
-            erc20StakerInstance,
+            erc20DistributionInstance,
             stakableTokenInstance,
             stakerAddress: firstStakerAddress,
             stakableAmount: 1,
@@ -149,7 +149,7 @@ contract("ERC20Staker - Single reward/stakable token - Reward recovery", () => {
             endingTimestamp,
         } = await initializeDistribution({
             from: ownerAddress,
-            erc20Staker: erc20StakerInstance,
+            erc20DistributionInstance,
             stakableTokens: [stakableTokenInstance],
             rewardTokens: [rewardsTokenInstance],
             rewardAmounts: [rewardsAmount],
@@ -162,26 +162,26 @@ contract("ERC20Staker - Single reward/stakable token - Reward recovery", () => {
         const stakingTimestamp = startingTimestamp.add(new BN(5));
         await fastForwardTo({ timestamp: stakingTimestamp });
         await stakeAtTimestamp(
-            erc20StakerInstance,
+            erc20DistributionInstance,
             firstStakerAddress,
             [1],
             stakingTimestamp
         );
         await fastForwardTo({ timestamp: endingTimestamp });
-        const onchainEndingTimestamp = await erc20StakerInstance.endingTimestamp();
+        const onchainEndingTimestamp = await erc20DistributionInstance.endingTimestamp();
         // staker staked for 5 seconds
         expect(onchainEndingTimestamp.sub(stakingTimestamp)).to.be.equalBn(
             new BN(5)
         );
         // staker claims their reward
-        const rewardPerSecond = await erc20StakerInstance.rewardPerSecond(
+        const rewardPerSecond = await erc20DistributionInstance.rewardPerSecond(
             rewardsTokenInstance.address
         );
-        await erc20StakerInstance.claim({ from: firstStakerAddress });
+        await erc20DistributionInstance.claim({ from: firstStakerAddress });
         expect(
             await rewardsTokenInstance.balanceOf(firstStakerAddress)
         ).to.be.equalBn(rewardPerSecond.mul(new BN(5)));
-        await erc20StakerInstance.recoverUnassignedRewards();
+        await erc20DistributionInstance.recoverUnassignedRewards();
         expect(
             await rewardsTokenInstance.balanceOf(ownerAddress)
         ).to.be.equalBn(rewardsAmount.div(new BN(2)));
@@ -190,13 +190,13 @@ contract("ERC20Staker - Single reward/stakable token - Reward recovery", () => {
     it("should recover half of the rewards when two stakers stake the same time", async () => {
         const rewardsAmount = await toWei(100, rewardsTokenInstance);
         await initializeStaker({
-            erc20StakerInstance,
+            erc20DistributionInstance,
             stakableTokenInstance,
             stakerAddress: firstStakerAddress,
             stakableAmount: 1,
         });
         await initializeStaker({
-            erc20StakerInstance,
+            erc20DistributionInstance,
             stakableTokenInstance,
             stakerAddress: secondStakerAddress,
             stakableAmount: 1,
@@ -206,7 +206,7 @@ contract("ERC20Staker - Single reward/stakable token - Reward recovery", () => {
             endingTimestamp,
         } = await initializeDistribution({
             from: ownerAddress,
-            erc20Staker: erc20StakerInstance,
+            erc20DistributionInstance,
             stakableTokens: [stakableTokenInstance],
             rewardTokens: [rewardsTokenInstance],
             rewardAmounts: [rewardsAmount],
@@ -216,34 +216,34 @@ contract("ERC20Staker - Single reward/stakable token - Reward recovery", () => {
             await rewardsTokenInstance.balanceOf(ownerAddress)
         ).to.be.equalBn(ZERO_BN);
         // stake after 5 seconds until the end of the distribution
+        await stopMining();
         const stakingTimestamp = startingTimestamp.add(new BN(5));
         await fastForwardTo({ timestamp: stakingTimestamp });
-        await stopMining();
-        await stake(erc20StakerInstance, firstStakerAddress, [1], false);
-        await stake(erc20StakerInstance, secondStakerAddress, [1], false);
+        await stake(erc20DistributionInstance, firstStakerAddress, [1], false);
+        await stake(erc20DistributionInstance, secondStakerAddress, [1], false);
         await mineBlock(stakingTimestamp);
         expect(await getEvmTimestamp()).to.be.equalBn(stakingTimestamp);
         await startMining();
         await fastForwardTo({ timestamp: endingTimestamp });
-        const distributionEndingTimestamp = await erc20StakerInstance.endingTimestamp();
+        const distributionEndingTimestamp = await erc20DistributionInstance.endingTimestamp();
         // each staker staked for 5 seconds
         expect(distributionEndingTimestamp.sub(stakingTimestamp)).to.be.equalBn(
             new BN(5)
         );
         // stakers claim their reward
-        const rewardPerSecond = await erc20StakerInstance.rewardPerSecond(
+        const rewardPerSecond = await erc20DistributionInstance.rewardPerSecond(
             rewardsTokenInstance.address
         );
         const expectedReward = rewardPerSecond.div(new BN(2)).mul(new BN(5));
-        await erc20StakerInstance.claim({ from: firstStakerAddress });
+        await erc20DistributionInstance.claim({ from: firstStakerAddress });
         expect(
             await rewardsTokenInstance.balanceOf(firstStakerAddress)
         ).to.be.equalBn(expectedReward);
-        await erc20StakerInstance.claim({ from: secondStakerAddress });
+        await erc20DistributionInstance.claim({ from: secondStakerAddress });
         expect(
             await rewardsTokenInstance.balanceOf(secondStakerAddress)
         ).to.be.equalBn(expectedReward);
-        await erc20StakerInstance.recoverUnassignedRewards();
+        await erc20DistributionInstance.recoverUnassignedRewards();
         expect(
             await rewardsTokenInstance.balanceOf(ownerAddress)
         ).to.be.equalBn(rewardsAmount.div(new BN(2)));
@@ -252,7 +252,7 @@ contract("ERC20Staker - Single reward/stakable token - Reward recovery", () => {
     it("should recover a third of the rewards when a staker stakes for two thirds of the distribution duration", async () => {
         const rewardsAmount = await toWei(100, rewardsTokenInstance);
         await initializeStaker({
-            erc20StakerInstance,
+            erc20DistributionInstance,
             stakableTokenInstance,
             stakerAddress: firstStakerAddress,
             stakableAmount: 1,
@@ -262,7 +262,7 @@ contract("ERC20Staker - Single reward/stakable token - Reward recovery", () => {
             endingTimestamp,
         } = await initializeDistribution({
             from: ownerAddress,
-            erc20Staker: erc20StakerInstance,
+            erc20DistributionInstance,
             stakableTokens: [stakableTokenInstance],
             rewardTokens: [rewardsTokenInstance],
             rewardAmounts: [rewardsAmount],
@@ -275,26 +275,26 @@ contract("ERC20Staker - Single reward/stakable token - Reward recovery", () => {
         const stakingTimestamp = startingTimestamp.add(new BN(4));
         await fastForwardTo({ timestamp: stakingTimestamp });
         await stakeAtTimestamp(
-            erc20StakerInstance,
+            erc20DistributionInstance,
             firstStakerAddress,
             [1],
             stakingTimestamp
         );
         await fastForwardTo({ timestamp: endingTimestamp });
-        const onchainEndingTimestamp = await erc20StakerInstance.endingTimestamp();
+        const onchainEndingTimestamp = await erc20DistributionInstance.endingTimestamp();
         expect(onchainEndingTimestamp.sub(stakingTimestamp)).to.be.equalBn(
             new BN(8)
         );
         // staker claims their reward
-        const rewardPerSecond = await erc20StakerInstance.rewardPerSecond(
+        const rewardPerSecond = await erc20DistributionInstance.rewardPerSecond(
             rewardsTokenInstance.address
         );
         const expectedReward = rewardPerSecond.mul(new BN(8));
-        await erc20StakerInstance.claim({ from: firstStakerAddress });
+        await erc20DistributionInstance.claim({ from: firstStakerAddress });
         expect(
             await rewardsTokenInstance.balanceOf(firstStakerAddress)
         ).to.be.equalBn(expectedReward);
-        await erc20StakerInstance.recoverUnassignedRewards();
+        await erc20DistributionInstance.recoverUnassignedRewards();
         expect(
             await rewardsTokenInstance.balanceOf(ownerAddress)
         ).to.be.closeBn(rewardsAmount.div(new BN(3)), MAXIMUM_VARIANCE);
@@ -303,7 +303,7 @@ contract("ERC20Staker - Single reward/stakable token - Reward recovery", () => {
     it("should recover two thirds of the rewards when a staker stakes for a third of the distribution duration, right in the middle", async () => {
         const rewardsAmount = await toWei(100, rewardsTokenInstance);
         await initializeStaker({
-            erc20StakerInstance,
+            erc20DistributionInstance,
             stakableTokenInstance,
             stakerAddress: firstStakerAddress,
             stakableAmount: 1,
@@ -313,7 +313,7 @@ contract("ERC20Staker - Single reward/stakable token - Reward recovery", () => {
             endingTimestamp,
         } = await initializeDistribution({
             from: ownerAddress,
-            erc20Staker: erc20StakerInstance,
+            erc20DistributionInstance,
             stakableTokens: [stakableTokenInstance],
             rewardTokens: [rewardsTokenInstance],
             rewardAmounts: [rewardsAmount],
@@ -326,7 +326,7 @@ contract("ERC20Staker - Single reward/stakable token - Reward recovery", () => {
         const stakingTimestamp = startingTimestamp.add(new BN(4));
         await fastForwardTo({ timestamp: stakingTimestamp });
         await stakeAtTimestamp(
-            erc20StakerInstance,
+            erc20DistributionInstance,
             firstStakerAddress,
             [1],
             stakingTimestamp
@@ -335,7 +335,7 @@ contract("ERC20Staker - Single reward/stakable token - Reward recovery", () => {
         await fastForwardTo({ timestamp: withdrawTimestamp });
         // withdraw after 4 seconds, occupying 4 seconds in total
         await withdrawAtTimestamp(
-            erc20StakerInstance,
+            erc20DistributionInstance,
             firstStakerAddress,
             [1],
             withdrawTimestamp
@@ -346,15 +346,15 @@ contract("ERC20Staker - Single reward/stakable token - Reward recovery", () => {
             new BN(4)
         );
         // staker claims their reward
-        const rewardPerSecond = await erc20StakerInstance.rewardPerSecond(
+        const rewardPerSecond = await erc20DistributionInstance.rewardPerSecond(
             rewardsTokenInstance.address
         );
         const expectedReward = rewardPerSecond.mul(new BN(4));
-        await erc20StakerInstance.claim({ from: firstStakerAddress });
+        await erc20DistributionInstance.claim({ from: firstStakerAddress });
         expect(
             await rewardsTokenInstance.balanceOf(firstStakerAddress)
         ).to.be.equalBn(expectedReward);
-        await erc20StakerInstance.recoverUnassignedRewards();
+        await erc20DistributionInstance.recoverUnassignedRewards();
         expect(
             await rewardsTokenInstance.balanceOf(ownerAddress)
         ).to.be.equalBn(rewardPerSecond.mul(new BN(8)));
@@ -363,7 +363,7 @@ contract("ERC20Staker - Single reward/stakable token - Reward recovery", () => {
     it("should recover two thirds of the rewards when a staker stakes for a third of the distribution duration, in the end period", async () => {
         const rewardsAmount = await toWei(100, rewardsTokenInstance);
         await initializeStaker({
-            erc20StakerInstance,
+            erc20DistributionInstance,
             stakableTokenInstance,
             stakerAddress: firstStakerAddress,
             stakableAmount: 1,
@@ -373,7 +373,7 @@ contract("ERC20Staker - Single reward/stakable token - Reward recovery", () => {
             endingTimestamp,
         } = await initializeDistribution({
             from: ownerAddress,
-            erc20Staker: erc20StakerInstance,
+            erc20DistributionInstance,
             stakableTokens: [stakableTokenInstance],
             rewardTokens: [rewardsTokenInstance],
             rewardAmounts: [rewardsAmount],
@@ -385,27 +385,27 @@ contract("ERC20Staker - Single reward/stakable token - Reward recovery", () => {
         const stakingTimestamp = startingTimestamp.add(new BN(8));
         await fastForwardTo({ timestamp: stakingTimestamp });
         await stakeAtTimestamp(
-            erc20StakerInstance,
+            erc20DistributionInstance,
             firstStakerAddress,
             [1],
             stakingTimestamp
         );
         await fastForwardTo({ timestamp: endingTimestamp });
 
-        const onchainEndingTimestamp = await erc20StakerInstance.endingTimestamp();
+        const onchainEndingTimestamp = await erc20DistributionInstance.endingTimestamp();
         expect(onchainEndingTimestamp.sub(stakingTimestamp)).to.be.equalBn(
             new BN(4)
         );
         // staker claims their reward
-        const rewardPerSecond = await erc20StakerInstance.rewardPerSecond(
+        const rewardPerSecond = await erc20DistributionInstance.rewardPerSecond(
             rewardsTokenInstance.address
         );
         const expectedReward = rewardPerSecond.mul(new BN(4));
-        await erc20StakerInstance.claim({ from: firstStakerAddress });
+        await erc20DistributionInstance.claim({ from: firstStakerAddress });
         expect(
             await rewardsTokenInstance.balanceOf(firstStakerAddress)
         ).to.be.equalBn(expectedReward);
-        await erc20StakerInstance.recoverUnassignedRewards();
+        await erc20DistributionInstance.recoverUnassignedRewards();
         expect(
             await rewardsTokenInstance.balanceOf(ownerAddress)
         ).to.be.equalBn(rewardPerSecond.mul(new BN(8)));

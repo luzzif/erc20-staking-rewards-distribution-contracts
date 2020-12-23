@@ -7,9 +7,9 @@ import "@openzeppelin/contracts/math/Math.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
+import "./IDistribution.sol";
 
-
-contract ERC20Staker is Ownable {
+contract ERC20Distribution is IDistribution, Ownable {
     using SafeMath for uint256;
     using SafeERC20 for ERC20;
 
@@ -29,7 +29,8 @@ contract ERC20Staker is Ownable {
 
     mapping(address => mapping(address => uint256)) public stakedTokensOf;
     mapping(address => uint256) private totalStakedTokensOf;
-    mapping(address => mapping(address => uint256)) public consolidatedRewardsPerStakedToken;
+    mapping(address => mapping(address => uint256))
+        public consolidatedRewardsPerStakedToken;
     mapping(address => mapping(address => uint256)) public earnedRewards;
     mapping(address => mapping(address => uint256)) public claimedReward;
 
@@ -60,19 +61,19 @@ contract ERC20Staker is Ownable {
         uint256[] calldata _rewardAmounts,
         uint256 _startingTimestamp,
         uint256 _endingTimestamp
-    ) external onlyOwner onlyUninitialized {
+    ) external override onlyOwner onlyUninitialized {
         uint256 _currentTimestamp = block.timestamp;
         require(
             _startingTimestamp > _currentTimestamp,
-            "ERC20Staker: starting timestamp lower or equal than current"
+            "ERC20Distribution: starting timestamp lower or equal than current"
         );
         require(
             _endingTimestamp > _startingTimestamp,
-            "ERC20Staker: invalid time duration"
+            "ERC20Distribution: invalid time duration"
         );
         require(
             _rewardTokenAddresses.length == _rewardAmounts.length,
-            "ERC20Staker: inconsistent reward token/amount arrays length"
+            "ERC20Distribution: inconsistent reward token/amount arrays length"
         );
 
         uint256 _secondsDuration = _endingTimestamp - _startingTimestamp;
@@ -81,21 +82,21 @@ contract ERC20Staker is Ownable {
             address _rewardTokenAddress = _rewardTokenAddresses[_i];
             require(
                 _rewardTokenAddress != address(0),
-                "ERC20Staker: 0 address as reward token"
+                "ERC20Distribution: 0 address as reward token"
             );
             ERC20 _rewardToken = ERC20(_rewardTokenAddress);
             uint256 _rewardAmount = _rewardAmounts[_i];
-            require(_rewardAmount > 0, "ERC20Staker: no reward");
+            require(_rewardAmount > 0, "ERC20Distribution: no reward");
             require(
                 _rewardToken.balanceOf(address(this)) >= _rewardAmount,
-                "ERC20Staker: funds required"
+                "ERC20Distribution: funds required"
             );
             // avoid overflow down the road by constraining the reward
             // token decimals to a maximum of 18
             uint256 _rewardTokenDecimals = _rewardToken.decimals();
             require(
                 _rewardTokenDecimals <= 18,
-                "ERC20Staker: more than 18 decimals for reward token"
+                "ERC20Distribution: more than 18 decimals for reward token"
             );
             rewardTokens.push(_rewardToken);
             rewardTokenMultiplier[_rewardTokenAddress] = uint256(1).mul(
@@ -112,7 +113,7 @@ contract ERC20Staker is Ownable {
             address _stakableTokenAddress = _stakableTokenAddresses[_i];
             require(
                 _stakableTokenAddress != address(0),
-                "ERC20Staker: 0 address as stakable token"
+                "ERC20Distribution: 0 address as stakable token"
             );
             stakableTokens.push(ERC20(_stakableTokenAddress));
         }
@@ -131,10 +132,10 @@ contract ERC20Staker is Ownable {
         );
     }
 
-    function cancel() external onlyInitialized onlyOwner {
+    function cancel() external override onlyInitialized onlyOwner {
         require(
             block.timestamp < startingTimestamp,
-            "ERC20Staker: distribution already started"
+            "ERC20Distribution: distribution already started"
         );
         // resetting reward information (both tokens and amounts)
         for (uint256 _i; _i < rewardTokens.length; _i++) {
@@ -156,18 +157,21 @@ contract ERC20Staker is Ownable {
         emit Canceled();
     }
 
-    function recoverUnassignedRewards() external onlyInitialized onlyStarted {
+    function recoverUnassignedRewards()
+        external
+        override
+        onlyInitialized
+        onlyStarted
+    {
         consolidateReward();
         uint256 _rewardTokensAmount = rewardTokens.length;
-        uint256[] memory _recoveredUnassignedRewards = new uint256[](
-            _rewardTokensAmount
-        );
+        uint256[] memory _recoveredUnassignedRewards =
+            new uint256[](_rewardTokensAmount);
         for (uint256 _i; _i < _rewardTokensAmount; _i++) {
             ERC20 _relatedRewardToken = rewardTokens[_i];
 
-
-                uint256 _relatedUnassignedReward
-             = recoverableUnassignedReward[address(_relatedRewardToken)];
+            uint256 _relatedUnassignedReward =
+                recoverableUnassignedReward[address(_relatedRewardToken)];
             _relatedRewardToken.safeTransfer(owner(), _relatedUnassignedReward);
             _recoveredUnassignedRewards[_i] = _relatedUnassignedReward;
             delete recoverableUnassignedReward[address(_relatedRewardToken)];
@@ -177,13 +181,14 @@ contract ERC20Staker is Ownable {
 
     function stake(uint256[] calldata _amounts)
         external
+        override
         onlyInitialized
         onlyStarted
         onlyRunning
     {
         require(
             _amounts.length == stakableTokens.length,
-            "ERC20Staker: inconsistent staked amounts length"
+            "ERC20Distribution: inconsistent staked amounts length"
         );
         consolidateReward();
         for (uint256 _i; _i < _amounts.length; _i++) {
@@ -192,19 +197,21 @@ contract ERC20Staker is Ownable {
                 continue;
             }
             ERC20 _relatedStakableToken = stakableTokens[_i];
-            address _relatedStakableTokenAddress = address(
-                _relatedStakableToken
-            );
+            address _relatedStakableTokenAddress =
+                address(_relatedStakableToken);
             _relatedStakableToken.safeTransferFrom(
                 msg.sender,
                 address(this),
                 _amount
             );
-            stakedTokensOf[msg
-                .sender][_relatedStakableTokenAddress] = stakedTokensOf[msg
-                .sender][_relatedStakableTokenAddress]
-                .add(_amount);
-            stakedTokenAmount[_relatedStakableTokenAddress] = stakedTokenAmount[_relatedStakableTokenAddress]
+            stakedTokensOf[msg.sender][
+                _relatedStakableTokenAddress
+            ] = stakedTokensOf[msg.sender][_relatedStakableTokenAddress].add(
+                _amount
+            );
+            stakedTokenAmount[_relatedStakableTokenAddress] = stakedTokenAmount[
+                _relatedStakableTokenAddress
+            ]
                 .add(_amount);
             totalStakedTokensOf[msg.sender] = totalStakedTokensOf[msg.sender]
                 .add(_amount);
@@ -215,9 +222,14 @@ contract ERC20Staker is Ownable {
 
     function withdraw(uint256[] calldata _amounts)
         external
+        override
         onlyInitialized
         onlyStarted
     {
+        require(
+            _amounts.length == stakableTokens.length,
+            "ERC20Distribution: inconsistent withdrawn amounts length"
+        );
         consolidateReward();
         for (uint256 _i; _i < _amounts.length; _i++) {
             uint256 _amount = _amounts[_i];
@@ -225,20 +237,22 @@ contract ERC20Staker is Ownable {
                 continue;
             }
             ERC20 _relatedStakableToken = stakableTokens[_i];
-            address _relatedStakableTokenAddress = address(
-                _relatedStakableToken
-            );
+            address _relatedStakableTokenAddress =
+                address(_relatedStakableToken);
             require(
                 _amount <=
                     stakedTokensOf[msg.sender][_relatedStakableTokenAddress],
-                "ERC20Staker: withdrawn amount greater than current stake"
+                "ERC20Distribution: withdrawn amount greater than current stake"
             );
             _relatedStakableToken.safeTransfer(msg.sender, _amount);
-            stakedTokensOf[msg
-                .sender][_relatedStakableTokenAddress] = stakedTokensOf[msg
-                .sender][_relatedStakableTokenAddress]
-                .sub(_amount);
-            stakedTokenAmount[_relatedStakableTokenAddress] = stakedTokenAmount[_relatedStakableTokenAddress]
+            stakedTokensOf[msg.sender][
+                _relatedStakableTokenAddress
+            ] = stakedTokensOf[msg.sender][_relatedStakableTokenAddress].sub(
+                _amount
+            );
+            stakedTokenAmount[_relatedStakableTokenAddress] = stakedTokenAmount[
+                _relatedStakableTokenAddress
+            ]
                 .sub(_amount);
             totalStakedTokensOf[msg.sender] = totalStakedTokensOf[msg.sender]
                 .sub(_amount);
@@ -247,48 +261,49 @@ contract ERC20Staker is Ownable {
         emit Withdrawn(msg.sender, _amounts);
     }
 
-    function claim() external onlyInitialized onlyStarted {
+    function claim() external override onlyInitialized onlyStarted {
         consolidateReward();
         uint256[] memory _pendingRewards = new uint256[](rewardTokens.length);
         for (uint256 _i; _i < rewardTokens.length; _i++) {
             ERC20 _relatedRewardToken = rewardTokens[_i];
             address _relatedRewardTokenAddress = address(_relatedRewardToken);
-            uint256 _pendingReward = earnedRewards[msg
-                .sender][_relatedRewardTokenAddress]
-                .sub(claimedReward[msg.sender][_relatedRewardTokenAddress]);
+            uint256 _pendingReward =
+                earnedRewards[msg.sender][_relatedRewardTokenAddress].sub(
+                    claimedReward[msg.sender][_relatedRewardTokenAddress]
+                );
             _relatedRewardToken.safeTransfer(msg.sender, _pendingReward);
-            claimedReward[msg
-                .sender][_relatedRewardTokenAddress] = claimedReward[msg
-                .sender][_relatedRewardTokenAddress]
-                .add(_pendingReward);
+            claimedReward[msg.sender][
+                _relatedRewardTokenAddress
+            ] = claimedReward[msg.sender][_relatedRewardTokenAddress].add(
+                _pendingReward
+            );
             _pendingRewards[_i] = _pendingReward;
         }
         emit Claimed(msg.sender, _pendingRewards);
     }
 
     function consolidateReward() public onlyInitialized onlyStarted {
-        uint256 _consolidationTimestamp = Math.min(
-            block.timestamp,
-            endingTimestamp
-        );
-        uint256 _lastPeriodDuration = _consolidationTimestamp.sub(
-            lastConsolidationTimestamp
-        );
+        uint256 _consolidationTimestamp =
+            Math.min(block.timestamp, endingTimestamp);
+        uint256 _lastPeriodDuration =
+            _consolidationTimestamp.sub(lastConsolidationTimestamp);
         for (uint256 _i; _i < rewardTokens.length; _i++) {
             address _relatedRewardTokenAddress = address(rewardTokens[_i]);
             if (totalStakedTokensAmount == 0) {
                 // If the current staked tokens amount is zero, there have been unassigned rewards in the last period.
                 // We add them to any previous one so that they can be claimed back by the contract's owner.
-                recoverableUnassignedReward[_relatedRewardTokenAddress] = recoverableUnassignedReward[_relatedRewardTokenAddress]
-                    .add(
+                recoverableUnassignedReward[
+                    _relatedRewardTokenAddress
+                ] = recoverableUnassignedReward[_relatedRewardTokenAddress].add(
                     _lastPeriodDuration.mul(
                         rewardPerSecond[_relatedRewardTokenAddress]
                     )
                 );
                 rewardPerStakedToken[_relatedRewardTokenAddress] = 0;
             } else {
-                rewardPerStakedToken[_relatedRewardTokenAddress] = rewardPerStakedToken[_relatedRewardTokenAddress]
-                    .add(
+                rewardPerStakedToken[
+                    _relatedRewardTokenAddress
+                ] = rewardPerStakedToken[_relatedRewardTokenAddress].add(
                     _lastPeriodDuration
                         .mul(rewardPerSecond[_relatedRewardTokenAddress])
                         .mul(rewardTokenMultiplier[_relatedRewardTokenAddress])
@@ -299,42 +314,44 @@ contract ERC20Staker is Ownable {
             // the rewards in current period must be 0 by definition, no need to
             // perform subtraction risking overflow.
 
-
-                uint256 _rewardInCurrentPeriod
-             = rewardPerStakedToken[_relatedRewardTokenAddress] > 0
-                ? totalStakedTokensOf[msg.sender]
-                    .mul(
-                    rewardPerStakedToken[_relatedRewardTokenAddress].sub(
-                        consolidatedRewardsPerStakedToken[msg
-                            .sender][_relatedRewardTokenAddress]
+            uint256 _rewardInCurrentPeriod =
+                rewardPerStakedToken[_relatedRewardTokenAddress] > 0
+                    ? totalStakedTokensOf[msg.sender]
+                        .mul(
+                        rewardPerStakedToken[_relatedRewardTokenAddress].sub(
+                            consolidatedRewardsPerStakedToken[msg.sender][
+                                _relatedRewardTokenAddress
+                            ]
+                        )
                     )
-                )
-                    .div(rewardTokenMultiplier[_relatedRewardTokenAddress])
-                : 0;
-            earnedRewards[msg
-                .sender][_relatedRewardTokenAddress] = earnedRewards[msg
-                .sender][_relatedRewardTokenAddress]
-                .add(_rewardInCurrentPeriod);
-            consolidatedRewardsPerStakedToken[msg
-                .sender][_relatedRewardTokenAddress] = rewardPerStakedToken[_relatedRewardTokenAddress];
+                        .div(rewardTokenMultiplier[_relatedRewardTokenAddress])
+                    : 0;
+            earnedRewards[msg.sender][
+                _relatedRewardTokenAddress
+            ] = earnedRewards[msg.sender][_relatedRewardTokenAddress].add(
+                _rewardInCurrentPeriod
+            );
+            consolidatedRewardsPerStakedToken[msg.sender][
+                _relatedRewardTokenAddress
+            ] = rewardPerStakedToken[_relatedRewardTokenAddress];
         }
         lastConsolidationTimestamp = _consolidationTimestamp;
     }
 
     modifier onlyUninitialized() {
-        require(!initialized, "ERC20Staker: already initialized");
+        require(!initialized, "ERC20Distribution: already initialized");
         _;
     }
 
     modifier onlyInitialized() {
-        require(initialized, "ERC20Staker: not initialized");
+        require(initialized, "ERC20Distribution: not initialized");
         _;
     }
 
     modifier onlyStarted() {
         require(
             initialized && block.timestamp >= startingTimestamp,
-            "ERC20Staker: not started"
+            "ERC20Distribution: not started"
         );
         _;
     }
@@ -342,7 +359,7 @@ contract ERC20Staker is Ownable {
     modifier onlyRunning() {
         require(
             initialized && block.timestamp <= endingTimestamp,
-            "ERC20Staker: already ended"
+            "ERC20Distribution: already ended"
         );
         _;
     }

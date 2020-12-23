@@ -5,13 +5,13 @@ const { initializeDistribution } = require("../../utils");
 const { toWei } = require("../../utils/conversion");
 const { getEvmTimestamp, fastForwardTo } = require("../../utils/network");
 
-const ERC20Staker = artifacts.require("ERC20Staker");
+const ERC20Distribution = artifacts.require("ERC20Distribution");
 const FirstRewardERC20 = artifacts.require("FirstRewardERC20");
 const FirstStakableERC20 = artifacts.require("FirstStakableERC20");
 const HighDecimalsERC20 = artifacts.require("HighDecimalsERC20");
 
-contract("ERC20Staker - Single reward/stakable token - Initialization", () => {
-    let erc20StakerInstance,
+contract("ERC20Distribution - Single reward/stakable token - Initialization", () => {
+    let erc20DistributionInstance,
         rewardsTokenInstance,
         stakableTokenInstance,
         highDecimalsTokenInstance,
@@ -20,7 +20,7 @@ contract("ERC20Staker - Single reward/stakable token - Initialization", () => {
 
     beforeEach(async () => {
         const accounts = await web3.eth.getAccounts();
-        erc20StakerInstance = await ERC20Staker.new();
+        erc20DistributionInstance = await ERC20Distribution.new();
         rewardsTokenInstance = await FirstRewardERC20.new();
         stakableTokenInstance = await FirstStakableERC20.new();
         highDecimalsTokenInstance = await HighDecimalsERC20.new();
@@ -32,7 +32,7 @@ contract("ERC20Staker - Single reward/stakable token - Initialization", () => {
         try {
             await initializeDistribution({
                 from: firstStakerAddress,
-                erc20Staker: erc20StakerInstance,
+                erc20DistributionInstance,
                 stakableTokens: [stakableTokenInstance],
                 rewardTokens: [rewardsTokenInstance],
                 rewardAmounts: [1],
@@ -50,7 +50,7 @@ contract("ERC20Staker - Single reward/stakable token - Initialization", () => {
         try {
             await initializeDistribution({
                 from: ownerAddress,
-                erc20Staker: erc20StakerInstance,
+                erc20DistributionInstance,
                 stakableTokens: [stakableTokenInstance],
                 rewardTokens: [{ address: ZERO_ADDRESS }],
                 rewardAmounts: [1],
@@ -60,7 +60,7 @@ contract("ERC20Staker - Single reward/stakable token - Initialization", () => {
             throw new Error("should have failed");
         } catch (error) {
             expect(error.message).to.contain(
-                "ERC20Staker: 0 address as reward token"
+                "ERC20Distribution: 0 address as reward token"
             );
         }
     });
@@ -69,7 +69,7 @@ contract("ERC20Staker - Single reward/stakable token - Initialization", () => {
         try {
             await initializeDistribution({
                 from: ownerAddress,
-                erc20Staker: erc20StakerInstance,
+                erc20DistributionInstance,
                 stakableTokens: [{ address: ZERO_ADDRESS }],
                 rewardTokens: [rewardsTokenInstance],
                 rewardAmounts: [1],
@@ -78,7 +78,7 @@ contract("ERC20Staker - Single reward/stakable token - Initialization", () => {
             throw new Error("should have failed");
         } catch (error) {
             expect(error.message).to.contain(
-                "ERC20Staker: 0 address as stakable token"
+                "ERC20Distribution: 0 address as stakable token"
             );
         }
     });
@@ -87,7 +87,7 @@ contract("ERC20Staker - Single reward/stakable token - Initialization", () => {
         try {
             await initializeDistribution({
                 from: ownerAddress,
-                erc20Staker: erc20StakerInstance,
+                erc20DistributionInstance,
                 stakableTokens: [stakableTokenInstance],
                 rewardTokens: [rewardsTokenInstance],
                 rewardAmounts: [0],
@@ -95,14 +95,14 @@ contract("ERC20Staker - Single reward/stakable token - Initialization", () => {
             });
             throw new Error("should have failed");
         } catch (error) {
-            expect(error.message).to.contain("ERC20Staker: no reward");
+            expect(error.message).to.contain("ERC20Distribution: no reward");
         }
     });
 
     it("should fail when passing a lower starting timestamp than the current one", async () => {
         try {
             const currentEvmTimestamp = await getEvmTimestamp();
-            await erc20StakerInstance.initialize(
+            await erc20DistributionInstance.initialize(
                 [rewardsTokenInstance.address],
                 [stakableTokenInstance.address],
                 [1],
@@ -113,7 +113,7 @@ contract("ERC20Staker - Single reward/stakable token - Initialization", () => {
             throw new Error("should have failed");
         } catch (error) {
             expect(error.message).to.contain(
-                "ERC20Staker: starting timestamp lower or equal than current"
+                "ERC20Distribution: starting timestamp lower or equal than current"
             );
         }
     });
@@ -121,7 +121,7 @@ contract("ERC20Staker - Single reward/stakable token - Initialization", () => {
     it("should fail when passing the same starting timestamp as the current one", async () => {
         try {
             const currentEvmTimestamp = await getEvmTimestamp();
-            await erc20StakerInstance.initialize(
+            await erc20DistributionInstance.initialize(
                 [rewardsTokenInstance.address],
                 [stakableTokenInstance.address],
                 [1],
@@ -132,7 +132,7 @@ contract("ERC20Staker - Single reward/stakable token - Initialization", () => {
             throw new Error("should have failed");
         } catch (error) {
             expect(error.message).to.contain(
-                "ERC20Staker: starting timestamp lower or equal than current"
+                "ERC20Distribution: starting timestamp lower or equal than current"
             );
         }
     });
@@ -141,7 +141,7 @@ contract("ERC20Staker - Single reward/stakable token - Initialization", () => {
         try {
             await initializeDistribution({
                 from: ownerAddress,
-                erc20Staker: erc20StakerInstance,
+                erc20DistributionInstance,
                 stakableTokens: [stakableTokenInstance],
                 rewardTokens: [rewardsTokenInstance],
                 rewardAmounts: [1],
@@ -150,7 +150,7 @@ contract("ERC20Staker - Single reward/stakable token - Initialization", () => {
             throw new Error("should have failed");
         } catch (error) {
             expect(error.message).to.contain(
-                "ERC20Staker: invalid time duration"
+                "ERC20Distribution: invalid time duration"
             );
         }
     });
@@ -159,7 +159,7 @@ contract("ERC20Staker - Single reward/stakable token - Initialization", () => {
         try {
             await initializeDistribution({
                 from: ownerAddress,
-                erc20Staker: erc20StakerInstance,
+                erc20DistributionInstance,
                 stakableTokens: [stakableTokenInstance],
                 rewardTokens: [rewardsTokenInstance],
                 rewardAmounts: [10],
@@ -168,7 +168,7 @@ contract("ERC20Staker - Single reward/stakable token - Initialization", () => {
             });
             throw new Error("should have failed");
         } catch (error) {
-            expect(error.message).to.contain("ERC20Staker: funds required");
+            expect(error.message).to.contain("ERC20Distribution: funds required");
         }
     });
 
@@ -176,7 +176,7 @@ contract("ERC20Staker - Single reward/stakable token - Initialization", () => {
         try {
             await initializeDistribution({
                 from: ownerAddress,
-                erc20Staker: erc20StakerInstance,
+                erc20DistributionInstance,
                 stakableTokens: [stakableTokenInstance],
                 rewardTokens: [highDecimalsTokenInstance],
                 rewardAmounts: [10],
@@ -185,7 +185,7 @@ contract("ERC20Staker - Single reward/stakable token - Initialization", () => {
             throw new Error("should have failed");
         } catch (error) {
             expect(error.message).to.contain(
-                "ERC20Staker: more than 18 decimals for reward token"
+                "ERC20Distribution: more than 18 decimals for reward token"
             );
         }
     });
@@ -200,7 +200,7 @@ contract("ERC20Staker - Single reward/stakable token - Initialization", () => {
             endingTimestamp,
         } = await initializeDistribution({
             from: ownerAddress,
-            erc20Staker: erc20StakerInstance,
+            erc20DistributionInstance,
             stakableTokens,
             rewardTokens,
             rewardAmounts,
@@ -208,13 +208,13 @@ contract("ERC20Staker - Single reward/stakable token - Initialization", () => {
         });
         await fastForwardTo(startingTimestamp);
 
-        expect(await erc20StakerInstance.initialized()).to.be.true;
-        const onchainRewardTokens = await erc20StakerInstance.getRewardTokens();
+        expect(await erc20DistributionInstance.initialized()).to.be.true;
+        const onchainRewardTokens = await erc20DistributionInstance.getRewardTokens();
         expect(onchainRewardTokens).to.have.length(rewardTokens.length);
         expect(onchainRewardTokens[0]).to.be.equal(
             rewardsTokenInstance.address
         );
-        const onchainStakableTokens = await erc20StakerInstance.getStakableTokens();
+        const onchainStakableTokens = await erc20DistributionInstance.getStakableTokens();
         for (let i = 0; i < stakableTokens.length; i++) {
             expect(onchainStakableTokens[i]).to.be.equal(
                 stakableTokens[i].address
@@ -224,25 +224,25 @@ contract("ERC20Staker - Single reward/stakable token - Initialization", () => {
             const rewardAmount = rewardAmounts[i];
             const rewardToken = rewardTokens[i];
             expect(
-                await erc20StakerInstance.rewardTokenMultiplier(
+                await erc20DistributionInstance.rewardTokenMultiplier(
                     rewardToken.address
                 )
             ).to.be.equalBn(
                 new BN(1).mul(new BN(10).pow(await rewardToken.decimals()))
             );
             expect(
-                await rewardToken.balanceOf(erc20StakerInstance.address)
+                await rewardToken.balanceOf(erc20DistributionInstance.address)
             ).to.be.equalBn(rewardAmount);
             expect(
-                await erc20StakerInstance.rewardAmount(rewardToken.address)
+                await erc20DistributionInstance.rewardAmount(rewardToken.address)
             ).to.be.equalBn(rewardAmount);
             expect(
-                await erc20StakerInstance.rewardPerSecond(rewardToken.address)
+                await erc20DistributionInstance.rewardPerSecond(rewardToken.address)
             ).to.be.equalBn(new BN(rewardAmount).div(duration));
         }
-        const onchainStartingTimestamp = await erc20StakerInstance.startingTimestamp();
+        const onchainStartingTimestamp = await erc20DistributionInstance.startingTimestamp();
         expect(onchainStartingTimestamp).to.be.equalBn(startingTimestamp);
-        const onchainEndingTimestamp = await erc20StakerInstance.endingTimestamp();
+        const onchainEndingTimestamp = await erc20DistributionInstance.endingTimestamp();
         expect(onchainEndingTimestamp.sub(startingTimestamp)).to.be.equalBn(
             duration
         );
@@ -253,7 +253,7 @@ contract("ERC20Staker - Single reward/stakable token - Initialization", () => {
         try {
             await initializeDistribution({
                 from: ownerAddress,
-                erc20Staker: erc20StakerInstance,
+                erc20DistributionInstance,
                 stakableTokens: [stakableTokenInstance],
                 rewardTokens: [rewardsTokenInstance],
                 rewardAmounts: [1],
@@ -261,7 +261,7 @@ contract("ERC20Staker - Single reward/stakable token - Initialization", () => {
             });
             await initializeDistribution({
                 from: ownerAddress,
-                erc20Staker: erc20StakerInstance,
+                erc20DistributionInstance,
                 stakableTokens: [stakableTokenInstance],
                 rewardTokens: [rewardsTokenInstance],
                 rewardAmounts: [1],
@@ -270,7 +270,7 @@ contract("ERC20Staker - Single reward/stakable token - Initialization", () => {
             throw new Error("should have failed");
         } catch (error) {
             expect(error.message).to.contain(
-                "ERC20Staker: already initialized"
+                "ERC20Distribution: already initialized"
             );
         }
     });

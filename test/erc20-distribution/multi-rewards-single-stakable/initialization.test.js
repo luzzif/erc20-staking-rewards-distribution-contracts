@@ -4,16 +4,16 @@ const { ZERO_ADDRESS } = require("../../constants");
 const { initializeDistribution } = require("../../utils");
 const { toWei } = require("../../utils/conversion");
 
-const ERC20Staker = artifacts.require("ERC20Staker");
+const ERC20Distribution = artifacts.require("ERC20Distribution");
 const FirstRewardERC20 = artifacts.require("FirstRewardERC20");
 const SecondRewardERC20 = artifacts.require("SecondRewardERC20");
 const FirstStakableERC20 = artifacts.require("FirstStakableERC20");
 const HighDecimalsERC20 = artifacts.require("HighDecimalsERC20");
 
 contract(
-    "ERC20Staker - Multi rewards, single stakable token - Initialization",
+    "ERC20Distribution - Multi rewards, single stakable token - Initialization",
     () => {
-        let erc20StakerInstance,
+        let erc20DistributionInstance,
             firstRewardsTokenInstance,
             secondRewardsTokenInstance,
             stakableTokenInstance,
@@ -23,7 +23,9 @@ contract(
         beforeEach(async () => {
             const accounts = await web3.eth.getAccounts();
             ownerAddress = accounts[0];
-            erc20StakerInstance = await ERC20Staker.new({ from: ownerAddress });
+            erc20DistributionInstance = await ERC20Distribution.new({
+                from: ownerAddress,
+            });
             firstRewardsTokenInstance = await FirstRewardERC20.new();
             secondRewardsTokenInstance = await SecondRewardERC20.new();
             stakableTokenInstance = await FirstStakableERC20.new();
@@ -34,7 +36,7 @@ contract(
             try {
                 await initializeDistribution({
                     from: ownerAddress,
-                    erc20Staker: erc20StakerInstance,
+                    erc20DistributionInstance,
                     stakableTokens: [stakableTokenInstance],
                     rewardTokens: [
                         firstRewardsTokenInstance,
@@ -49,7 +51,7 @@ contract(
                 throw new Error("should have failed");
             } catch (error) {
                 expect(error.message).to.contain(
-                    "ERC20Staker: inconsistent reward token/amount arrays length"
+                    "ERC20Distribution: inconsistent reward token/amount arrays length"
                 );
             }
         });
@@ -59,12 +61,12 @@ contract(
                 // manual funding to avoid error on zero-address token
                 const rewardAmounts = [1, 1];
                 await firstRewardsTokenInstance.mint(
-                    erc20StakerInstance.address,
+                    erc20DistributionInstance.address,
                     rewardAmounts[0]
                 );
                 await initializeDistribution({
                     from: ownerAddress,
-                    erc20Staker: erc20StakerInstance,
+                    erc20DistributionInstance,
                     stakableTokens: [stakableTokenInstance],
                     rewardTokens: [
                         firstRewardsTokenInstance,
@@ -77,7 +79,7 @@ contract(
                 throw new Error("should have failed");
             } catch (error) {
                 expect(error.message).to.contain(
-                    "ERC20Staker: 0 address as reward token"
+                    "ERC20Distribution: 0 address as reward token"
                 );
             }
         });
@@ -86,7 +88,7 @@ contract(
             try {
                 await initializeDistribution({
                     from: ownerAddress,
-                    erc20Staker: erc20StakerInstance,
+                    erc20DistributionInstance,
                     stakableTokens: [stakableTokenInstance],
                     rewardTokens: [
                         firstRewardsTokenInstance,
@@ -97,7 +99,9 @@ contract(
                 });
                 throw new Error("should have failed");
             } catch (error) {
-                expect(error.message).to.contain("ERC20Staker: no reward");
+                expect(error.message).to.contain(
+                    "ERC20Distribution: no reward"
+                );
             }
         });
 
@@ -105,7 +109,7 @@ contract(
             try {
                 await initializeDistribution({
                     from: ownerAddress,
-                    erc20Staker: erc20StakerInstance,
+                    erc20DistributionInstance,
                     stakableTokens: [stakableTokenInstance],
                     rewardTokens: [
                         firstRewardsTokenInstance,
@@ -116,7 +120,9 @@ contract(
                 });
                 throw new Error("should have failed");
             } catch (error) {
-                expect(error.message).to.contain("ERC20Staker: no reward");
+                expect(error.message).to.contain(
+                    "ERC20Distribution: no reward"
+                );
             }
         });
 
@@ -124,7 +130,7 @@ contract(
             try {
                 await initializeDistribution({
                     from: ownerAddress,
-                    erc20Staker: erc20StakerInstance,
+                    erc20DistributionInstance,
                     stakableTokens: [stakableTokenInstance],
                     rewardTokens: [
                         firstRewardsTokenInstance,
@@ -136,7 +142,9 @@ contract(
                 });
                 throw new Error("should have failed");
             } catch (error) {
-                expect(error.message).to.contain("ERC20Staker: funds required");
+                expect(error.message).to.contain(
+                    "ERC20Distribution: funds required"
+                );
             }
         });
 
@@ -144,7 +152,7 @@ contract(
             try {
                 await initializeDistribution({
                     from: ownerAddress,
-                    erc20Staker: erc20StakerInstance,
+                    erc20DistributionInstance,
                     stakableTokens: [stakableTokenInstance],
                     rewardTokens: [
                         firstRewardsTokenInstance,
@@ -156,7 +164,7 @@ contract(
                 throw new Error("should have failed");
             } catch (error) {
                 expect(error.message).to.contain(
-                    "ERC20Staker: more than 18 decimals for reward token"
+                    "ERC20Distribution: more than 18 decimals for reward token"
                 );
             }
         });
@@ -174,15 +182,15 @@ contract(
             const stakableTokens = [stakableTokenInstance];
             const { startingTimestamp } = await initializeDistribution({
                 from: ownerAddress,
-                erc20Staker: erc20StakerInstance,
+                erc20DistributionInstance,
                 stakableTokens,
                 rewardTokens,
                 rewardAmounts,
                 duration,
             });
 
-            expect(await erc20StakerInstance.initialized()).to.be.true;
-            const onchainRewardTokens = await erc20StakerInstance.getRewardTokens();
+            expect(await erc20DistributionInstance.initialized()).to.be.true;
+            const onchainRewardTokens = await erc20DistributionInstance.getRewardTokens();
             expect(onchainRewardTokens).to.have.length(2);
             expect(onchainRewardTokens[0]).to.be.equal(
                 firstRewardsTokenInstance.address
@@ -190,33 +198,37 @@ contract(
             expect(onchainRewardTokens[1]).to.be.equal(
                 secondRewardsTokenInstance.address
             );
-            const onchainStakableTokens = await erc20StakerInstance.getStakableTokens();
+            const onchainStakableTokens = await erc20DistributionInstance.getStakableTokens();
             expect(onchainStakableTokens).to.have.length(1);
             for (let i = 0; i < rewardTokens.length; i++) {
                 const rewardAmount = rewardAmounts[i];
                 const rewardToken = rewardTokens[i];
                 expect(
-                    await erc20StakerInstance.rewardTokenMultiplier(
+                    await erc20DistributionInstance.rewardTokenMultiplier(
                         rewardToken.address
                     )
                 ).to.be.equalBn(
                     new BN(1).mul(new BN(10).pow(await rewardToken.decimals()))
                 );
                 expect(
-                    await rewardToken.balanceOf(erc20StakerInstance.address)
+                    await rewardToken.balanceOf(
+                        erc20DistributionInstance.address
+                    )
                 ).to.be.equalBn(rewardAmount);
                 expect(
-                    await erc20StakerInstance.rewardAmount(rewardToken.address)
+                    await erc20DistributionInstance.rewardAmount(
+                        rewardToken.address
+                    )
                 ).to.be.equalBn(rewardAmount);
                 expect(
-                    await erc20StakerInstance.rewardPerSecond(
+                    await erc20DistributionInstance.rewardPerSecond(
                         rewardToken.address
                     )
                 ).to.be.equalBn(new BN(rewardAmount).div(duration));
             }
-            const onchainStartingTimestamp = await erc20StakerInstance.startingTimestamp();
+            const onchainStartingTimestamp = await erc20DistributionInstance.startingTimestamp();
             expect(onchainStartingTimestamp).to.be.equalBn(startingTimestamp);
-            const onchainEndingTimestamp = await erc20StakerInstance.endingTimestamp();
+            const onchainEndingTimestamp = await erc20DistributionInstance.endingTimestamp();
             expect(
                 onchainEndingTimestamp.sub(onchainStartingTimestamp)
             ).to.be.equalBn(duration);
@@ -226,7 +238,7 @@ contract(
             try {
                 await initializeDistribution({
                     from: ownerAddress,
-                    erc20Staker: erc20StakerInstance,
+                    erc20DistributionInstance,
                     stakableTokens: [stakableTokenInstance],
                     rewardTokens: [
                         firstRewardsTokenInstance,
@@ -237,7 +249,7 @@ contract(
                 });
                 await initializeDistribution({
                     from: ownerAddress,
-                    erc20Staker: erc20StakerInstance,
+                    erc20DistributionInstance,
                     stakableTokens: [stakableTokenInstance],
                     rewardTokens: [
                         firstRewardsTokenInstance,
@@ -249,7 +261,7 @@ contract(
                 throw new Error("should have failed");
             } catch (error) {
                 expect(error.message).to.contain(
-                    "ERC20Staker: already initialized"
+                    "ERC20Distribution: already initialized"
                 );
             }
         });

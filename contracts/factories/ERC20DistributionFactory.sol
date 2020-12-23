@@ -6,61 +6,59 @@ import "@openzeppelin/contracts/math/SafeMath.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
-import "../ERC20Staker.sol";
+import "../distributions/ERC20Distribution.sol";
 
-
-contract BasicDistributionFactory is Ownable {
+contract ERC20DistributionFactory is Ownable {
     using SafeMath for uint256;
     using SafeERC20 for ERC20;
 
-    ERC20Staker[] public distributions;
+    ERC20Distribution[] public distributions;
 
     event Created(
         address indexed creator,
         address[] indexed rewardsTokenAddresses,
         address[] indexed stakableTokenAddresses,
         uint256[] rewardsAmounts,
-        uint256 startingBlock,
-        uint256 blocksDuration
+        uint256 startingTimestamp,
+        uint256 secondsDuration
     );
 
     function createDistribution(
         address[] calldata _rewardsTokenAddresses,
         address[] calldata _stakableTokenAddresses,
-        uint256[] calldata _rewardsAmounts,
-        uint256 _startingBlock,
-        uint256 _blocksDuration
+        uint256[] calldata _rewardAmounts,
+        uint256 _startingTimestamp,
+        uint256 _secondsDuration
     ) public virtual {
         require(
-            _rewardsTokenAddresses.length == _rewardsAmounts.length,
+            _rewardsTokenAddresses.length == _rewardAmounts.length,
             "DistributionFactory: inconsistent reward token/amount arrays length"
         );
-        ERC20Staker _staker = new ERC20Staker();
+        ERC20Distribution _distribution = new ERC20Distribution();
         for (uint256 _i; _i < _rewardsTokenAddresses.length; _i++) {
             ERC20 _rewardToken = ERC20(_rewardsTokenAddresses[_i]);
-            uint256 _relatedAmount = _rewardsAmounts[_i];
-            _rewardToken.approve(address(_staker), _relatedAmount);
+            uint256 _relatedAmount = _rewardAmounts[_i];
             _rewardToken.safeTransferFrom(
                 msg.sender,
-                address(_staker),
+                address(_distribution),
                 _relatedAmount
             );
         }
-        _staker.initialize(
+        _distribution.initialize(
             _rewardsTokenAddresses,
             _stakableTokenAddresses,
-            _rewardsAmounts,
-            _startingBlock,
-            _blocksDuration
+            _rewardAmounts,
+            _startingTimestamp,
+            _secondsDuration
         );
-        distributions.push(_staker);
+        distributions.push(_distribution);
         emit Created(
             msg.sender,
             _rewardsTokenAddresses,
             _stakableTokenAddresses,
-            _rewardsAmounts,
-            _startingBlock,
-            _blocksDuration
+            _rewardAmounts,
+            _startingTimestamp,
+            _secondsDuration
         );
     }
 }
