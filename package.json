@@ -3,10 +3,10 @@
     "version": "0.1.0",
     "description": "Generic ERC20 tokens staker contracts to bootstrap staking campaigns (liquidity mining etc).",
     "scripts": {
-        "lint:code": "eslint \"test/**/*.js\"",
-        "lint:prettier": "prettier -l test/**/*.js",
+        "lint:eslint": "eslint \"test/**/*.js\"",
+        "lint:prettier": "prettier -l contracts/**/*.sol && prettier -l test/**/*.js",
         "lint:commit-message": "commitlint -e",
-        "lint": "yarn lint:code & yarn lint:prettier",
+        "lint": "yarn lint:eslint & yarn lint:prettier",
         "test": "truffle test --runner-output-only",
         "coverage": "truffle run coverage",
         "compile": "truffle compile",
@@ -25,6 +25,8 @@
         "ganache-cli": "^6.12.1",
         "husky": "^4.3.0",
         "prettier": "^2.1.2",
+        "prettier-plugin-solidity": "^1.0.0-beta.2",
+        "solhint-plugin-prettier": "^0.0.5",
         "solidity-coverage": "^0.7.13",
         "truffle": "^5.1.58"
     }
