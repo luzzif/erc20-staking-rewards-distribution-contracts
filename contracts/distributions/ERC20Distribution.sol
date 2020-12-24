@@ -28,7 +28,7 @@ contract ERC20Distribution is IDistribution, Ownable {
     mapping(address => uint256) public recoverableUnassignedReward;
 
     mapping(address => mapping(address => uint256)) public stakedTokensOf;
-    mapping(address => uint256) private totalStakedTokensOf;
+    mapping(address => uint256) public totalStakedTokensOf;
     mapping(address => mapping(address => uint256))
         public consolidatedRewardsPerStakedToken;
     mapping(address => mapping(address => uint256)) public earnedRewards;
@@ -305,6 +305,7 @@ contract ERC20Distribution is IDistribution, Ownable {
                     _relatedRewardTokenAddress
                 ] = rewardPerStakedToken[_relatedRewardTokenAddress].add(
                     _lastPeriodDuration
+                    // FIXME: could this overflow?
                         .mul(rewardPerSecond[_relatedRewardTokenAddress])
                         .mul(rewardTokenMultiplier[_relatedRewardTokenAddress])
                         .div(totalStakedTokensAmount)
@@ -313,7 +314,6 @@ contract ERC20Distribution is IDistribution, Ownable {
             // avoids subtraction overflow. If the rewards per staked tokens are 0,
             // the rewards in current period must be 0 by definition, no need to
             // perform subtraction risking overflow.
-
             uint256 _rewardInCurrentPeriod =
                 rewardPerStakedToken[_relatedRewardTokenAddress] > 0
                     ? totalStakedTokensOf[msg.sender]
