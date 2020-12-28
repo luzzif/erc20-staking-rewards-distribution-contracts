@@ -2163,19 +2163,18 @@ contract(
                 timestamp: stakingTimestamp,
                 mineBlockAfter: false,
             });
-            await stake(
+            await stakeAtTimestamp(
                 erc20DistributionInstance,
                 firstStakerAddress,
                 [stakedAmount, 0],
-                false
+                stakingTimestamp
             );
-            await stake(
+            await stakeAtTimestamp(
                 erc20DistributionInstance,
                 secondStakerAddress,
                 [stakedAmount, 0],
-                false
+                stakingTimestamp
             );
-            await mineBlock(stakingTimestamp);
             expect(await getEvmTimestamp()).to.be.equalBn(stakingTimestamp);
             await startMining();
             await fastForwardTo({ timestamp: endingTimestamp });
@@ -2242,19 +2241,18 @@ contract(
                 timestamp: stakingTimestamp,
                 mineBlockAfter: false,
             });
-            await stake(
+            await stakeAtTimestamp(
                 erc20DistributionInstance,
                 firstStakerAddress,
                 [0, stakedAmount],
-                false
+                stakingTimestamp
             );
-            await stake(
+            await stakeAtTimestamp(
                 erc20DistributionInstance,
                 secondStakerAddress,
                 [0, stakedAmount],
-                false
+                stakingTimestamp
             );
-            await mineBlock(stakingTimestamp);
             expect(await getEvmTimestamp()).to.be.equalBn(stakingTimestamp);
             await startMining();
             await fastForwardTo({ timestamp: endingTimestamp });
@@ -2343,19 +2341,18 @@ contract(
                 timestamp: stakingTimestamp,
                 mineBlockAfter: false,
             });
-            await stake(
+            await stakeAtTimestamp(
                 erc20DistributionInstance,
                 firstStakerAddress,
                 [firstStakedAmount, secondStakedAmount],
-                false
+                stakingTimestamp
             );
-            await stake(
+            await stakeAtTimestamp(
                 erc20DistributionInstance,
                 secondStakerAddress,
                 [firstStakedAmount, secondStakedAmount],
-                false
+                stakingTimestamp
             );
-            await mineBlock(stakingTimestamp);
             expect(await getEvmTimestamp()).to.be.equalBn(stakingTimestamp);
             await startMining();
             await fastForwardTo({ timestamp: endingTimestamp });
@@ -2730,19 +2727,18 @@ contract(
                 timestamp: stakeAndWithdrawTimestamp,
                 mineBlockAfter: false,
             });
-            await stake(
+            await stakeAtTimestamp(
                 erc20DistributionInstance,
                 secondStakerAddress,
                 [0, stakedAmount],
-                false
+                stakeAndWithdrawTimestamp
             );
-            await withdraw(
+            await withdrawAtTimestamp(
                 erc20DistributionInstance,
                 firstStakerAddress,
                 [0, stakedAmount],
-                false
+                stakeAndWithdrawTimestamp
             );
-            await mineBlock(stakeAndWithdrawTimestamp);
             const secondStakerStartingTimestamp = await getEvmTimestamp();
             const firstStakerWithdrawTimestamp = await getEvmTimestamp();
             await startMining();
@@ -2831,19 +2827,18 @@ contract(
                 timestamp: stakeAndWithdrawTimestamp,
                 mineBlockAfter: false,
             });
-            await stake(
+            await stakeAtTimestamp(
                 erc20DistributionInstance,
                 secondStakerAddress,
                 [0, stakedAmount],
-                false
+                stakeAndWithdrawTimestamp
             );
-            await withdraw(
+            await withdrawAtTimestamp(
                 erc20DistributionInstance,
                 firstStakerAddress,
                 [0, stakedAmount],
-                false
+                stakeAndWithdrawTimestamp
             );
-            await mineBlock(stakeAndWithdrawTimestamp);
             const secondStakerStartingTimestamp = await getEvmTimestamp();
             const firstStakerWithdrawTimestamp = await getEvmTimestamp();
             await startMining();
@@ -2944,19 +2939,18 @@ contract(
                 timestamp: stakeAndWithdrawTimestamp,
                 mineBlockAfter: false,
             });
-            await stake(
+            await stakeAtTimestamp(
                 erc20DistributionInstance,
                 secondStakerAddress,
                 [stakedAmount, stakedAmount],
-                false
+                stakeAndWithdrawTimestamp
             );
-            await withdraw(
+            await withdrawAtTimestamp(
                 erc20DistributionInstance,
                 firstStakerAddress,
                 [stakedAmount, stakedAmount],
-                false
+                stakeAndWithdrawTimestamp
             );
-            await mineBlock(stakeAndWithdrawTimestamp);
             const secondStakerStartingTimestamp = await getEvmTimestamp();
             const firstStakerWithdrawTimestamp = await getEvmTimestamp();
             await startMining();
@@ -3057,19 +3051,18 @@ contract(
                 timestamp: stakeAndWithdrawTimestamp,
                 mineBlockAfter: false,
             });
-            await stake(
+            await stakeAtTimestamp(
                 erc20DistributionInstance,
                 secondStakerAddress,
                 [stakedAmount, 30],
-                false
+                stakeAndWithdrawTimestamp
             );
-            await withdraw(
+            await withdrawAtTimestamp(
                 erc20DistributionInstance,
                 firstStakerAddress,
                 [stakedAmount, stakedAmount],
-                false
+                stakeAndWithdrawTimestamp
             );
-            await mineBlock(stakeAndWithdrawTimestamp);
             const secondStakerStartingTimestamp = await getEvmTimestamp();
             const firstStakerWithdrawTimestamp = await getEvmTimestamp();
             await startMining();

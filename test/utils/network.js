@@ -34,6 +34,8 @@ const mineBlock = async (timestamp) => {
     return new Promise((resolve, reject) => {
         web3.currentProvider.send(
             {
+                id: Date.now(),
+                jsonrpc: "2.0",
                 method: "evm_mine",
                 params: timestamp ? [new BN(timestamp).toNumber()] : [],
             },

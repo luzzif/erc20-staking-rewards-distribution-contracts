@@ -23,7 +23,7 @@ const FirstRewardERC20 = artifacts.require("FirstRewardERC20");
 const SecondRewardERC20 = artifacts.require("SecondRewardERC20");
 const FirstStakableERC20 = artifacts.require("FirstStakableERC20");
 
-contract.only(
+contract(
     "ERC20Distribution - Single stakable, multi reward tokens - Claiming",
     () => {
         let erc20DistributionInstance,
@@ -839,19 +839,18 @@ contract.only(
                 timestamp: stakingTimestamp,
                 mineBlockAfter: false,
             });
-            await stake(
+            await stakeAtTimestamp(
                 erc20DistributionInstance,
                 firstStakerAddress,
                 [stakedAmount],
-                false
+                stakingTimestamp
             );
-            await stake(
+            await stakeAtTimestamp(
                 erc20DistributionInstance,
                 secondStakerAddress,
                 [stakedAmount],
-                false
+                stakingTimestamp
             );
-            await mineBlock(stakingTimestamp);
             expect(await getEvmTimestamp()).to.be.equalBn(stakingTimestamp);
             await startMining();
             await fastForwardTo({ timestamp: endingTimestamp });

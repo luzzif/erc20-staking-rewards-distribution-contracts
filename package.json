@@ -2,6 +2,10 @@
     "name": "erc20-staker",
     "version": "0.1.0",
     "description": "Generic ERC20 tokens staker contracts to bootstrap staking campaigns (liquidity mining etc).",
+    "files": [
+        "/contracts/**/*.sol",
+        "/build/contracts/*.json"
+    ],
     "scripts": {
         "lint:eslint": "eslint \"test/**/*.js\"",
         "lint:prettier": "prettier -l contracts/**/*.sol && prettier -l test/**/*.js",

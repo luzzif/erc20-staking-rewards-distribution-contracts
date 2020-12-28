@@ -252,26 +252,22 @@ contract(
             const stakingTimestamp = startingTimestamp.add(new BN(10));
             await fastForwardTo({ timestamp: stakingTimestamp });
             await stopMining();
-            await stake(
+            await stakeAtTimestamp(
                 erc20DistributionInstance,
                 firstStakerAddress,
                 [1],
-                false
+                stakingTimestamp
             );
-            await stake(
+            await stakeAtTimestamp(
                 erc20DistributionInstance,
                 secondStakerAddress,
                 [1],
-                false
+                stakingTimestamp
             );
-            await mineBlock(stakingTimestamp);
             expect(await getEvmTimestamp()).to.be.equalBn(stakingTimestamp);
             await startMining();
             await fastForwardTo({ timestamp: endingTimestamp });
             const onchainEndingTimestamp = await erc20DistributionInstance.endingTimestamp();
-            expect(await getEvmTimestamp()).to.be.equalBn(
-                onchainEndingTimestamp
-            );
             // each staker staked for 10 seconds
             expect(onchainEndingTimestamp.sub(stakingTimestamp)).to.be.equalBn(
                 new BN(10)

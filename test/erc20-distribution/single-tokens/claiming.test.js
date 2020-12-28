@@ -34,7 +34,9 @@ contract("ERC20Distribution - Single reward/stakable token - Claiming", () => {
     beforeEach(async () => {
         const accounts = await web3.eth.getAccounts();
         ownerAddress = accounts[0];
-        erc20DistributionInstance = await ERC20Distribution.new({ from: ownerAddress });
+        erc20DistributionInstance = await ERC20Distribution.new({
+            from: ownerAddress,
+        });
         rewardsTokenInstance = await FirstRewardERC20.new();
         stakableTokenInstance = await FirstStakableERC20.new();
         firstStakerAddress = accounts[1];
@@ -609,19 +611,18 @@ contract("ERC20Distribution - Single reward/stakable token - Claiming", () => {
             timestamp: stakingTimestamp,
             mineBlockAfter: false,
         });
-        await stake(
+        await stakeAtTimestamp(
             erc20DistributionInstance,
             firstStakerAddress,
             [stakedAmount],
-            false
+            stakingTimestamp
         );
-        await stake(
+        await stakeAtTimestamp(
             erc20DistributionInstance,
             secondStakerAddress,
             [stakedAmount],
-            false
+            stakingTimestamp
         );
-        await mineBlock(stakingTimestamp);
         expect(await getEvmTimestamp()).to.be.equalBn(stakingTimestamp);
         await startMining();
         await fastForwardTo({ timestamp: endingTimestamp });
