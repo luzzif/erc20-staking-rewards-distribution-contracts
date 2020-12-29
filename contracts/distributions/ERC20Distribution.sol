@@ -7,9 +7,8 @@ import "@openzeppelin/contracts/math/Math.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
-import "./IDistribution.sol";
 
-contract ERC20Distribution is IDistribution, Ownable {
+contract ERC20Distribution is Ownable {
     using SafeMath for uint256;
     using SafeERC20 for ERC20;
 
@@ -23,6 +22,7 @@ contract ERC20Distribution is IDistribution, Ownable {
     mapping(address => uint256) public rewardPerStakedToken;
     uint256 public startingTimestamp;
     uint256 public endingTimestamp;
+    bool public locked;
     bool public initialized;
     uint256 public lastConsolidationTimestamp;
     mapping(address => uint256) public recoverableUnassignedReward;
@@ -39,7 +39,8 @@ contract ERC20Distribution is IDistribution, Ownable {
         address[] stakableTokenAddresses,
         uint256[] rewardsAmounts,
         uint256 startingTimestamp,
-        uint256 endingTimestamp
+        uint256 endingTimestamp,
+        bool locked
     );
     event Canceled();
     event Staked(address indexed staker, uint256[] amounts);
@@ -60,8 +61,9 @@ contract ERC20Distribution is IDistribution, Ownable {
         address[] calldata _stakableTokenAddresses,
         uint256[] calldata _rewardAmounts,
         uint256 _startingTimestamp,
-        uint256 _endingTimestamp
-    ) external override onlyOwner onlyUninitialized {
+        uint256 _endingTimestamp,
+        bool _locked
+    ) external onlyOwner onlyUninitialized {
         uint256 _currentTimestamp = block.timestamp;
         require(
             _startingTimestamp > _currentTimestamp,
@@ -121,6 +123,7 @@ contract ERC20Distribution is IDistribution, Ownable {
         startingTimestamp = _startingTimestamp;
         endingTimestamp = _endingTimestamp;
         lastConsolidationTimestamp = _startingTimestamp;
+        locked = _locked;
 
         initialized = true;
         emit Initialized(
@@ -128,11 +131,12 @@ contract ERC20Distribution is IDistribution, Ownable {
             _stakableTokenAddresses,
             _rewardAmounts,
             _startingTimestamp,
-            _endingTimestamp
+            _endingTimestamp,
+            _locked
         );
     }
 
-    function cancel() external override onlyInitialized onlyOwner {
+    function cancel() external onlyInitialized onlyOwner {
         require(
             block.timestamp < startingTimestamp,
             "ERC20Distribution: distribution already started"
@@ -157,12 +161,7 @@ contract ERC20Distribution is IDistribution, Ownable {
         emit Canceled();
     }
 
-    function recoverUnassignedRewards()
-        external
-        override
-        onlyInitialized
-        onlyStarted
-    {
+    function recoverUnassignedRewards() external onlyInitialized onlyStarted {
         consolidateReward();
         uint256 _rewardTokensAmount = rewardTokens.length;
         uint256[] memory _recoveredUnassignedRewards =
@@ -181,7 +180,6 @@ contract ERC20Distribution is IDistribution, Ownable {
 
     function stake(uint256[] calldata _amounts)
         external
-        override
         onlyInitialized
         onlyStarted
         onlyRunning
@@ -222,7 +220,6 @@ contract ERC20Distribution is IDistribution, Ownable {
 
     function withdraw(uint256[] calldata _amounts)
         external
-        override
         onlyInitialized
         onlyStarted
     {
@@ -230,6 +227,12 @@ contract ERC20Distribution is IDistribution, Ownable {
             _amounts.length == stakableTokens.length,
             "ERC20Distribution: inconsistent withdrawn amounts length"
         );
+        if (locked) {
+            require(
+                block.timestamp > endingTimestamp,
+                "ERC20Distribution: funds locked until ending timestamp"
+            );
+        }
         consolidateReward();
         for (uint256 _i; _i < _amounts.length; _i++) {
             uint256 _amount = _amounts[_i];
@@ -261,7 +264,7 @@ contract ERC20Distribution is IDistribution, Ownable {
         emit Withdrawn(msg.sender, _amounts);
     }
 
-    function claim() external override onlyInitialized onlyStarted {
+    function claim() external onlyInitialized onlyStarted {
         consolidateReward();
         uint256[] memory _pendingRewards = new uint256[](rewardTokens.length);
         for (uint256 _i; _i < rewardTokens.length; _i++) {

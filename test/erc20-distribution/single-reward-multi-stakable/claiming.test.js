@@ -5,7 +5,6 @@ const {
     initializeDistribution,
     initializeStaker,
     stake,
-    withdraw,
     stakeAtTimestamp,
     withdrawAtTimestamp,
 } = require("../../utils");
@@ -85,8 +84,12 @@ contract(
             const stakerStartingTimestamp = await getEvmTimestamp();
             expect(stakerStartingTimestamp).to.be.equalBn(startingTimestamp);
             // make sure the distribution has ended
-            await fastForwardTo({ timestamp: endingTimestamp.add(new BN(1)) });
-            await erc20DistributionInstance.claim({ from: firstStakerAddress });
+            await fastForwardTo({
+                timestamp: endingTimestamp.add(new BN(1)),
+            });
+            await erc20DistributionInstance.claim({
+                from: firstStakerAddress,
+            });
             const onchainStartingTimestamp = await erc20DistributionInstance.startingTimestamp();
             const onchainEndingTimestamp = await erc20DistributionInstance.endingTimestamp();
             expect(onchainStartingTimestamp).to.be.equalBn(startingTimestamp);
@@ -2626,19 +2629,18 @@ contract(
                 timestamp: stakeAndWithdrawTimestamp,
                 mineBlockAfter: false,
             });
-            await stake(
+            await stakeAtTimestamp(
                 erc20DistributionInstance,
                 secondStakerAddress,
                 [stakedAmount, 0],
-                false
+                stakeAndWithdrawTimestamp
             );
-            await withdraw(
+            await withdrawAtTimestamp(
                 erc20DistributionInstance,
                 firstStakerAddress,
                 [stakedAmount, 0],
-                false
+                stakeAndWithdrawTimestamp
             );
-            await mineBlock(stakeAndWithdrawTimestamp);
             const secondStakerStartingTimestamp = await getEvmTimestamp();
             const firstStakerWithdrawTimestamp = await getEvmTimestamp();
             await startMining();

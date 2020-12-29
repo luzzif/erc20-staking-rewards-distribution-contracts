@@ -4,15 +4,12 @@ const { MAXIMUM_VARIANCE, ZERO_BN } = require("../../constants");
 const {
     initializeDistribution,
     initializeStaker,
-    stake,
-    withdraw,
     stakeAtTimestamp,
     withdrawAtTimestamp,
 } = require("../../utils");
 const { toWei } = require("../../utils/conversion");
 const {
     stopMining,
-    mineBlock,
     startMining,
     fastForwardTo,
     getEvmTimestamp,
@@ -78,7 +75,6 @@ contract(
             });
             await fastForwardTo({
                 timestamp: startingTimestamp,
-                mineBlockAfter: false,
             });
             await stakeAtTimestamp(
                 erc20DistributionInstance,
@@ -165,7 +161,6 @@ contract(
             });
             await fastForwardTo({
                 timestamp: startingTimestamp,
-                mineBlockAfter: false,
             });
             // make sure the staking operation happens as soon as possible
             await stakeAtTimestamp(
@@ -181,7 +176,6 @@ contract(
             // make half of the distribution time pass
             await fastForwardTo({
                 timestamp: startingTimestamp.add(new BN(5)),
-                mineBlockAfter: false,
             });
             await stakeAtTimestamp(
                 erc20DistributionInstance,
@@ -291,7 +285,6 @@ contract(
             });
             await fastForwardTo({
                 timestamp: startingTimestamp,
-                mineBlockAfter: false,
             });
             // first staker stakes
             await stakeAtTimestamp(
@@ -306,7 +299,6 @@ contract(
             );
             await fastForwardTo({
                 timestamp: startingTimestamp.add(new BN(6)),
-                mineBlockAfter: false,
             });
             // second staker stakes
             await stakeAtTimestamp(
@@ -321,7 +313,6 @@ contract(
             );
             await fastForwardTo({
                 timestamp: secondStakerStartingTimestamp.add(new BN(3)),
-                mineBlockAfter: false,
             });
             // third staker stakes
             await stakeAtTimestamp(
@@ -465,7 +456,6 @@ contract(
             // fast forward to half of the distribution duration
             await fastForwardTo({
                 timestamp: startingTimestamp.add(new BN(5)),
-                mineBlockAfter: false,
             });
             await stakeAtTimestamp(
                 erc20DistributionInstance,
@@ -542,7 +532,6 @@ contract(
             });
             await fastForwardTo({
                 timestamp: endingTimestamp.sub(new BN(1)),
-                mineBlockAfter: false,
             });
             const stakerStartingTimestamp = endingTimestamp;
             await stakeAtTimestamp(
@@ -598,7 +587,6 @@ contract(
             });
             await fastForwardTo({
                 timestamp: endingTimestamp.sub(new BN(1)),
-                mineBlockAfter: false,
             });
             const stakerStartingTimestamp = endingTimestamp.sub(new BN(1));
             await stakeAtTimestamp(
@@ -678,7 +666,6 @@ contract(
             });
             await fastForwardTo({
                 timestamp: startingTimestamp,
-                mineBlockAfter: false,
             });
             await stakeAtTimestamp(
                 erc20DistributionInstance,
@@ -692,7 +679,6 @@ contract(
             );
             await fastForwardTo({
                 timestamp: startingTimestamp.add(new BN(5)),
-                mineBlockAfter: false,
             });
             await stakeAtTimestamp(
                 erc20DistributionInstance,
@@ -707,7 +693,6 @@ contract(
             // first staker withdraws at the eight second
             await fastForwardTo({
                 timestamp: secondStakerStartingTimestamp.add(new BN(3)),
-                mineBlockAfter: false,
             });
             await withdrawAtTimestamp(
                 erc20DistributionInstance,
@@ -837,7 +822,6 @@ contract(
             const stakingTimestamp = endingTimestamp.sub(new BN(1));
             await fastForwardTo({
                 timestamp: stakingTimestamp,
-                mineBlockAfter: false,
             });
             await stakeAtTimestamp(
                 erc20DistributionInstance,
@@ -944,7 +928,6 @@ contract(
             });
             await fastForwardTo({
                 timestamp: startingTimestamp,
-                mineBlockAfter: false,
             });
             await stakeAtTimestamp(
                 erc20DistributionInstance,
@@ -958,7 +941,6 @@ contract(
             );
             await fastForwardTo({
                 timestamp: startingTimestamp.add(new BN(5)),
-                mineBlockAfter: false,
             });
             await stakeAtTimestamp(
                 erc20DistributionInstance,
@@ -1040,21 +1022,19 @@ contract(
             const stakeAndWithdrawTimestamp = startingTimestamp.add(new BN(5));
             await fastForwardTo({
                 timestamp: stakeAndWithdrawTimestamp,
-                mineBlockAfter: false,
             });
-            await stake(
+            await stakeAtTimestamp(
                 erc20DistributionInstance,
                 secondStakerAddress,
                 [stakedAmount],
-                false
+                stakeAndWithdrawTimestamp
             );
-            await withdraw(
+            await withdrawAtTimestamp(
                 erc20DistributionInstance,
                 firstStakerAddress,
                 [stakedAmount],
-                false
+                stakeAndWithdrawTimestamp
             );
-            await mineBlock(stakeAndWithdrawTimestamp);
             const secondStakerStartingTimestamp = await getEvmTimestamp();
             const firstStakerWithdrawTimestamp = await getEvmTimestamp();
             await startMining();

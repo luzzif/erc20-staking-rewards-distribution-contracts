@@ -54,11 +54,12 @@ exports.mineBlock = mineBlock;
 exports.fastForwardTo = async ({ timestamp, mineBlockAfter = true }) => {
     const evmTimestamp = await getEvmTimestamp();
     return new Promise((resolve, reject) => {
-        const secondsInterval = new BN(timestamp).sub(evmTimestamp);
+        const secondsInterval =
+            new BN(timestamp).toNumber() - evmTimestamp.toNumber();
         web3.currentProvider.send(
             {
                 method: "evm_increaseTime",
-                params: [secondsInterval.toNumber()],
+                params: [secondsInterval],
             },
             (error) => {
                 if (error) {

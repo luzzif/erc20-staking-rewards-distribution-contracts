@@ -4,15 +4,12 @@ const { MAXIMUM_VARIANCE, ZERO_BN } = require("../../constants");
 const {
     initializeDistribution,
     initializeStaker,
-    stake,
-    withdraw,
     stakeAtTimestamp,
     withdrawAtTimestamp,
 } = require("../../utils");
 const { toWei } = require("../../utils/conversion");
 const {
     stopMining,
-    mineBlock,
     startMining,
     fastForwardTo,
     getEvmTimestamp,
@@ -759,19 +756,18 @@ contract("ERC20Distribution - Single reward/stakable token - Claiming", () => {
             timestamp: stakeAndWithdrawTimestamp,
             mineBlockAfter: false,
         });
-        await stake(
+        await stakeAtTimestamp(
             erc20DistributionInstance,
             secondStakerAddress,
             [stakedAmount],
-            false
+            stakeAndWithdrawTimestamp
         );
-        await withdraw(
+        await withdrawAtTimestamp(
             erc20DistributionInstance,
             firstStakerAddress,
             [stakedAmount],
-            false
+            stakeAndWithdrawTimestamp
         );
-        await mineBlock(stakeAndWithdrawTimestamp);
         const secondStakerStartingTimestamp = await getEvmTimestamp();
         const firstStakerWithdrawTimestamp = await getEvmTimestamp();
         await startMining();

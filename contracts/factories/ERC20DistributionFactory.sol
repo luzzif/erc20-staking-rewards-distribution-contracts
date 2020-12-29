@@ -20,7 +20,8 @@ contract ERC20DistributionFactory is Ownable {
         address[] indexed stakableTokenAddresses,
         uint256[] rewardsAmounts,
         uint256 startingTimestamp,
-        uint256 secondsDuration
+        uint256 endingTimestamp,
+        bool locked
     );
 
     function createDistribution(
@@ -28,7 +29,8 @@ contract ERC20DistributionFactory is Ownable {
         address[] calldata _stakableTokenAddresses,
         uint256[] calldata _rewardAmounts,
         uint256 _startingTimestamp,
-        uint256 _secondsDuration
+        uint256 _endingTimestmp,
+        bool _locked
     ) public virtual {
         require(
             _rewardsTokenAddresses.length == _rewardAmounts.length,
@@ -49,7 +51,8 @@ contract ERC20DistributionFactory is Ownable {
             _stakableTokenAddresses,
             _rewardAmounts,
             _startingTimestamp,
-            _secondsDuration
+            _endingTimestmp,
+            _locked
         );
         distributions.push(_distribution);
         emit Created(
@@ -58,7 +61,8 @@ contract ERC20DistributionFactory is Ownable {
             _stakableTokenAddresses,
             _rewardAmounts,
             _startingTimestamp,
-            _secondsDuration
+            _endingTimestmp,
+            _locked
         );
     }
 }

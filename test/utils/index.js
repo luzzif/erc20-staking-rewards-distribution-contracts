@@ -33,6 +33,7 @@ exports.initializeDistribution = async ({
     startingTimestamp,
     fund = true,
     skipRewardTokensAmountsConsistenyCheck,
+    locked = false,
 }) => {
     if (
         !skipRewardTokensAmountsConsistenyCheck &&
@@ -64,6 +65,7 @@ exports.initializeDistribution = async ({
         rewardAmounts,
         campaignStartingTimestamp,
         campaignEndingTimestamp,
+        locked,
         { from }
     );
     return {
@@ -101,7 +103,7 @@ exports.stakeAtTimestamp = async (
 ) => {
     await stopMining();
     // Make sure the transaction has actually been queued before returning
-    await new Promise((resolve, reject) => {
+    const hash = await new Promise((resolve, reject) => {
         erc20DistributionInstance
             .stake(amounts, { from })
             .on("transactionHash", resolve)
@@ -110,6 +112,21 @@ exports.stakeAtTimestamp = async (
             .catch(reject);
     });
     await mineBlock(new BN(timestamp).toNumber());
+    // By resolving the promise above when the transaction is included in the block,
+    // but we need to find a way to detect reverts and error messages, to check on them in tests.
+    // We can do so by getting the full transaction that was mined on-chain and "simulating"
+    // it using the eth_call method (no on-chain state is changed).
+    // We only do this if the transaction actually reverted on-chain after mining the block.
+    // If we wouldn't perform this check, the simulation might fail because the tx changed
+    // the contracts state, while if the tx reverted, we're sure to have the exact same simulation environment.
+    try {
+        const receipt = await web3.eth.getTransactionReceipt(hash);
+        if (!receipt.status) {
+            await web3.eth.call(await web3.eth.getTransaction(hash));
+        }
+    } finally {
+        await startMining();
+    }
     await startMining();
 };
 
@@ -143,7 +160,7 @@ exports.withdrawAtTimestamp = async (
 ) => {
     await stopMining();
     // Make sure the transaction has actually been queued before returning
-    await new Promise((resolve, reject) => {
+    const hash = await new Promise((resolve, reject) => {
         erc20DistributionInstance
             .withdraw(amounts, { from })
             .on("transactionHash", resolve)
@@ -152,5 +169,20 @@ exports.withdrawAtTimestamp = async (
             .catch(reject);
     });
     await mineBlock(new BN(timestamp).toNumber());
+    // By resolving the promise above when the transaction is included in the block,
+    // but we need to find a way to detect reverts and error messages, to check on them in tests.
+    // We can do so by getting the full transaction that was mined on-chain and "simulating"
+    // it using the eth_call method (no on-chain state is changed).
+    // We only do this if the transaction actually reverted on-chain after mining the block.
+    // If we wouldn't perform this check, the simulation might fail because the tx changed
+    // the contracts state, while if the tx reverted, we're sure to have the exact same simulation environment.
+    try {
+        const receipt = await web3.eth.getTransactionReceipt(hash);
+        if (!receipt.status) {
+            await web3.eth.call(await web3.eth.getTransaction(hash));
+        }
+    } finally {
+        await startMining();
+    }
     await startMining();
 };
