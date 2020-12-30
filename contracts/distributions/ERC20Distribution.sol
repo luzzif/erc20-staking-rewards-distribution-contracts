@@ -92,12 +92,6 @@ contract ERC20Distribution is Ownable {
                 "ERC20Distribution: seconds duration less than rewards amount"
             );
             ERC20 _rewardToken = ERC20(_rewardTokenAddress);
-            // transfer funds to the contract
-            _rewardToken.safeTransferFrom(
-                msg.sender,
-                address(this),
-                _rewardAmount
-            );
             // avoid overflow down the road (when consolidating rewards)
             // by constraining the reward token decimals to a maximum of 18
             uint256 _rewardTokenDecimals = _rewardToken.decimals();
@@ -112,6 +106,12 @@ contract ERC20Distribution is Ownable {
                 _secondsDuration
             );
             rewardAmount[_rewardTokenAddress] = _rewardAmount;
+            // transfer funds to the contract
+            _rewardToken.safeTransferFrom(
+                msg.sender,
+                address(this),
+                _rewardAmount
+            );
         }
 
         // Initializing stakable tokens
@@ -150,10 +150,10 @@ contract ERC20Distribution is Ownable {
             ERC20 rewardToken = rewardTokens[_i];
             address rewardTokenAddress = address(rewardToken);
             uint256 _relatedRewardAmount = rewardAmount[rewardTokenAddress];
-            rewardToken.safeTransfer(owner(), _relatedRewardAmount);
             delete rewardTokenMultiplier[rewardTokenAddress];
             delete rewardAmount[rewardTokenAddress];
             delete rewardPerSecond[rewardTokenAddress];
+            rewardToken.safeTransfer(owner(), _relatedRewardAmount);
         }
         delete rewardTokens;
         delete stakableTokens;
@@ -175,9 +175,9 @@ contract ERC20Distribution is Ownable {
 
             uint256 _relatedUnassignedReward =
                 recoverableUnassignedReward[address(_relatedRewardToken)];
-            _relatedRewardToken.safeTransfer(owner(), _relatedUnassignedReward);
-            _recoveredUnassignedRewards[_i] = _relatedUnassignedReward;
             delete recoverableUnassignedReward[address(_relatedRewardToken)];
+            _recoveredUnassignedRewards[_i] = _relatedUnassignedReward;
+            _relatedRewardToken.safeTransfer(owner(), _relatedUnassignedReward);
         }
         emit Recovered(_recoveredUnassignedRewards);
     }
@@ -201,11 +201,6 @@ contract ERC20Distribution is Ownable {
             ERC20 _relatedStakableToken = stakableTokens[_i];
             address _relatedStakableTokenAddress =
                 address(_relatedStakableToken);
-            _relatedStakableToken.safeTransferFrom(
-                msg.sender,
-                address(this),
-                _amount
-            );
             stakedTokensOf[msg.sender][
                 _relatedStakableTokenAddress
             ] = stakedTokensOf[msg.sender][_relatedStakableTokenAddress].add(
@@ -218,6 +213,11 @@ contract ERC20Distribution is Ownable {
             totalStakedTokensOf[msg.sender] = totalStakedTokensOf[msg.sender]
                 .add(_amount);
             totalStakedTokensAmount = totalStakedTokensAmount.add(_amount);
+            _relatedStakableToken.safeTransferFrom(
+                msg.sender,
+                address(this),
+                _amount
+            );
         }
         emit Staked(msg.sender, _amounts);
     }
@@ -251,7 +251,6 @@ contract ERC20Distribution is Ownable {
                     stakedTokensOf[msg.sender][_relatedStakableTokenAddress],
                 "ERC20Distribution: withdrawn amount greater than current stake"
             );
-            _relatedStakableToken.safeTransfer(msg.sender, _amount);
             stakedTokensOf[msg.sender][
                 _relatedStakableTokenAddress
             ] = stakedTokensOf[msg.sender][_relatedStakableTokenAddress].sub(
@@ -264,6 +263,7 @@ contract ERC20Distribution is Ownable {
             totalStakedTokensOf[msg.sender] = totalStakedTokensOf[msg.sender]
                 .sub(_amount);
             totalStakedTokensAmount = totalStakedTokensAmount.sub(_amount);
+            _relatedStakableToken.safeTransfer(msg.sender, _amount);
         }
         emit Withdrawn(msg.sender, _amounts);
     }
@@ -278,12 +278,12 @@ contract ERC20Distribution is Ownable {
                 earnedRewards[msg.sender][_relatedRewardTokenAddress].sub(
                     claimedReward[msg.sender][_relatedRewardTokenAddress]
                 );
-            _relatedRewardToken.safeTransfer(msg.sender, _pendingReward);
             claimedReward[msg.sender][
                 _relatedRewardTokenAddress
             ] = claimedReward[msg.sender][_relatedRewardTokenAddress].add(
                 _pendingReward
             );
+            _relatedRewardToken.safeTransfer(msg.sender, _pendingReward);
             _pendingRewards[_i] = _pendingReward;
         }
         emit Claimed(msg.sender, _pendingRewards);

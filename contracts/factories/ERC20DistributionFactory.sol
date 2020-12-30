@@ -32,16 +32,16 @@ contract ERC20DistributionFactory is Ownable {
         uint256 _endingTimestmp,
         bool _locked
     ) public virtual {
-        require(
-            _rewardsTokenAddresses.length == _rewardAmounts.length,
-            "DistributionFactory: inconsistent reward token/amount arrays length"
-        );
         ERC20Distribution _distribution = new ERC20Distribution();
         for (uint256 _i; _i < _rewardsTokenAddresses.length; _i++) {
             ERC20 _rewardToken = ERC20(_rewardsTokenAddresses[_i]);
             uint256 _relatedAmount = _rewardAmounts[_i];
             _rewardToken.safeTransferFrom(
                 msg.sender,
+                address(this),
+                _relatedAmount
+            );
+            _rewardToken.safeIncreaseAllowance(
                 address(_distribution),
                 _relatedAmount
             );
@@ -64,5 +64,9 @@ contract ERC20DistributionFactory is Ownable {
             _endingTimestmp,
             _locked
         );
+    }
+
+    function getDistributionsAmount() external view returns (uint256) {
+        return distributions.length;
     }
 }
