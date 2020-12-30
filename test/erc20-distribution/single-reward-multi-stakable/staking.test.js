@@ -26,7 +26,9 @@ contract(
         beforeEach(async () => {
             const accounts = await web3.eth.getAccounts();
             ownerAddress = accounts[0];
-            erc20DistributionInstance = await ERC20Distribution.new({ from: ownerAddress });
+            erc20DistributionInstance = await ERC20Distribution.new({
+                from: ownerAddress,
+            });
             rewardsTokenInstance = await FirstRewardERC20.new();
             firstStakableTokenInstance = await FirstStakableERC20.new();
             secondStakableTokenInstance = await SecondStakableERC20.new();
@@ -43,7 +45,7 @@ contract(
                         secondStakableTokenInstance,
                     ],
                     rewardTokens: [rewardsTokenInstance],
-                    rewardAmounts: [1],
+                    rewardAmounts: [2],
                     duration: 2,
                 });
                 await mineBlock(startingTimestamp);
@@ -74,7 +76,7 @@ contract(
                         secondStakableTokenInstance,
                     ],
                     rewardTokens: [rewardsTokenInstance],
-                    rewardAmounts: [1],
+                    rewardAmounts: [2],
                     duration: 2,
                 });
                 await mineBlock(startingTimestamp);
@@ -100,7 +102,7 @@ contract(
                         secondStakableTokenInstance,
                     ],
                     rewardTokens: [rewardsTokenInstance],
-                    rewardAmounts: [1],
+                    rewardAmounts: [2],
                     duration: 2,
                 });
                 await mineBlock(startingTimestamp);
@@ -132,7 +134,7 @@ contract(
                         secondStakableTokenInstance,
                     ],
                     rewardTokens: [rewardsTokenInstance],
-                    rewardAmounts: [1],
+                    rewardAmounts: [2],
                     duration: 2,
                 });
                 await mineBlock(startingTimestamp);
@@ -163,7 +165,7 @@ contract(
                         secondStakableTokenInstance,
                     ],
                     rewardTokens: [rewardsTokenInstance],
-                    rewardAmounts: [1],
+                    rewardAmounts: [2],
                     duration: 2,
                 });
                 await mineBlock(startingTimestamp);
@@ -200,7 +202,7 @@ contract(
                         secondStakableTokenInstance,
                     ],
                     rewardTokens: [rewardsTokenInstance],
-                    rewardAmounts: [1],
+                    rewardAmounts: [2],
                     duration: 2,
                 });
                 await mineBlock(startingTimestamp);

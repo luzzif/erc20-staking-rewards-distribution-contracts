@@ -52,7 +52,7 @@ contract(
                     erc20DistributionInstance,
                     stakableTokens: [stakableTokenInstance],
                     rewardTokens: [rewardsTokenInstance],
-                    rewardAmounts: [1],
+                    rewardAmounts: [2],
                     duration: 2,
                 });
                 await erc20DistributionInstance.withdraw([0]);
@@ -77,7 +77,7 @@ contract(
                     erc20DistributionInstance,
                     stakableTokens: [stakableTokenInstance],
                     rewardTokens: [rewardsTokenInstance],
-                    rewardAmounts: [1],
+                    rewardAmounts: [20],
                     duration: 10,
                 });
                 await fastForwardTo({ timestamp: startingTimestamp });
@@ -111,7 +111,7 @@ contract(
                     erc20DistributionInstance,
                     stakableTokens: [stakableTokenInstance],
                     rewardTokens: [rewardsTokenInstance],
-                    rewardAmounts: [1],
+                    rewardAmounts: [11],
                     duration: 10,
                 });
                 await fastForwardTo({ timestamp: startingTimestamp });
@@ -145,7 +145,7 @@ contract(
                     erc20DistributionInstance,
                     stakableTokens: [stakableTokenInstance],
                     rewardTokens: [rewardsTokenInstance],
-                    rewardAmounts: [1],
+                    rewardAmounts: [11],
                     duration: 10,
                 });
                 await fastForwardTo({ timestamp: startingTimestamp });

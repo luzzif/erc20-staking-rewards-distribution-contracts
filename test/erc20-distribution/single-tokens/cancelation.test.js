@@ -41,7 +41,7 @@ contract("ERC20Distribution - Single reward/stakable token - Cancelation", () =>
                 erc20DistributionInstance,
                 stakableTokens: [stakableTokenInstance],
                 rewardTokens: [rewardsTokenInstance],
-                rewardAmounts: [1],
+                rewardAmounts: [2],
                 duration: 2,
             });
             await erc20DistributionInstance.cancel({ from: stakerAddress });
@@ -60,7 +60,7 @@ contract("ERC20Distribution - Single reward/stakable token - Cancelation", () =>
                 erc20DistributionInstance,
                 stakableTokens: [stakableTokenInstance],
                 rewardTokens: [rewardsTokenInstance],
-                rewardAmounts: [1],
+                rewardAmounts: [5],
                 duration: 2,
             });
             await fastForwardTo({ timestamp: startingTimestamp });

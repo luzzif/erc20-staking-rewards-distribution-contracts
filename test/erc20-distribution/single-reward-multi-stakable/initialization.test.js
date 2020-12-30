@@ -21,7 +21,9 @@ contract(
         beforeEach(async () => {
             const accounts = await web3.eth.getAccounts();
             ownerAddress = accounts[0];
-            erc20DistributionInstance = await ERC20Distribution.new({ from: ownerAddress });
+            erc20DistributionInstance = await ERC20Distribution.new({
+                from: ownerAddress,
+            });
             rewardsTokenInstance = await FirstRewardERC20.new();
             firstStakableTokenInstance = await FirstStakableERC20.new();
             secondStakableTokenInstance = await SecondStakableERC20.new();
@@ -37,7 +39,7 @@ contract(
                         { address: ZERO_ADDRESS },
                     ],
                     rewardTokens: [rewardsTokenInstance],
-                    rewardAmounts: [1],
+                    rewardAmounts: [11],
                     duration: 10,
                     skipRewardTokensAmountsConsistenyCheck: true,
                 });
@@ -89,10 +91,14 @@ contract(
                 await rewardToken.balanceOf(erc20DistributionInstance.address)
             ).to.be.equalBn(rewardAmount);
             expect(
-                await erc20DistributionInstance.rewardAmount(rewardToken.address)
+                await erc20DistributionInstance.rewardAmount(
+                    rewardToken.address
+                )
             ).to.be.equalBn(rewardAmount);
             expect(
-                await erc20DistributionInstance.rewardPerSecond(rewardToken.address)
+                await erc20DistributionInstance.rewardPerSecond(
+                    rewardToken.address
+                )
             ).to.be.equalBn(new BN(rewardAmount).div(duration));
             const onchainStartingTimestamp = await erc20DistributionInstance.startingTimestamp();
             expect(onchainStartingTimestamp).to.be.equalBn(startingTimestamp);
@@ -100,6 +106,27 @@ contract(
             expect(
                 onchainEndingTimestamp.sub(onchainStartingTimestamp)
             ).to.be.equalBn(duration);
+        });
+
+        it("should fail when passing a duration which surpasses the rewards amount (reward per second to 0)", async () => {
+            try {
+                await initializeDistribution({
+                    from: ownerAddress,
+                    erc20DistributionInstance,
+                    stakableTokens: [
+                        firstStakableTokenInstance,
+                        secondStakableTokenInstance,
+                    ],
+                    rewardTokens: [rewardsTokenInstance],
+                    rewardAmounts: [1],
+                    duration: 10000000000,
+                });
+                throw new Error("should have failed");
+            } catch (error) {
+                expect(error.message).to.contain(
+                    "ERC20Distribution: seconds duration less than rewards amount"
+                );
+            }
         });
     }
 );

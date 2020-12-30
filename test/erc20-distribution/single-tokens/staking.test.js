@@ -43,7 +43,7 @@ contract("ERC20Distribution - Single reward/stakable token - Staking", () => {
                 erc20DistributionInstance,
                 stakableTokens: [stakableTokenInstance],
                 rewardTokens: [rewardsTokenInstance],
-                rewardAmounts: [1],
+                rewardAmounts: [3],
                 duration: 2,
             });
             await erc20DistributionInstance.stake([2], { from: stakerAddress });
@@ -60,7 +60,7 @@ contract("ERC20Distribution - Single reward/stakable token - Staking", () => {
                 erc20DistributionInstance,
                 stakableTokens: [stakableTokenInstance],
                 rewardTokens: [rewardsTokenInstance],
-                rewardAmounts: [1],
+                rewardAmounts: [2],
                 duration: 2,
             });
             await mineBlock(startingTimestamp);
@@ -81,7 +81,7 @@ contract("ERC20Distribution - Single reward/stakable token - Staking", () => {
                 erc20DistributionInstance,
                 stakableTokens: [stakableTokenInstance],
                 rewardTokens: [rewardsTokenInstance],
-                rewardAmounts: [1],
+                rewardAmounts: [2],
                 duration: 2,
             });
             await mineBlock(startingTimestamp);
@@ -110,7 +110,7 @@ contract("ERC20Distribution - Single reward/stakable token - Staking", () => {
                 erc20DistributionInstance,
                 stakableTokens: [stakableTokenInstance],
                 rewardTokens: [rewardsTokenInstance],
-                rewardAmounts: [1],
+                rewardAmounts: [3],
                 duration: 2,
             });
             await mineBlock(startingTimestamp);

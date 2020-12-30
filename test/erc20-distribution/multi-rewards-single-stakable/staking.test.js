@@ -45,7 +45,7 @@ contract(
                         firstRewardsTokenInstance,
                         secondRewardsTokenInstance,
                     ],
-                    rewardAmounts: [1, 1],
+                    rewardAmounts: [2, 2],
                     duration: 2,
                 });
                 await fastForwardTo({ timestamp: startingTimestamp });

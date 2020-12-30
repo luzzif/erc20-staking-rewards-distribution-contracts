@@ -64,9 +64,8 @@ contract ERC20Distribution is Ownable {
         uint256 _endingTimestamp,
         bool _locked
     ) external onlyOwner onlyUninitialized {
-        uint256 _currentTimestamp = block.timestamp;
         require(
-            _startingTimestamp > _currentTimestamp,
+            _startingTimestamp > block.timestamp,
             "ERC20Distribution: starting timestamp lower or equal than current"
         );
         require(
@@ -82,28 +81,33 @@ contract ERC20Distribution is Ownable {
         // Initializing reward tokens and amounts
         for (uint32 _i = 0; _i < _rewardTokenAddresses.length; _i++) {
             address _rewardTokenAddress = _rewardTokenAddresses[_i];
+            uint256 _rewardAmount = _rewardAmounts[_i];
             require(
                 _rewardTokenAddress != address(0),
                 "ERC20Distribution: 0 address as reward token"
             );
-            ERC20 _rewardToken = ERC20(_rewardTokenAddress);
-            uint256 _rewardAmount = _rewardAmounts[_i];
             require(_rewardAmount > 0, "ERC20Distribution: no reward");
             require(
-                _rewardToken.balanceOf(address(this)) >= _rewardAmount,
-                "ERC20Distribution: funds required"
+                _rewardAmount >= _secondsDuration,
+                "ERC20Distribution: seconds duration less than rewards amount"
             );
-            // avoid overflow down the road by constraining the reward
-            // token decimals to a maximum of 18
+            ERC20 _rewardToken = ERC20(_rewardTokenAddress);
+            // transfer funds to the contract
+            _rewardToken.safeTransferFrom(
+                msg.sender,
+                address(this),
+                _rewardAmount
+            );
+            // avoid overflow down the road (when consolidating rewards)
+            // by constraining the reward token decimals to a maximum of 18
             uint256 _rewardTokenDecimals = _rewardToken.decimals();
             require(
-                _rewardTokenDecimals <= 18,
-                "ERC20Distribution: more than 18 decimals for reward token"
+                _rewardTokenDecimals > 0 && _rewardTokenDecimals <= 18,
+                "ERC20Distribution: invalid decimals for reward token"
             );
             rewardTokens.push(_rewardToken);
-            rewardTokenMultiplier[_rewardTokenAddress] = uint256(1).mul(
-                uint256(10)**uint256(_rewardTokenDecimals)
-            );
+            rewardTokenMultiplier[_rewardTokenAddress] =
+                uint256(10)**uint256(_rewardTokenDecimals);
             rewardPerSecond[_rewardTokenAddress] = _rewardAmount.div(
                 _secondsDuration
             );
@@ -146,7 +150,6 @@ contract ERC20Distribution is Ownable {
             ERC20 rewardToken = rewardTokens[_i];
             address rewardTokenAddress = address(rewardToken);
             uint256 _relatedRewardAmount = rewardAmount[rewardTokenAddress];
-            rewardToken.approve(owner(), _relatedRewardAmount);
             rewardToken.safeTransfer(owner(), _relatedRewardAmount);
             delete rewardTokenMultiplier[rewardTokenAddress];
             delete rewardAmount[rewardTokenAddress];
@@ -158,6 +161,7 @@ contract ERC20Distribution is Ownable {
         endingTimestamp = 0;
         lastConsolidationTimestamp = 0;
         initialized = false;
+        locked = false;
         emit Canceled();
     }
 
@@ -314,9 +318,9 @@ contract ERC20Distribution is Ownable {
                         .div(totalStakedTokensAmount)
                 );
             }
-            // avoids subtraction overflow. If the rewards per staked tokens are 0,
+            // avoids subtraction underflow. If the rewards per staked tokens are 0,
             // the rewards in current period must be 0 by definition, no need to
-            // perform subtraction risking overflow.
+            // perform subtraction risking underflow.
             uint256 _rewardInCurrentPeriod =
                 rewardPerStakedToken[_relatedRewardTokenAddress] > 0
                     ? totalStakedTokensOf[msg.sender]

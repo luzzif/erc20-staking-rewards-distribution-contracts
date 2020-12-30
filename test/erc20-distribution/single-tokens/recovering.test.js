@@ -4,14 +4,14 @@ const { MAXIMUM_VARIANCE, ZERO_BN } = require("../../constants");
 const {
     initializeDistribution,
     initializeStaker,
-    stake,
     withdrawAtTimestamp,
     stakeAtTimestamp,
+    claimAtTimestamp,
+    recoverUnassignedRewardsAtTimestamp,
 } = require("../../utils");
 const { toWei } = require("../../utils/conversion");
 const {
     stopMining,
-    mineBlock,
     startMining,
     fastForwardTo,
     getEvmTimestamp,
@@ -61,7 +61,7 @@ contract(
                     erc20DistributionInstance,
                     stakableTokens: [stakableTokenInstance],
                     rewardTokens: [rewardsTokenInstance],
-                    rewardAmounts: [1],
+                    rewardAmounts: [11],
                     duration: 10,
                 });
                 await erc20DistributionInstance.recoverUnassignedRewards();
@@ -430,6 +430,132 @@ contract(
             expect(
                 await rewardsTokenInstance.balanceOf(ownerAddress)
             ).to.be.equalBn(rewardPerSecond.mul(new BN(8)));
+        });
+
+        it("should recover the unassigned rewards when a staker stakes for a certain period, withdraws, stakes again, and withdraws again", async () => {
+            const rewardsAmount = await toWei(100, rewardsTokenInstance);
+            await initializeStaker({
+                erc20DistributionInstance,
+                stakableTokenInstance,
+                stakerAddress: firstStakerAddress,
+                stakableAmount: 1,
+            });
+            const {
+                startingTimestamp,
+                endingTimestamp,
+            } = await initializeDistribution({
+                from: ownerAddress,
+                erc20DistributionInstance,
+                stakableTokens: [stakableTokenInstance],
+                rewardTokens: [rewardsTokenInstance],
+                rewardAmounts: [rewardsAmount],
+                duration: 12,
+            });
+            expect(
+                await rewardsTokenInstance.balanceOf(ownerAddress)
+            ).to.be.equalBn(ZERO_BN);
+            const firstStakingTimestamp = startingTimestamp;
+            await fastForwardTo({ timestamp: firstStakingTimestamp });
+            await stakeAtTimestamp(
+                erc20DistributionInstance,
+                firstStakerAddress,
+                [1],
+                firstStakingTimestamp
+            );
+
+            const firstWithdrawTimestamp = firstStakingTimestamp.add(new BN(3));
+            await fastForwardTo({ timestamp: firstWithdrawTimestamp });
+            await withdrawAtTimestamp(
+                erc20DistributionInstance,
+                firstStakerAddress,
+                [1],
+                firstWithdrawTimestamp
+            );
+
+            const secondStakingTimestamp = firstWithdrawTimestamp.add(
+                new BN(3)
+            );
+            await stakableTokenInstance.approve(
+                erc20DistributionInstance.address,
+                1,
+                { from: firstStakerAddress }
+            );
+            await stopMining();
+            // reapproving the stakable token before staking for a second time
+            await fastForwardTo({ timestamp: secondStakingTimestamp });
+            // should be able to immediately claim the first unassigned rewards from the first 3 empty seconds
+            await claimAtTimestamp(
+                erc20DistributionInstance,
+                firstStakerAddress,
+                secondStakingTimestamp
+            );
+            await recoverUnassignedRewardsAtTimestamp(
+                erc20DistributionInstance,
+                firstStakerAddress,
+                secondStakingTimestamp
+            );
+            await stakeAtTimestamp(
+                erc20DistributionInstance,
+                firstStakerAddress,
+                [1],
+                secondStakingTimestamp
+            );
+            expect(await getEvmTimestamp()).to.be.equalBn(
+                secondStakingTimestamp
+            );
+            await startMining();
+            // recoverable unassigned rewards should have been put to 0
+            expect(
+                await erc20DistributionInstance.recoverableUnassignedReward(
+                    rewardsTokenInstance.address
+                )
+            ).to.be.equalBn(ZERO_BN);
+
+            const secondWithdrawTimestamp = secondStakingTimestamp.add(
+                new BN(3)
+            );
+            await fastForwardTo({ timestamp: secondWithdrawTimestamp });
+            await withdrawAtTimestamp(
+                erc20DistributionInstance,
+                firstStakerAddress,
+                [1],
+                secondWithdrawTimestamp
+            );
+
+            await fastForwardTo({ timestamp: endingTimestamp });
+
+            // staker claims their reward
+            const rewardPerSecond = await erc20DistributionInstance.rewardPerSecond(
+                rewardsTokenInstance.address
+            );
+            // the staker staked for 6 seconds total
+            const expectedReward = rewardPerSecond.mul(new BN(6));
+            // claiming for the second time
+            await erc20DistributionInstance.claim({ from: firstStakerAddress });
+            expect(
+                await rewardsTokenInstance.balanceOf(firstStakerAddress)
+            ).to.be.equalBn(expectedReward);
+
+            // the owner should already have some recovered reward tokens from above
+            const expectedRemainingReward = rewardPerSecond.mul(new BN(3));
+            expect(
+                await rewardsTokenInstance.balanceOf(ownerAddress)
+            ).to.be.equalBn(rewardPerSecond.mul(new BN(3)));
+            expect(
+                await erc20DistributionInstance.recoverableUnassignedReward(
+                    rewardsTokenInstance.address
+                )
+            ).to.be.equalBn(expectedRemainingReward);
+            // claiming the unassigned rewards that accrued starting from the second withdraw
+            await erc20DistributionInstance.recoverUnassignedRewards();
+            expect(
+                await erc20DistributionInstance.recoverableUnassignedReward(
+                    rewardsTokenInstance.address
+                )
+            ).to.be.equalBn(ZERO_BN);
+            expect(
+                await rewardsTokenInstance.balanceOf(ownerAddress)
+            ).to.be.equalBn(expectedRemainingReward.mul(new BN(2)));
         });
     }
 );

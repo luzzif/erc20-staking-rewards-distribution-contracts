@@ -58,7 +58,7 @@ contract(
                         secondStakableTokenInstance,
                     ],
                     rewardTokens: [rewardsTokenInstance],
-                    rewardAmounts: [1],
+                    rewardAmounts: [10],
                     duration: 10,
                 });
                 await fastForwardTo({ timestamp: startingTimestamp });
@@ -99,7 +99,7 @@ contract(
                         secondStakableTokenInstance,
                     ],
                     rewardTokens: [rewardsTokenInstance],
-                    rewardAmounts: [1],
+                    rewardAmounts: [15],
                     duration: 10,
                 });
                 await fastForwardTo({ timestamp: startingTimestamp });

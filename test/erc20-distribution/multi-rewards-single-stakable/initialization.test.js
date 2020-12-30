@@ -1,7 +1,7 @@
 const BN = require("bn.js");
 const { expect } = require("chai");
 const { ZERO_ADDRESS } = require("../../constants");
-const { initializeDistribution } = require("../../utils");
+const { initializeDistribution, initializeStaker } = require("../../utils");
 const { toWei } = require("../../utils/conversion");
 
 const ERC20Distribution = artifacts.require("ERC20Distribution");
@@ -42,7 +42,7 @@ contract(
                         firstRewardsTokenInstance,
                         secondRewardsTokenInstance,
                     ],
-                    rewardAmounts: [1],
+                    rewardAmounts: [11],
                     duration: 10,
                     skipRewardTokensAmountsConsistenyCheck: true,
                     // skip funding to avoid errors that happen before the contract is actually called
@@ -59,10 +59,15 @@ contract(
         it("should fail when passing a 0-address second rewards token", async () => {
             try {
                 // manual funding to avoid error on zero-address token
-                const rewardAmounts = [1, 1];
+                const rewardAmounts = [10, 10];
                 await firstRewardsTokenInstance.mint(
-                    erc20DistributionInstance.address,
+                    ownerAddress,
                     rewardAmounts[0]
+                );
+                await firstRewardsTokenInstance.approve(
+                    erc20DistributionInstance.address,
+                    10,
+                    { from: ownerAddress }
                 );
                 await initializeDistribution({
                     from: ownerAddress,
@@ -94,7 +99,7 @@ contract(
                         firstRewardsTokenInstance,
                         secondRewardsTokenInstance,
                     ],
-                    rewardAmounts: [0, 1],
+                    rewardAmounts: [0, 10],
                     duration: 10,
                 });
                 throw new Error("should have failed");
@@ -115,7 +120,7 @@ contract(
                         firstRewardsTokenInstance,
                         secondRewardsTokenInstance,
                     ],
-                    rewardAmounts: [1, 0],
+                    rewardAmounts: [10, 0],
                     duration: 10,
                 });
                 throw new Error("should have failed");
@@ -126,8 +131,24 @@ contract(
             }
         });
 
-        it("should fail when the second rewards amount has not been sent to the contract", async () => {
+        it("should fail when allowance for the second rewards amount has not been given to the contract", async () => {
             try {
+                const rewardAmounts = [10, 10];
+                await firstRewardsTokenInstance.mint(
+                    ownerAddress,
+                    rewardAmounts[0]
+                );
+                // approve first reward tokens
+                await firstRewardsTokenInstance.approve(
+                    erc20DistributionInstance.address,
+                    rewardAmounts[0],
+                    { from: ownerAddress }
+                );
+                // second reward tokens is minted, but not given approval to the distribution instance
+                await secondRewardsTokenInstance.mint(
+                    ownerAddress,
+                    rewardAmounts[1]
+                );
                 await initializeDistribution({
                     from: ownerAddress,
                     erc20DistributionInstance,
@@ -136,14 +157,14 @@ contract(
                         firstRewardsTokenInstance,
                         secondRewardsTokenInstance,
                     ],
-                    rewardAmounts: [10, 0],
+                    rewardAmounts,
                     duration: 10,
                     fund: false,
                 });
                 throw new Error("should have failed");
             } catch (error) {
                 expect(error.message).to.contain(
-                    "ERC20Distribution: funds required"
+                    "ERC20: transfer amount exceeds allowance"
                 );
             }
         });
@@ -164,7 +185,7 @@ contract(
                 throw new Error("should have failed");
             } catch (error) {
                 expect(error.message).to.contain(
-                    "ERC20Distribution: more than 18 decimals for reward token"
+                    "ERC20Distribution: invalid decimals for reward token"
                 );
             }
         });
@@ -244,7 +265,7 @@ contract(
                         firstRewardsTokenInstance,
                         secondRewardsTokenInstance,
                     ],
-                    rewardAmounts: [1, 1],
+                    rewardAmounts: [11, 14],
                     duration: 2,
                 });
                 await initializeDistribution({
@@ -255,13 +276,61 @@ contract(
                         firstRewardsTokenInstance,
                         secondRewardsTokenInstance,
                     ],
-                    rewardAmounts: [1, 1],
+                    rewardAmounts: [17, 12],
                     duration: 2,
                 });
                 throw new Error("should have failed");
             } catch (error) {
                 expect(error.message).to.contain(
                     "ERC20Distribution: already initialized"
+                );
+            }
+        });
+
+        it("should fail when passing a duration which surpasses the first reward amount (reward per second to 0)", async () => {
+            try {
+                await initializeDistribution({
+                    from: ownerAddress,
+                    erc20DistributionInstance,
+                    stakableTokens: [stakableTokenInstance],
+                    rewardTokens: [
+                        firstRewardsTokenInstance,
+                        secondRewardsTokenInstance,
+                    ],
+                    rewardAmounts: [
+                        1,
+                        await toWei(1, secondRewardsTokenInstance),
+                    ],
+                    duration: 10000000000,
+                });
+                throw new Error("should have failed");
+            } catch (error) {
+                expect(error.message).to.contain(
+                    "ERC20Distribution: seconds duration less than rewards amount"
+                );
+            }
+        });
+
+        it("should fail when passing a duration which surpasses the second reward amount (reward per second to 0)", async () => {
+            try {
+                await initializeDistribution({
+                    from: ownerAddress,
+                    erc20DistributionInstance,
+                    stakableTokens: [stakableTokenInstance],
+                    rewardTokens: [
+                        firstRewardsTokenInstance,
+                        secondRewardsTokenInstance,
+                    ],
+                    rewardAmounts: [
+                        await toWei(1, secondRewardsTokenInstance),
+                        1,
+                    ],
+                    duration: 10000000000,
+                });
+                throw new Error("should have failed");
+            } catch (error) {
+                expect(error.message).to.contain(
+                    "ERC20Distribution: seconds duration less than rewards amount"
                 );
             }
         });
