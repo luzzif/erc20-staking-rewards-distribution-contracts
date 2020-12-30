@@ -10,6 +10,7 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 
 contract ERC20Distribution is Ownable {
     using SafeMath for uint256;
+    using SafeMath for uint64;
     using SafeERC20 for ERC20;
 
     ERC20[] public rewardTokens;
@@ -20,11 +21,11 @@ contract ERC20Distribution is Ownable {
     mapping(address => uint256) public stakedTokenAmount;
     uint256 public totalStakedTokensAmount;
     mapping(address => uint256) public rewardPerStakedToken;
-    uint256 public startingTimestamp;
-    uint256 public endingTimestamp;
+    uint64 public startingTimestamp;
+    uint64 public endingTimestamp;
     bool public locked;
     bool public initialized;
-    uint256 public lastConsolidationTimestamp;
+    uint64 public lastConsolidationTimestamp;
     mapping(address => uint256) public recoverableUnassignedReward;
 
     mapping(address => mapping(address => uint256)) public stakedTokensOf;
@@ -38,8 +39,8 @@ contract ERC20Distribution is Ownable {
         address[] rewardsTokenAddresses,
         address[] stakableTokenAddresses,
         uint256[] rewardsAmounts,
-        uint256 startingTimestamp,
-        uint256 endingTimestamp,
+        uint64 startingTimestamp,
+        uint64 endingTimestamp,
         bool locked
     );
     event Canceled();
@@ -60,8 +61,8 @@ contract ERC20Distribution is Ownable {
         address[] calldata _rewardTokenAddresses,
         address[] calldata _stakableTokenAddresses,
         uint256[] calldata _rewardAmounts,
-        uint256 _startingTimestamp,
-        uint256 _endingTimestamp,
+        uint64 _startingTimestamp,
+        uint64 _endingTimestamp,
         bool _locked
     ) external onlyOwner onlyUninitialized {
         require(
@@ -290,10 +291,10 @@ contract ERC20Distribution is Ownable {
     }
 
     function consolidateReward() public onlyInitialized onlyStarted {
-        uint256 _consolidationTimestamp =
-            Math.min(block.timestamp, endingTimestamp);
+        uint64 _consolidationTimestamp =
+            uint64(Math.min(block.timestamp, endingTimestamp));
         uint256 _lastPeriodDuration =
-            _consolidationTimestamp.sub(lastConsolidationTimestamp);
+            uint256(_consolidationTimestamp.sub(lastConsolidationTimestamp));
         for (uint256 _i; _i < rewardTokens.length; _i++) {
             address _relatedRewardTokenAddress = address(rewardTokens[_i]);
             if (totalStakedTokensAmount == 0) {

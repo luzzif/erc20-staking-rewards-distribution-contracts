@@ -28,8 +28,8 @@ contract ERC20DistributionFactory is Ownable {
         address[] calldata _rewardsTokenAddresses,
         address[] calldata _stakableTokenAddresses,
         uint256[] calldata _rewardAmounts,
-        uint256 _startingTimestamp,
-        uint256 _endingTimestmp,
+        uint64 _startingTimestamp,
+        uint64 _endingTimestmp,
         bool _locked
     ) public virtual {
         ERC20Distribution _distribution = new ERC20Distribution();

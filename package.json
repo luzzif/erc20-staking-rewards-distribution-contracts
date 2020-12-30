@@ -10,7 +10,7 @@
         "lint:eslint": "eslint \"test/**/*.js\"",
         "lint:prettier": "prettier -l contracts/**/*.sol && prettier -l test/**/*.js",
         "lint:commit-message": "commitlint -e",
-        "lint": "yarn lint:eslint & yarn lint:prettier",
+        "lint": "yarn lint:eslint && yarn lint:prettier",
         "test": "truffle test --runner-output-only",
         "test:coverage": "truffle run coverage",
         "test:gasreport": "truffle test --gas-report",
