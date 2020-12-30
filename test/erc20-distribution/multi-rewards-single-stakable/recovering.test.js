@@ -4,14 +4,12 @@ const { MAXIMUM_VARIANCE, ZERO_BN } = require("../../constants");
 const {
     initializeDistribution,
     initializeStaker,
-    stake,
     stakeAtTimestamp,
     withdrawAtTimestamp,
 } = require("../../utils");
 const { toWei } = require("../../utils/conversion");
 const {
     stopMining,
-    mineBlock,
     startMining,
     fastForwardTo,
     getEvmTimestamp,

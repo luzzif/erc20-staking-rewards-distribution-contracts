@@ -1,7 +1,7 @@
 const BN = require("bn.js");
 const { expect } = require("chai");
 const { ZERO_ADDRESS } = require("../../constants");
-const { initializeDistribution, initializeStaker } = require("../../utils");
+const { initializeDistribution } = require("../../utils");
 const { toWei } = require("../../utils/conversion");
 
 const ERC20Distribution = artifacts.require("ERC20Distribution");
