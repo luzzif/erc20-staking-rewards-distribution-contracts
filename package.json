@@ -14,8 +14,7 @@
         "test": "truffle test --runner-output-only",
         "test:coverage": "truffle run coverage",
         "test:gasreport": "truffle test --gas-report",
-        "compile": "truffle compile",
-        "migrate": "truffle migrate"
+        "compile": "truffle compile"
     },
     "author": "Federico Luzzi <fedeluzzi00@gmail.com>",
     "license": "GPL-3.0",

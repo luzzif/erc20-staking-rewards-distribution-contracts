@@ -4,7 +4,6 @@ const { MAXIMUM_VARIANCE, ZERO_BN } = require("../../constants");
 const {
     initializeDistribution,
     initializeStaker,
-    stake,
     stakeAtTimestamp,
     withdrawAtTimestamp,
 } = require("../../utils");
@@ -2442,22 +2441,21 @@ contract(
                 mineBlockAfter: false,
             });
             const totalFirstStakerStake = firstStakedAmount.mul(new BN(2));
-            await stake(
+            await stakeAtTimestamp(
                 erc20DistributionInstance,
                 firstStakerAddress,
                 [firstStakedAmount, firstStakedAmount],
-                false
+                stakingTimestamp
             );
             const totalSecondStakerStake = firstStakedAmount.add(
                 secondStakedAmount
             );
-            await stake(
+            await stakeAtTimestamp(
                 erc20DistributionInstance,
                 secondStakerAddress,
                 [firstStakedAmount, secondStakedAmount],
-                false
+                stakingTimestamp
             );
-            await mineBlock(stakingTimestamp);
             expect(await getEvmTimestamp()).to.be.equalBn(stakingTimestamp);
             await startMining();
             await fastForwardTo({ timestamp: endingTimestamp });
