@@ -313,7 +313,6 @@ contract ERC20Distribution is Ownable {
                     _relatedRewardTokenAddress
                 ] = rewardPerStakedToken[_relatedRewardTokenAddress].add(
                     _lastPeriodDuration
-                    // FIXME: could this overflow?
                         .mul(rewardPerSecond[_relatedRewardTokenAddress])
                         .mul(rewardTokenMultiplier[_relatedRewardTokenAddress])
                         .div(totalStakedTokensAmount)
