@@ -93,6 +93,10 @@ contract ERC20Distribution is Ownable {
                 "ERC20Distribution: seconds duration less than rewards amount"
             );
             ERC20 _rewardToken = ERC20(_rewardTokenAddress);
+            require(
+                _rewardToken.balanceOf(address(this)) >= _rewardAmount,
+                "ERC20Distribution: no funding"
+            );
             // avoid overflow down the road (when consolidating rewards)
             // by constraining the reward token decimals to a maximum of 18
             uint256 _rewardTokenDecimals = _rewardToken.decimals();
@@ -107,12 +111,6 @@ contract ERC20Distribution is Ownable {
                 _secondsDuration
             );
             rewardAmount[_rewardTokenAddress] = _rewardAmount;
-            // transfer funds to the contract
-            _rewardToken.safeTransferFrom(
-                msg.sender,
-                address(this),
-                _rewardAmount
-            );
         }
 
         // Initializing stakable tokens
@@ -299,7 +297,7 @@ contract ERC20Distribution is Ownable {
             address _relatedRewardTokenAddress = address(rewardTokens[_i]);
             if (totalStakedTokensAmount == 0) {
                 // If the current staked tokens amount is zero, there have been unassigned rewards in the last period.
-                // We add them to any previous one so that they can be claimed back by the contract's owner.
+                // We add these unassigned rewards to the amount that can be claimed back by the contract's owner.
                 recoverableUnassignedReward[
                     _relatedRewardTokenAddress
                 ] = recoverableUnassignedReward[_relatedRewardTokenAddress].add(

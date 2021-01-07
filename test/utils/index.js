@@ -43,12 +43,12 @@ exports.initializeDistribution = async ({
     }
     if (fund) {
         for (let i = 0; i < rewardTokens.length; i++) {
-            await rewardTokens[i].mint(from, rewardAmounts[i]);
-            // approve tokens
-            await rewardTokens[i].approve(
+            // funds are sent directly to the distribution contract (this
+            // wouldn't necessarily be needed if using the factory to
+            // bootstrap distributions)
+            await rewardTokens[i].mint(
                 erc20DistributionInstance.address,
-                rewardAmounts[i],
-                { from }
+                rewardAmounts[i]
             );
         }
     }

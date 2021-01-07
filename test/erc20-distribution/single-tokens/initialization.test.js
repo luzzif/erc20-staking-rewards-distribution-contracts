@@ -159,26 +159,6 @@ contract(
             }
         });
 
-        it("should fail when the rewards amount has not been approved to be used by the contract", async () => {
-            try {
-                await rewardsTokenInstance.mint(ownerAddress, 10);
-                await initializeDistribution({
-                    from: ownerAddress,
-                    erc20DistributionInstance,
-                    stakableTokens: [stakableTokenInstance],
-                    rewardTokens: [rewardsTokenInstance],
-                    rewardAmounts: [10],
-                    duration: 10,
-                    fund: false,
-                });
-                throw new Error("should have failed");
-            } catch (error) {
-                expect(error.message).to.contain(
-                    "ERC20: transfer amount exceeds allowance"
-                );
-            }
-        });
-
         it("should fail when the rewards token has more than 18 decimals (avoids possible overflow)", async () => {
             try {
                 await initializeDistribution({

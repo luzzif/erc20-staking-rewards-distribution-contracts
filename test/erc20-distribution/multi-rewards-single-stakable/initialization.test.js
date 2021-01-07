@@ -56,18 +56,66 @@ contract(
             }
         });
 
-        it("should fail when passing a 0-address second rewards token", async () => {
+        it("should fail when funding for the first reward token has not been sent to the contract before calling initialize", async () => {
+            try {
+                await initializeDistribution({
+                    from: ownerAddress,
+                    erc20DistributionInstance,
+                    stakableTokens: [stakableTokenInstance],
+                    rewardTokens: [
+                        firstRewardsTokenInstance,
+                        secondRewardsTokenInstance,
+                    ],
+                    rewardAmounts: [10, 10],
+                    duration: 10,
+                    skipRewardTokensAmountsConsistenyCheck: true,
+                    // skip funding to avoid errors that happen before the contract is actually called
+                    fund: false,
+                });
+                throw new Error("should have failed");
+            } catch (error) {
+                expect(error.message).to.contain(
+                    "ERC20Distribution: no funding"
+                );
+            }
+        });
+
+        it("should fail when funding for the second reward token has not been sent to the contract before calling initialize", async () => {
+            try {
+                const rewardAmounts = [10, 10];
+                await firstRewardsTokenInstance.mint(
+                    erc20DistributionInstance.address,
+                    rewardAmounts[0]
+                );
+                await initializeDistribution({
+                    from: ownerAddress,
+                    erc20DistributionInstance,
+                    stakableTokens: [stakableTokenInstance],
+                    rewardTokens: [
+                        firstRewardsTokenInstance,
+                        secondRewardsTokenInstance,
+                    ],
+                    rewardAmounts,
+                    duration: 10,
+                    skipRewardTokensAmountsConsistenyCheck: true,
+                    // skip funding to avoid errors that happen before the contract is actually called
+                    fund: false,
+                });
+                throw new Error("should have failed");
+            } catch (error) {
+                expect(error.message).to.contain(
+                    "ERC20Distribution: no funding"
+                );
+            }
+        });
+
+        it("should fail when passing a 0-address second reward token", async () => {
             try {
                 // manual funding to avoid error on zero-address token
                 const rewardAmounts = [10, 10];
                 await firstRewardsTokenInstance.mint(
-                    ownerAddress,
-                    rewardAmounts[0]
-                );
-                await firstRewardsTokenInstance.approve(
                     erc20DistributionInstance.address,
-                    10,
-                    { from: ownerAddress }
+                    rewardAmounts[0]
                 );
                 await initializeDistribution({
                     from: ownerAddress,
@@ -127,44 +175,6 @@ contract(
             } catch (error) {
                 expect(error.message).to.contain(
                     "ERC20Distribution: no reward"
-                );
-            }
-        });
-
-        it("should fail when allowance for the second rewards amount has not been given to the contract", async () => {
-            try {
-                const rewardAmounts = [10, 10];
-                await firstRewardsTokenInstance.mint(
-                    ownerAddress,
-                    rewardAmounts[0]
-                );
-                // approve first reward tokens
-                await firstRewardsTokenInstance.approve(
-                    erc20DistributionInstance.address,
-                    rewardAmounts[0],
-                    { from: ownerAddress }
-                );
-                // second reward tokens is minted, but not given approval to the distribution instance
-                await secondRewardsTokenInstance.mint(
-                    ownerAddress,
-                    rewardAmounts[1]
-                );
-                await initializeDistribution({
-                    from: ownerAddress,
-                    erc20DistributionInstance,
-                    stakableTokens: [stakableTokenInstance],
-                    rewardTokens: [
-                        firstRewardsTokenInstance,
-                        secondRewardsTokenInstance,
-                    ],
-                    rewardAmounts,
-                    duration: 10,
-                    fund: false,
-                });
-                throw new Error("should have failed");
-            } catch (error) {
-                expect(error.message).to.contain(
-                    "ERC20: transfer amount exceeds allowance"
                 );
             }
         });
