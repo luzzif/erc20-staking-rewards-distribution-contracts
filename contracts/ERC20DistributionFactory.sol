@@ -17,7 +17,7 @@ contract ERC20DistributionFactory is Ownable {
     event Created(
         address indexed creator,
         address[] rewardsTokenAddresses,
-        address[] stakableTokenAddresses,
+        address stakableTokenAddresses,
         uint256[] rewardsAmounts,
         uint256 startingTimestamp,
         uint256 endingTimestamp,
@@ -26,7 +26,7 @@ contract ERC20DistributionFactory is Ownable {
 
     function createDistribution(
         address[] calldata _rewardTokenAddresses,
-        address[] calldata _stakableTokenAddresses,
+        address _stakableTokenAddress,
         uint256[] calldata _rewardAmounts,
         uint64 _startingTimestamp,
         uint64 _endingTimestmp,
@@ -44,7 +44,7 @@ contract ERC20DistributionFactory is Ownable {
         }
         _distribution.initialize(
             _rewardTokenAddresses,
-            _stakableTokenAddresses,
+            _stakableTokenAddress,
             _rewardAmounts,
             _startingTimestamp,
             _endingTimestmp,
@@ -55,7 +55,7 @@ contract ERC20DistributionFactory is Ownable {
         emit Created(
             msg.sender,
             _rewardTokenAddresses,
-            _stakableTokenAddresses,
+            _stakableTokenAddress,
             _rewardAmounts,
             _startingTimestamp,
             _endingTimestmp,

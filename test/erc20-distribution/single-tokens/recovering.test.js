@@ -59,7 +59,7 @@ contract(
                 await initializeDistribution({
                     from: ownerAddress,
                     erc20DistributionInstance,
-                    stakableTokens: [stakableTokenInstance],
+                    stakableToken: stakableTokenInstance,
                     rewardTokens: [rewardsTokenInstance],
                     rewardAmounts: [11],
                     duration: 10,
@@ -78,7 +78,7 @@ contract(
             const { endingTimestamp } = await initializeDistribution({
                 from: ownerAddress,
                 erc20DistributionInstance,
-                stakableTokens: [stakableTokenInstance],
+                stakableToken: stakableTokenInstance,
                 rewardTokens: [rewardsTokenInstance],
                 rewardAmounts: [rewardsAmount],
                 duration: 10,
@@ -100,7 +100,7 @@ contract(
             const { endingTimestamp } = await initializeDistribution({
                 from: ownerAddress,
                 erc20DistributionInstance,
-                stakableTokens: [stakableTokenInstance],
+                stakableToken: stakableTokenInstance,
                 rewardTokens: [rewardsTokenInstance],
                 rewardAmounts: [rewardsAmount],
                 duration: 10,
@@ -122,7 +122,7 @@ contract(
             const { endingTimestamp } = await initializeDistribution({
                 from: ownerAddress,
                 erc20DistributionInstance,
-                stakableTokens: [stakableTokenInstance],
+                stakableToken: stakableTokenInstance,
                 rewardTokens: [rewardsTokenInstance],
                 rewardAmounts: [rewardsAmount],
                 duration: 10,
@@ -158,7 +158,7 @@ contract(
             } = await initializeDistribution({
                 from: ownerAddress,
                 erc20DistributionInstance,
-                stakableTokens: [stakableTokenInstance],
+                stakableToken: stakableTokenInstance,
                 rewardTokens: [rewardsTokenInstance],
                 rewardAmounts: [rewardsAmount],
                 duration: 10,
@@ -215,7 +215,7 @@ contract(
             } = await initializeDistribution({
                 from: ownerAddress,
                 erc20DistributionInstance,
-                stakableTokens: [stakableTokenInstance],
+                stakableToken: stakableTokenInstance,
                 rewardTokens: [rewardsTokenInstance],
                 rewardAmounts: [rewardsAmount],
                 duration: 10,
@@ -284,7 +284,7 @@ contract(
             } = await initializeDistribution({
                 from: ownerAddress,
                 erc20DistributionInstance,
-                stakableTokens: [stakableTokenInstance],
+                stakableToken: stakableTokenInstance,
                 rewardTokens: [rewardsTokenInstance],
                 rewardAmounts: [rewardsAmount],
                 duration: 12,
@@ -335,7 +335,7 @@ contract(
             } = await initializeDistribution({
                 from: ownerAddress,
                 erc20DistributionInstance,
-                stakableTokens: [stakableTokenInstance],
+                stakableToken: stakableTokenInstance,
                 rewardTokens: [rewardsTokenInstance],
                 rewardAmounts: [rewardsAmount],
                 duration: 12,
@@ -395,7 +395,7 @@ contract(
             } = await initializeDistribution({
                 from: ownerAddress,
                 erc20DistributionInstance,
-                stakableTokens: [stakableTokenInstance],
+                stakableToken: stakableTokenInstance,
                 rewardTokens: [rewardsTokenInstance],
                 rewardAmounts: [rewardsAmount],
                 duration: 12,
@@ -446,7 +446,7 @@ contract(
             } = await initializeDistribution({
                 from: ownerAddress,
                 erc20DistributionInstance,
-                stakableTokens: [stakableTokenInstance],
+                stakableToken: stakableTokenInstance,
                 rewardTokens: [rewardsTokenInstance],
                 rewardAmounts: [rewardsAmount],
                 duration: 12,

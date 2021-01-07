@@ -29,7 +29,7 @@ contract("ERC20DistributionFactory - Distribution creation", () => {
             const startingTimestamp = (await getEvmTimestamp()).add(new BN(10));
             await erc20DistributionFactoryInstance.createDistribution(
                 [rewardsTokenInstance.address],
-                [stakableTokenInstance.address],
+                stakableTokenInstance.address,
                 [10],
                 startingTimestamp,
                 startingTimestamp.add(new BN(10)),
@@ -51,7 +51,7 @@ contract("ERC20DistributionFactory - Distribution creation", () => {
             const startingTimestamp = (await getEvmTimestamp()).add(new BN(10));
             await erc20DistributionFactoryInstance.createDistribution(
                 [rewardsTokenInstance.address],
-                [stakableTokenInstance.address],
+                stakableTokenInstance.address,
                 [rewardAmount],
                 startingTimestamp,
                 startingTimestamp.add(new BN(10)),
@@ -77,13 +77,12 @@ contract("ERC20DistributionFactory - Distribution creation", () => {
         );
         const rewardAmounts = [rewardAmount];
         const rewardTokens = [rewardsTokenInstance.address];
-        const stakableTokens = [stakableTokenInstance.address];
         const startingTimestamp = (await getEvmTimestamp()).add(new BN(10));
         const endingTimestamp = startingTimestamp.add(new BN(10));
         const locked = false;
         await erc20DistributionFactoryInstance.createDistribution(
             rewardTokens,
-            stakableTokens,
+            stakableTokenInstance.address,
             rewardAmounts,
             startingTimestamp,
             endingTimestamp,
@@ -101,12 +100,13 @@ contract("ERC20DistributionFactory - Distribution creation", () => {
         );
 
         const onchainRewardTokens = await erc20DistributionInstance.getRewardTokens();
-        const onchainStakableTokens = await erc20DistributionInstance.getStakableTokens();
         const onchainStartingTimestamp = await erc20DistributionInstance.startingTimestamp();
         const onchainEndingTimestamp = await erc20DistributionInstance.endingTimestamp();
 
         expect(onchainRewardTokens).to.have.length(rewardTokens.length);
-        expect(onchainStakableTokens).to.have.length(stakableTokens.length);
+        expect(await erc20DistributionInstance.stakableToken()).to.be.equal(
+            stakableTokenInstance.address
+        );
         for (let i = 0; i < onchainRewardTokens.length; i++) {
             const token = onchainRewardTokens[i];
             const amount = await erc20DistributionInstance.rewardAmount(token);

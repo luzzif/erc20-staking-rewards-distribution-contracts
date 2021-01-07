@@ -42,7 +42,7 @@ contract(
             await initializeDistribution({
                 from: ownerAddress,
                 erc20DistributionInstance,
-                stakableTokens: [stakableTokenInstance],
+                stakableToken: stakableTokenInstance,
                 rewardTokens,
                 rewardAmounts,
                 duration: 2,
@@ -52,9 +52,9 @@ contract(
             expect(
                 await erc20DistributionInstance.getRewardTokens()
             ).to.have.length(0);
-            expect(
-                await erc20DistributionInstance.getStakableTokens()
-            ).to.have.length(0);
+            expect(await erc20DistributionInstance.stakableToken()).to.be.equal(
+                "0x0000000000000000000000000000000000000000"
+            );
             for (let i = 0; i < rewardTokens.length; i++) {
                 const rewardToken = rewardTokens[i];
                 const rewardAmount = rewardAmounts[i];
@@ -108,17 +108,16 @@ contract(
             await initializeDistribution({
                 from: ownerAddress,
                 erc20DistributionInstance,
-                stakableTokens: [stakableTokenInstance],
+                stakableToken: stakableTokenInstance,
                 rewardTokens,
                 rewardAmounts,
                 duration: 2,
             });
             await erc20DistributionInstance.cancel({ from: ownerAddress });
-            // resending funds since the ones sent before have been sent back
             await initializeDistribution({
                 from: ownerAddress,
                 erc20DistributionInstance,
-                stakableTokens: [stakableTokenInstance],
+                stakableToken: stakableTokenInstance,
                 rewardTokens,
                 rewardAmounts,
                 duration: 2,

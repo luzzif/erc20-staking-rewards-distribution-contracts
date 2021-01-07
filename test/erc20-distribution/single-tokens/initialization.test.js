@@ -35,7 +35,7 @@ contract(
                 await initializeDistribution({
                     from: firstStakerAddress,
                     erc20DistributionInstance,
-                    stakableTokens: [stakableTokenInstance],
+                    stakableToken: stakableTokenInstance,
                     rewardTokens: [rewardsTokenInstance],
                     rewardAmounts: [11],
                     duration: 10,
@@ -53,7 +53,7 @@ contract(
                 await initializeDistribution({
                     from: ownerAddress,
                     erc20DistributionInstance,
-                    stakableTokens: [stakableTokenInstance],
+                    stakableToken: stakableTokenInstance,
                     rewardTokens: [{ address: ZERO_ADDRESS }],
                     rewardAmounts: [10],
                     duration: 10,
@@ -72,7 +72,7 @@ contract(
                 await initializeDistribution({
                     from: ownerAddress,
                     erc20DistributionInstance,
-                    stakableTokens: [{ address: ZERO_ADDRESS }],
+                    stakableToken: { address: ZERO_ADDRESS },
                     rewardTokens: [rewardsTokenInstance],
                     rewardAmounts: [14],
                     duration: 10,
@@ -90,7 +90,7 @@ contract(
                 await initializeDistribution({
                     from: ownerAddress,
                     erc20DistributionInstance,
-                    stakableTokens: [stakableTokenInstance],
+                    stakableToken: stakableTokenInstance,
                     rewardTokens: [rewardsTokenInstance],
                     rewardAmounts: [0],
                     duration: 10,
@@ -108,7 +108,7 @@ contract(
                 const currentEvmTimestamp = await getEvmTimestamp();
                 await erc20DistributionInstance.initialize(
                     [rewardsTokenInstance.address],
-                    [stakableTokenInstance.address],
+                    stakableTokenInstance.address,
                     [1],
                     currentEvmTimestamp.sub(new BN(10)),
                     currentEvmTimestamp.add(new BN(10)),
@@ -127,7 +127,7 @@ contract(
                 const currentEvmTimestamp = await getEvmTimestamp();
                 await erc20DistributionInstance.initialize(
                     [rewardsTokenInstance.address],
-                    [stakableTokenInstance.address],
+                    stakableTokenInstance.address,
                     [1],
                     currentEvmTimestamp,
                     currentEvmTimestamp.add(new BN(10)),
@@ -146,7 +146,7 @@ contract(
                 await initializeDistribution({
                     from: ownerAddress,
                     erc20DistributionInstance,
-                    stakableTokens: [stakableTokenInstance],
+                    stakableToken: stakableTokenInstance,
                     rewardTokens: [rewardsTokenInstance],
                     rewardAmounts: [1],
                     duration: 0,
@@ -164,7 +164,7 @@ contract(
                 await initializeDistribution({
                     from: ownerAddress,
                     erc20DistributionInstance,
-                    stakableTokens: [stakableTokenInstance],
+                    stakableToken: stakableTokenInstance,
                     rewardTokens: [highDecimalsTokenInstance],
                     rewardAmounts: [10],
                     duration: 10,
@@ -183,14 +183,13 @@ contract(
             ];
             const duration = new BN(10);
             const rewardTokens = [rewardsTokenInstance];
-            const stakableTokens = [stakableTokenInstance];
             const {
                 startingTimestamp,
                 endingTimestamp,
             } = await initializeDistribution({
                 from: ownerAddress,
                 erc20DistributionInstance,
-                stakableTokens,
+                stakableToken: stakableTokenInstance,
                 rewardTokens,
                 rewardAmounts,
                 duration,
@@ -203,12 +202,9 @@ contract(
             expect(onchainRewardTokens[0]).to.be.equal(
                 rewardsTokenInstance.address
             );
-            const onchainStakableTokens = await erc20DistributionInstance.getStakableTokens();
-            for (let i = 0; i < stakableTokens.length; i++) {
-                expect(onchainStakableTokens[i]).to.be.equal(
-                    stakableTokens[i].address
-                );
-            }
+            expect(await erc20DistributionInstance.stakableToken()).to.be.equal(
+                stakableTokenInstance.address
+            );
             for (let i = 0; i < rewardTokens.length; i++) {
                 const rewardAmount = rewardAmounts[i];
                 const rewardToken = rewardTokens[i];
@@ -249,7 +245,7 @@ contract(
                 await initializeDistribution({
                     from: ownerAddress,
                     erc20DistributionInstance,
-                    stakableTokens: [stakableTokenInstance],
+                    stakableToken: stakableTokenInstance,
                     rewardTokens: [rewardsTokenInstance],
                     rewardAmounts: [2],
                     duration: 2,
@@ -257,7 +253,7 @@ contract(
                 await initializeDistribution({
                     from: ownerAddress,
                     erc20DistributionInstance,
-                    stakableTokens: [stakableTokenInstance],
+                    stakableToken: stakableTokenInstance,
                     rewardTokens: [rewardsTokenInstance],
                     rewardAmounts: [7],
                     duration: 2,
@@ -275,7 +271,7 @@ contract(
                 await initializeDistribution({
                     from: ownerAddress,
                     erc20DistributionInstance,
-                    stakableTokens: [stakableTokenInstance],
+                    stakableToken: stakableTokenInstance,
                     rewardTokens: [rewardsTokenInstance],
                     rewardAmounts: [1],
                     duration: 10000000000,
