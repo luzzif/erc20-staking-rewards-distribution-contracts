@@ -1,11 +1,11 @@
 {
-    "name": "erc20-staking-rewards-contracts",
+    "name": "erc20-staking-rewards-distribution-contracts",
     "version": "0.2.0",
     "description": "Generic contracts suite to bootstrap staking campaigns in which stakers get rewarded over time. Supports multiple ERC20 reward/stakable tokens and locked staking (i.e. no withdraw until the end of the distribution if tokens are staked).",
     "files": [
-        "/contracts/*.sol",
-        "/build/contracts/ERC20Distribution.json",
-        "/build/contracts/ERC20DistributionFactory.json"
+        "/*.sol",
+        "/build/ERC20StakingRewardsDistribution.json",
+        "/build/ERC20StakingRewardsDistributionFactory.json"
     ],
     "scripts": {
         "lint:eslint": "eslint \"test/**/*.js\"",
@@ -15,7 +15,9 @@
         "test": "truffle test --runner-output-only",
         "test:coverage": "truffle run coverage",
         "test:gasreport": "truffle test --gas-report",
-        "compile": "truffle compile"
+        "compile": "truffle compile",
+        "prepack": "cp ./contracts/*.sol ./",
+        "postpack": "rm -rf ./*.sol"
     },
     "author": "Federico Luzzi <fedeluzzi00@gmail.com>",
     "license": "GPL-3.0",

@@ -6,3 +6,6 @@ artifacts
 coverage*
 
 yarn-error.log
+
+/*.sol
+*.tgz

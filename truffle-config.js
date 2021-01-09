@@ -1,5 +1,5 @@
 const configuration = {
-    networks: {},
+    contracts_build_directory: "build",
     compilers: {
         solc: {
             version: "^0.6.12",
@@ -19,16 +19,7 @@ if (process.argv.indexOf("--gas-report") >= 0) {
         reporter: "eth-gas-reporter",
         reporterOptions: {
             currency: "USD",
-            excludeContracts: [
-                "TestDependencies.sol",
-                "DXTokenRegistry.sol",
-                "Migrations.sol",
-                "FirstRewardERC20.sol",
-                "SecondRewardERC20.sol",
-                "FirstStakableERC20.sol",
-                "SecondStakableERC20.sol",
-                "HighDecimalsERC20.sol",
-            ],
+            excludeContracts: ["test/TestDependencies.sol"],
         },
     };
 }
