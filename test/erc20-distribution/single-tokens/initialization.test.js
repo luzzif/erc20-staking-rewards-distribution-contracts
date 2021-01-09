@@ -5,7 +5,9 @@ const { initializeDistribution } = require("../../utils");
 const { toWei } = require("../../utils/conversion");
 const { getEvmTimestamp, fastForwardTo } = require("../../utils/network");
 
-const ERC20StakingRewardsDistribution = artifacts.require("ERC20StakingRewardsDistribution");
+const ERC20StakingRewardsDistribution = artifacts.require(
+    "ERC20StakingRewardsDistribution"
+);
 const FirstRewardERC20 = artifacts.require("FirstRewardERC20");
 const FirstStakableERC20 = artifacts.require("FirstStakableERC20");
 const HighDecimalsERC20 = artifacts.require("HighDecimalsERC20");
@@ -117,7 +119,7 @@ contract(
                 throw new Error("should have failed");
             } catch (error) {
                 expect(error.message).to.contain(
-                    "ERC20StakingRewardsDistribution: starting timestamp lower or equal than current"
+                    "ERC20StakingRewardsDistribution: invalid starting timestamp"
                 );
             }
         });
@@ -136,7 +138,7 @@ contract(
                 throw new Error("should have failed");
             } catch (error) {
                 expect(error.message).to.contain(
-                    "ERC20StakingRewardsDistribution: starting timestamp lower or equal than current"
+                    "ERC20StakingRewardsDistribution: invalid starting timestamp"
                 );
             }
         });

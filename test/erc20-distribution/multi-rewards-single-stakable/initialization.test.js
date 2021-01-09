@@ -4,7 +4,9 @@ const { ZERO_ADDRESS } = require("../../constants");
 const { initializeDistribution } = require("../../utils");
 const { toWei } = require("../../utils/conversion");
 
-const ERC20StakingRewardsDistribution = artifacts.require("ERC20StakingRewardsDistribution");
+const ERC20StakingRewardsDistribution = artifacts.require(
+    "ERC20StakingRewardsDistribution"
+);
 const FirstRewardERC20 = artifacts.require("FirstRewardERC20");
 const SecondRewardERC20 = artifacts.require("SecondRewardERC20");
 const FirstStakableERC20 = artifacts.require("FirstStakableERC20");
@@ -23,9 +25,9 @@ contract(
         beforeEach(async () => {
             const accounts = await web3.eth.getAccounts();
             ownerAddress = accounts[0];
-            erc20DistributionInstance = await ERC20StakingRewardsDistribution.new({
-                from: ownerAddress,
-            });
+            erc20DistributionInstance = await ERC20StakingRewardsDistribution.new(
+                { from: ownerAddress }
+            );
             firstRewardsTokenInstance = await FirstRewardERC20.new();
             secondRewardsTokenInstance = await SecondRewardERC20.new();
             stakableTokenInstance = await FirstStakableERC20.new();
@@ -51,7 +53,7 @@ contract(
                 throw new Error("should have failed");
             } catch (error) {
                 expect(error.message).to.contain(
-                    "ERC20StakingRewardsDistribution: inconsistent reward token/amount arrays length"
+                    "ERC20StakingRewardsDistribution: inconsistent reward token/amount"
                 );
             }
         });
