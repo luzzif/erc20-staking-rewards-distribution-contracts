@@ -6,13 +6,13 @@ import "@openzeppelin/contracts/math/SafeMath.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
-import "./ERC20Distribution.sol";
+import "./ERC20StakingRewardsDistribution.sol";
 
-contract ERC20DistributionFactory is Ownable {
+contract ERC20StakingRewardsDistributionFactory is Ownable {
     using SafeMath for uint256;
     using SafeERC20 for ERC20;
 
-    ERC20Distribution[] public distributions;
+    ERC20StakingRewardsDistribution[] public distributions;
 
     event Created(
         address indexed creator,
@@ -32,7 +32,8 @@ contract ERC20DistributionFactory is Ownable {
         uint64 _endingTimestmp,
         bool _locked
     ) public virtual {
-        ERC20Distribution _distribution = new ERC20Distribution();
+        ERC20StakingRewardsDistribution _distribution =
+            new ERC20StakingRewardsDistribution();
         for (uint256 _i; _i < _rewardTokenAddresses.length; _i++) {
             ERC20 _rewardToken = ERC20(_rewardTokenAddresses[_i]);
             uint256 _relatedAmount = _rewardAmounts[_i];

@@ -5,13 +5,13 @@ const { initializeDistribution } = require("../../utils");
 const { toWei } = require("../../utils/conversion");
 const { getEvmTimestamp, fastForwardTo } = require("../../utils/network");
 
-const ERC20Distribution = artifacts.require("ERC20Distribution");
+const ERC20StakingRewardsDistribution = artifacts.require("ERC20StakingRewardsDistribution");
 const FirstRewardERC20 = artifacts.require("FirstRewardERC20");
 const FirstStakableERC20 = artifacts.require("FirstStakableERC20");
 const HighDecimalsERC20 = artifacts.require("HighDecimalsERC20");
 
 contract(
-    "ERC20Distribution - Single reward/stakable token - Initialization",
+    "ERC20StakingRewardsDistribution - Single reward/stakable token - Initialization",
     () => {
         let erc20DistributionInstance,
             rewardsTokenInstance,
@@ -22,7 +22,7 @@ contract(
 
         beforeEach(async () => {
             const accounts = await web3.eth.getAccounts();
-            erc20DistributionInstance = await ERC20Distribution.new();
+            erc20DistributionInstance = await ERC20StakingRewardsDistribution.new();
             rewardsTokenInstance = await FirstRewardERC20.new();
             stakableTokenInstance = await FirstStakableERC20.new();
             highDecimalsTokenInstance = await HighDecimalsERC20.new();
@@ -62,7 +62,7 @@ contract(
                 throw new Error("should have failed");
             } catch (error) {
                 expect(error.message).to.contain(
-                    "ERC20Distribution: 0 address as reward token"
+                    "ERC20StakingRewardsDistribution: 0 address as reward token"
                 );
             }
         });
@@ -80,7 +80,7 @@ contract(
                 throw new Error("should have failed");
             } catch (error) {
                 expect(error.message).to.contain(
-                    "ERC20Distribution: 0 address as stakable token"
+                    "ERC20StakingRewardsDistribution: 0 address as stakable token"
                 );
             }
         });
@@ -98,7 +98,7 @@ contract(
                 throw new Error("should have failed");
             } catch (error) {
                 expect(error.message).to.contain(
-                    "ERC20Distribution: no reward"
+                    "ERC20StakingRewardsDistribution: no reward"
                 );
             }
         });
@@ -117,7 +117,7 @@ contract(
                 throw new Error("should have failed");
             } catch (error) {
                 expect(error.message).to.contain(
-                    "ERC20Distribution: starting timestamp lower or equal than current"
+                    "ERC20StakingRewardsDistribution: starting timestamp lower or equal than current"
                 );
             }
         });
@@ -136,7 +136,7 @@ contract(
                 throw new Error("should have failed");
             } catch (error) {
                 expect(error.message).to.contain(
-                    "ERC20Distribution: starting timestamp lower or equal than current"
+                    "ERC20StakingRewardsDistribution: starting timestamp lower or equal than current"
                 );
             }
         });
@@ -154,7 +154,7 @@ contract(
                 throw new Error("should have failed");
             } catch (error) {
                 expect(error.message).to.contain(
-                    "ERC20Distribution: invalid time duration"
+                    "ERC20StakingRewardsDistribution: invalid time duration"
                 );
             }
         });
@@ -172,7 +172,7 @@ contract(
                 throw new Error("should have failed");
             } catch (error) {
                 expect(error.message).to.contain(
-                    "ERC20Distribution: invalid decimals for reward token"
+                    "ERC20StakingRewardsDistribution: invalid decimals for reward token"
                 );
             }
         });
@@ -261,7 +261,7 @@ contract(
                 throw new Error("should have failed");
             } catch (error) {
                 expect(error.message).to.contain(
-                    "ERC20Distribution: already initialized"
+                    "ERC20StakingRewardsDistribution: already initialized"
                 );
             }
         });
@@ -279,7 +279,7 @@ contract(
                 throw new Error("should have failed");
             } catch (error) {
                 expect(error.message).to.contain(
-                    "ERC20Distribution: seconds duration less than rewards amount"
+                    "ERC20StakingRewardsDistribution: seconds duration less than rewards amount"
                 );
             }
         });

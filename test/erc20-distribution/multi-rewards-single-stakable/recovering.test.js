@@ -15,13 +15,13 @@ const {
     getEvmTimestamp,
 } = require("../../utils/network");
 
-const ERC20Distribution = artifacts.require("ERC20Distribution");
+const ERC20StakingRewardsDistribution = artifacts.require("ERC20StakingRewardsDistribution");
 const FirstRewardERC20 = artifacts.require("FirstRewardERC20");
 const SecondRewardERC20 = artifacts.require("SecondRewardERC20");
 const FirstStakableERC20 = artifacts.require("FirstStakableERC20");
 
 contract(
-    "ERC20Distribution - Multi rewards, single stakable token - Reward recovery",
+    "ERC20StakingRewardsDistribution - Multi rewards, single stakable token - Reward recovery",
     () => {
         let erc20DistributionInstance,
             firstRewardsTokenInstance,
@@ -34,7 +34,7 @@ contract(
         beforeEach(async () => {
             const accounts = await web3.eth.getAccounts();
             ownerAddress = accounts[0];
-            erc20DistributionInstance = await ERC20Distribution.new({
+            erc20DistributionInstance = await ERC20StakingRewardsDistribution.new({
                 from: ownerAddress,
             });
             firstRewardsTokenInstance = await FirstRewardERC20.new();

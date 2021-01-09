@@ -2,12 +2,12 @@ const BN = require("bn.js");
 const { expect } = require("chai");
 const { getEvmTimestamp } = require("../../utils/network");
 
-const ERC20DistributionFactory = artifacts.require("ERC20DistributionFactory");
-const ERC20Distribution = artifacts.require("ERC20Distribution");
+const ERC20StakingRewardsDistributionFactory = artifacts.require("ERC20StakingRewardsDistributionFactory");
+const ERC20StakingRewardsDistribution = artifacts.require("ERC20StakingRewardsDistribution");
 const FirstRewardERC20 = artifacts.require("FirstRewardERC20");
 const FirstStakableERC20 = artifacts.require("FirstStakableERC20");
 
-contract("ERC20DistributionFactory - Distribution creation", () => {
+contract("ERC20StakingRewardsDistributionFactory - Distribution creation", () => {
     let erc20DistributionFactoryInstance,
         rewardsTokenInstance,
         stakableTokenInstance,
@@ -16,7 +16,7 @@ contract("ERC20DistributionFactory - Distribution creation", () => {
     beforeEach(async () => {
         const accounts = await web3.eth.getAccounts();
         ownerAddress = accounts[1];
-        erc20DistributionFactoryInstance = await ERC20DistributionFactory.new({
+        erc20DistributionFactoryInstance = await ERC20StakingRewardsDistributionFactory.new({
             from: ownerAddress,
         });
         rewardsTokenInstance = await FirstRewardERC20.new();
@@ -95,7 +95,7 @@ contract("ERC20DistributionFactory - Distribution creation", () => {
         const createdDistributionAddress = await erc20DistributionFactoryInstance.distributions(
             0
         );
-        const erc20DistributionInstance = await ERC20Distribution.at(
+        const erc20DistributionInstance = await ERC20StakingRewardsDistribution.at(
             createdDistributionAddress
         );
 

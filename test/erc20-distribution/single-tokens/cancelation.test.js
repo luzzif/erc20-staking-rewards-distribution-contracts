@@ -5,12 +5,12 @@ const { initializeDistribution } = require("../../utils");
 const { toWei } = require("../../utils/conversion");
 const { fastForwardTo, getEvmTimestamp } = require("../../utils/network");
 
-const ERC20Distribution = artifacts.require("ERC20Distribution");
+const ERC20StakingRewardsDistribution = artifacts.require("ERC20StakingRewardsDistribution");
 const FirstRewardERC20 = artifacts.require("FirstRewardERC20");
 const FirstStakableERC20 = artifacts.require("FirstStakableERC20");
 
 contract(
-    "ERC20Distribution - Single reward/stakable token - Cancelation",
+    "ERC20StakingRewardsDistribution - Single reward/stakable token - Cancelation",
     () => {
         let erc20DistributionInstance,
             rewardsTokenInstance,
@@ -21,7 +21,7 @@ contract(
         beforeEach(async () => {
             const accounts = await web3.eth.getAccounts();
             ownerAddress = accounts[0];
-            erc20DistributionInstance = await ERC20Distribution.new({
+            erc20DistributionInstance = await ERC20StakingRewardsDistribution.new({
                 from: ownerAddress,
             });
             rewardsTokenInstance = await FirstRewardERC20.new();
@@ -35,7 +35,7 @@ contract(
                 throw new Error("should have failed");
             } catch (error) {
                 expect(error.message).to.contain(
-                    "ERC20Distribution: not initialized"
+                    "ERC20StakingRewardsDistribution: not initialized"
                 );
             }
         });
@@ -74,7 +74,7 @@ contract(
                 throw new Error("should have failed");
             } catch (error) {
                 expect(error.message).to.contain(
-                    "ERC20Distribution: distribution already started"
+                    "ERC20StakingRewardsDistribution: distribution already started"
                 );
             }
         });

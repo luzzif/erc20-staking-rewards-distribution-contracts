@@ -8,7 +8,7 @@ import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
-contract ERC20Distribution is Ownable {
+contract ERC20StakingRewardsDistribution is Ownable {
     using SafeMath for uint256;
     using SafeMath for uint64;
     using SafeERC20 for ERC20;
@@ -62,15 +62,15 @@ contract ERC20Distribution is Ownable {
     ) external onlyOwner onlyUninitialized {
         require(
             _startingTimestamp > block.timestamp,
-            "ERC20Distribution: starting timestamp lower or equal than current"
+            "ERC20StakingRewardsDistribution: invalid starting timestamp"
         );
         require(
             _endingTimestamp > _startingTimestamp,
-            "ERC20Distribution: invalid time duration"
+            "ERC20StakingRewardsDistribution: invalid time duration"
         );
         require(
             _rewardTokenAddresses.length == _rewardAmounts.length,
-            "ERC20Distribution: inconsistent reward token/amount arrays length"
+            "ERC20StakingRewardsDistribution: inconsistent reward token/amount"
         );
 
         uint256 _secondsDuration = _endingTimestamp - _startingTimestamp;
@@ -80,24 +80,27 @@ contract ERC20Distribution is Ownable {
             uint256 _rewardAmount = _rewardAmounts[_i];
             require(
                 _rewardTokenAddress != address(0),
-                "ERC20Distribution: 0 address as reward token"
+                "ERC20StakingRewardsDistribution: 0 address as reward token"
             );
-            require(_rewardAmount > 0, "ERC20Distribution: no reward");
+            require(
+                _rewardAmount > 0,
+                "ERC20StakingRewardsDistribution: no reward"
+            );
             require(
                 _rewardAmount >= _secondsDuration,
-                "ERC20Distribution: seconds duration less than rewards amount"
+                "ERC20StakingRewardsDistribution: seconds duration less than rewards amount"
             );
             ERC20 _rewardToken = ERC20(_rewardTokenAddress);
             require(
                 _rewardToken.balanceOf(address(this)) >= _rewardAmount,
-                "ERC20Distribution: no funding"
+                "ERC20StakingRewardsDistribution: no funding"
             );
             // avoid overflow down the road (when consolidating rewards)
             // by constraining the reward token decimals to a maximum of 18
             uint256 _rewardTokenDecimals = _rewardToken.decimals();
             require(
                 _rewardTokenDecimals > 0 && _rewardTokenDecimals <= 18,
-                "ERC20Distribution: invalid decimals for reward token"
+                "ERC20StakingRewardsDistribution: invalid decimals for reward token"
             );
             rewardTokens.push(_rewardToken);
             rewardTokenMultiplier[_rewardTokenAddress] =
@@ -110,7 +113,7 @@ contract ERC20Distribution is Ownable {
 
         require(
             _stakableTokenAddress != address(0),
-            "ERC20Distribution: 0 address as stakable token"
+            "ERC20StakingRewardsDistribution: 0 address as stakable token"
         );
         stakableToken = ERC20(_stakableTokenAddress);
 
@@ -133,7 +136,7 @@ contract ERC20Distribution is Ownable {
     function cancel() external onlyInitialized onlyOwner {
         require(
             block.timestamp < startingTimestamp,
-            "ERC20Distribution: distribution already started"
+            "ERC20StakingRewardsDistribution: distribution already started"
         );
         // resetting reward information (both tokens and amounts)
         for (uint256 _i; _i < rewardTokens.length; _i++) {
@@ -178,7 +181,10 @@ contract ERC20Distribution is Ownable {
         onlyStarted
         onlyRunning
     {
-        require(_amount > 0, "ERC20Distribution: tried to stake nothing");
+        require(
+            _amount > 0,
+            "ERC20StakingRewardsDistribution: tried to stake nothing"
+        );
         consolidateReward();
         stakedTokensOf[msg.sender] = stakedTokensOf[msg.sender].add(_amount);
         totalStakedTokensAmount = totalStakedTokensAmount.add(_amount);
@@ -187,17 +193,20 @@ contract ERC20Distribution is Ownable {
     }
 
     function withdraw(uint256 _amount) external onlyInitialized onlyStarted {
-        require(_amount > 0, "ERC20Distribution: tried to withdraw nothing");
+        require(
+            _amount > 0,
+            "ERC20StakingRewardsDistribution: tried to withdraw nothing"
+        );
         if (locked) {
             require(
                 block.timestamp > endingTimestamp,
-                "ERC20Distribution: funds locked until the distribution ends"
+                "ERC20StakingRewardsDistribution: funds locked until the distribution ends"
             );
         }
         consolidateReward();
         require(
             _amount <= stakedTokensOf[msg.sender],
-            "ERC20Distribution: withdrawn amount greater than current stake"
+            "ERC20StakingRewardsDistribution: withdrawn amount greater than current stake"
         );
         stakedTokensOf[msg.sender] = stakedTokensOf[msg.sender].sub(_amount);
         totalStakedTokensAmount = totalStakedTokensAmount.sub(_amount);
@@ -282,19 +291,25 @@ contract ERC20Distribution is Ownable {
     }
 
     modifier onlyUninitialized() {
-        require(!initialized, "ERC20Distribution: already initialized");
+        require(
+            !initialized,
+            "ERC20StakingRewardsDistribution: already initialized"
+        );
         _;
     }
 
     modifier onlyInitialized() {
-        require(initialized, "ERC20Distribution: not initialized");
+        require(
+            initialized,
+            "ERC20StakingRewardsDistribution: not initialized"
+        );
         _;
     }
 
     modifier onlyStarted() {
         require(
             initialized && block.timestamp >= startingTimestamp,
-            "ERC20Distribution: not started"
+            "ERC20StakingRewardsDistribution: not started"
         );
         _;
     }
@@ -302,7 +317,7 @@ contract ERC20Distribution is Ownable {
     modifier onlyRunning() {
         require(
             initialized && block.timestamp <= endingTimestamp,
-            "ERC20Distribution: already ended"
+            "ERC20StakingRewardsDistribution: already ended"
         );
         _;
     }
