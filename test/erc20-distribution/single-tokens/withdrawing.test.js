@@ -36,7 +36,7 @@ contract(
 
         it("should fail when initialization has not been done", async () => {
             try {
-                await erc20DistributionInstance.withdraw([0]);
+                await erc20DistributionInstance.withdraw(0);
                 throw new Error("should have failed");
             } catch (error) {
                 expect(error.message).to.contain(
@@ -50,12 +50,12 @@ contract(
                 await initializeDistribution({
                     from: ownerAddress,
                     erc20DistributionInstance,
-                    stakableTokens: [stakableTokenInstance],
+                    stakableToken: stakableTokenInstance,
                     rewardTokens: [rewardsTokenInstance],
                     rewardAmounts: [2],
                     duration: 2,
                 });
-                await erc20DistributionInstance.withdraw([0]);
+                await erc20DistributionInstance.withdraw(0);
                 throw new Error("should have failed");
             } catch (error) {
                 expect(error.message).to.contain(
@@ -75,7 +75,7 @@ contract(
                 const { startingTimestamp } = await initializeDistribution({
                     from: ownerAddress,
                     erc20DistributionInstance,
-                    stakableTokens: [stakableTokenInstance],
+                    stakableToken: stakableTokenInstance,
                     rewardTokens: [rewardsTokenInstance],
                     rewardAmounts: [20],
                     duration: 10,
@@ -84,84 +84,16 @@ contract(
                 await stakeAtTimestamp(
                     erc20DistributionInstance,
                     stakerAddress,
-                    [1],
+                    1,
                     startingTimestamp
                 );
-                await erc20DistributionInstance.withdraw([2], {
+                await erc20DistributionInstance.withdraw(2, {
                     from: stakerAddress,
                 });
                 throw new Error("should have failed");
             } catch (error) {
                 expect(error.message).to.contain(
                     "ERC20Distribution: withdrawn amount greater than current stake"
-                );
-            }
-        });
-
-        it("should fail when passing an array longer than the amount of stakable tokens", async () => {
-            try {
-                await initializeStaker({
-                    erc20DistributionInstance,
-                    stakableTokenInstance,
-                    stakerAddress: stakerAddress,
-                    stakableAmount: 1,
-                });
-                const { startingTimestamp } = await initializeDistribution({
-                    from: ownerAddress,
-                    erc20DistributionInstance,
-                    stakableTokens: [stakableTokenInstance],
-                    rewardTokens: [rewardsTokenInstance],
-                    rewardAmounts: [11],
-                    duration: 10,
-                });
-                await fastForwardTo({ timestamp: startingTimestamp });
-                await stakeAtTimestamp(
-                    erc20DistributionInstance,
-                    stakerAddress,
-                    [1],
-                    startingTimestamp
-                );
-                await erc20DistributionInstance.withdraw([1, 0], {
-                    from: stakerAddress,
-                });
-                throw new Error("should have failed");
-            } catch (error) {
-                expect(error.message).to.contain(
-                    "ERC20Distribution: inconsistent withdrawn amounts length"
-                );
-            }
-        });
-
-        it("should fail when passing an array shorter than the amount of stakable tokens", async () => {
-            try {
-                await initializeStaker({
-                    erc20DistributionInstance,
-                    stakableTokenInstance,
-                    stakerAddress: stakerAddress,
-                    stakableAmount: 1,
-                });
-                const { startingTimestamp } = await initializeDistribution({
-                    from: ownerAddress,
-                    erc20DistributionInstance,
-                    stakableTokens: [stakableTokenInstance],
-                    rewardTokens: [rewardsTokenInstance],
-                    rewardAmounts: [11],
-                    duration: 10,
-                });
-                await fastForwardTo({ timestamp: startingTimestamp });
-                await stakeAtTimestamp(
-                    erc20DistributionInstance,
-                    stakerAddress,
-                    [1],
-                    startingTimestamp
-                );
-                await erc20DistributionInstance.withdraw([], {
-                    from: stakerAddress,
-                });
-                throw new Error("should have failed");
-            } catch (error) {
-                expect(error.message).to.contain(
-                    "ERC20Distribution: inconsistent withdrawn amounts length"
                 );
             }
         });
@@ -177,7 +109,7 @@ contract(
             const { startingTimestamp } = await initializeDistribution({
                 from: ownerAddress,
                 erc20DistributionInstance,
-                stakableTokens: [stakableTokenInstance],
+                stakableToken: stakableTokenInstance,
                 rewardTokens: [rewardsTokenInstance],
                 rewardAmounts: [await toWei(1, rewardsTokenInstance)],
                 duration: 10,
@@ -186,28 +118,19 @@ contract(
             await stakeAtTimestamp(
                 erc20DistributionInstance,
                 stakerAddress,
-                [stakedAmount],
+                stakedAmount,
                 startingTimestamp
             );
             expect(
-                await erc20DistributionInstance.stakedTokensOf(
-                    stakerAddress,
-                    stakableTokenInstance.address
-                )
+                await erc20DistributionInstance.stakedTokensOf(stakerAddress)
             ).to.be.equalBn(stakedAmount);
-            await withdraw(erc20DistributionInstance, stakerAddress, [
-                stakedAmount.div(new BN(2)),
-            ]);
+            await withdraw(
+                erc20DistributionInstance,
+                stakerAddress,
+                stakedAmount.div(new BN(2))
+            );
             expect(
-                await erc20DistributionInstance.stakedTokensOf(
-                    stakerAddress,
-                    stakableTokenInstance.address
-                )
-            ).to.be.equalBn(stakedAmount.div(new BN(2)));
-            expect(
-                await erc20DistributionInstance.stakedTokenAmount(
-                    stakableTokenInstance.address
-                )
+                await erc20DistributionInstance.stakedTokensOf(stakerAddress)
             ).to.be.equalBn(stakedAmount.div(new BN(2)));
             expect(
                 await stakableTokenInstance.balanceOf(stakerAddress)
@@ -228,7 +151,7 @@ contract(
             } = await initializeDistribution({
                 from: ownerAddress,
                 erc20DistributionInstance,
-                stakableTokens: [stakableTokenInstance],
+                stakableToken: stakableTokenInstance,
                 rewardTokens: [rewardsTokenInstance],
                 rewardAmounts: [await toWei(1, rewardsTokenInstance)],
                 duration: 10,
@@ -237,32 +160,21 @@ contract(
             await stakeAtTimestamp(
                 erc20DistributionInstance,
                 stakerAddress,
-                [stakedAmount],
+                stakedAmount,
                 startingTimestamp
             );
             expect(
-                await erc20DistributionInstance.stakedTokensOf(
-                    stakerAddress,
-                    stakableTokenInstance.address
-                )
+                await erc20DistributionInstance.stakedTokensOf(stakerAddress)
             ).to.be.equalBn(stakedAmount);
             await fastForwardTo({ timestamp: endingTimestamp });
             await withdrawAtTimestamp(
                 erc20DistributionInstance,
                 stakerAddress,
-                [stakedAmount.div(new BN(2))],
+                stakedAmount.div(new BN(2)),
                 endingTimestamp
             );
             expect(
-                await erc20DistributionInstance.stakedTokensOf(
-                    stakerAddress,
-                    stakableTokenInstance.address
-                )
-            ).to.be.equalBn(stakedAmount.div(new BN(2)));
-            expect(
-                await erc20DistributionInstance.stakedTokenAmount(
-                    stakableTokenInstance.address
-                )
+                await erc20DistributionInstance.stakedTokensOf(stakerAddress)
             ).to.be.equalBn(stakedAmount.div(new BN(2)));
             expect(
                 await stakableTokenInstance.balanceOf(stakerAddress)
@@ -281,7 +193,7 @@ contract(
                 const { startingTimestamp } = await initializeDistribution({
                     from: ownerAddress,
                     erc20DistributionInstance,
-                    stakableTokens: [stakableTokenInstance],
+                    stakableToken: stakableTokenInstance,
                     rewardTokens: [rewardsTokenInstance],
                     rewardAmounts: [await toWei(1, rewardsTokenInstance)],
                     duration: 10,
@@ -291,25 +203,26 @@ contract(
                 await stakeAtTimestamp(
                     erc20DistributionInstance,
                     stakerAddress,
-                    [stakedAmount],
+                    stakedAmount,
                     startingTimestamp
                 );
                 expect(
                     await erc20DistributionInstance.stakedTokensOf(
-                        stakerAddress,
-                        stakableTokenInstance.address
+                        stakerAddress
                     )
                 ).to.be.equalBn(stakedAmount);
                 // fast-forward to the middle of the distribution
                 const withdrawingTimestamp = startingTimestamp.add(new BN(5));
                 await fastForwardTo({ timestamp: withdrawingTimestamp });
-                await withdraw(erc20DistributionInstance, stakerAddress, [
-                    stakedAmount.div(new BN(2)),
-                ]);
+                await withdraw(
+                    erc20DistributionInstance,
+                    stakerAddress,
+                    stakedAmount.div(new BN(2))
+                );
                 throw new Error("should have failed");
             } catch (error) {
                 expect(error.message).to.contain(
-                    "ERC20Distribution: funds locked until ending timestamp"
+                    "ERC20Distribution: funds locked until the distribution ends"
                 );
             }
         });
@@ -332,7 +245,7 @@ contract(
                 } = await initializeDistribution({
                     from: ownerAddress,
                     erc20DistributionInstance,
-                    stakableTokens: [stakableTokenInstance],
+                    stakableToken: stakableTokenInstance,
                     rewardTokens: [rewardsTokenInstance],
                     rewardAmounts: [await toWei(1, rewardsTokenInstance)],
                     duration: 10,
@@ -343,13 +256,12 @@ contract(
                 await stakeAtTimestamp(
                     erc20DistributionInstance,
                     stakerAddress,
-                    [stakedAmount],
+                    stakedAmount,
                     startingTimestamp
                 );
                 expect(
                     await erc20DistributionInstance.stakedTokensOf(
-                        stakerAddress,
-                        stakableTokenInstance.address
+                        stakerAddress
                     )
                 ).to.be.equalBn(stakedAmount);
                 // fast-forward to the middle of the distribution
@@ -361,7 +273,7 @@ contract(
                 await withdrawAtTimestamp(
                     erc20DistributionInstance,
                     stakerAddress,
-                    [stakedAmount.div(new BN(2))],
+                    stakedAmount.div(new BN(2)),
                     withdrawingTimestamp
                 );
                 expect(await getEvmTimestamp()).to.be.equalBn(
@@ -370,7 +282,7 @@ contract(
                 throw new Error("should have failed");
             } catch (error) {
                 expect(error.message).to.contain(
-                    "ERC20Distribution: funds locked until ending timestamp"
+                    "ERC20Distribution: funds locked until the distribution ends"
                 );
             }
         });
@@ -389,7 +301,7 @@ contract(
             } = await initializeDistribution({
                 from: ownerAddress,
                 erc20DistributionInstance,
-                stakableTokens: [stakableTokenInstance],
+                stakableToken: stakableTokenInstance,
                 rewardTokens: [rewardsTokenInstance],
                 rewardAmounts: [await toWei(1, rewardsTokenInstance)],
                 duration: 10,
@@ -399,14 +311,11 @@ contract(
             await stakeAtTimestamp(
                 erc20DistributionInstance,
                 stakerAddress,
-                [stakedAmount],
+                stakedAmount,
                 startingTimestamp
             );
             expect(
-                await erc20DistributionInstance.stakedTokensOf(
-                    stakerAddress,
-                    stakableTokenInstance.address
-                )
+                await erc20DistributionInstance.stakedTokensOf(stakerAddress)
             ).to.be.equalBn(stakedAmount);
             // fast-forward to the middle of the distribution
             const withdrawingTimestamp = endingTimestamp.add(new BN(2));
@@ -414,7 +323,7 @@ contract(
             await withdrawAtTimestamp(
                 erc20DistributionInstance,
                 stakerAddress,
-                [stakedAmount],
+                stakedAmount,
                 withdrawingTimestamp
             );
             expect(await getEvmTimestamp()).to.be.equalBn(withdrawingTimestamp);

@@ -21,7 +21,9 @@ contract("ERC20Distribution - Single reward/stakable token - Staking", () => {
     beforeEach(async () => {
         const accounts = await web3.eth.getAccounts();
         ownerAddress = accounts[0];
-        erc20DistributionInstance = await ERC20Distribution.new({ from: ownerAddress });
+        erc20DistributionInstance = await ERC20Distribution.new({
+            from: ownerAddress,
+        });
         rewardsTokenInstance = await FirstRewardERC20.new();
         stakableTokenInstance = await FirstStakableERC20.new();
         stakerAddress = accounts[1];
@@ -32,7 +34,9 @@ contract("ERC20Distribution - Single reward/stakable token - Staking", () => {
             await erc20DistributionInstance.stake([0]);
             throw new Error("should have failed");
         } catch (error) {
-            expect(error.message).to.contain("ERC20Distribution: not initialized");
+            expect(error.message).to.contain(
+                "ERC20Distribution: not initialized"
+            );
         }
     });
 
@@ -41,7 +45,7 @@ contract("ERC20Distribution - Single reward/stakable token - Staking", () => {
             await initializeDistribution({
                 from: ownerAddress,
                 erc20DistributionInstance,
-                stakableTokens: [stakableTokenInstance],
+                stakableToken: stakableTokenInstance,
                 rewardTokens: [rewardsTokenInstance],
                 rewardAmounts: [3],
                 duration: 2,
@@ -58,13 +62,15 @@ contract("ERC20Distribution - Single reward/stakable token - Staking", () => {
             const { startingTimestamp } = await initializeDistribution({
                 from: ownerAddress,
                 erc20DistributionInstance,
-                stakableTokens: [stakableTokenInstance],
+                stakableToken: stakableTokenInstance,
                 rewardTokens: [rewardsTokenInstance],
                 rewardAmounts: [2],
                 duration: 2,
             });
             await mineBlock(startingTimestamp);
-            await erc20DistributionInstance.stake([100], { from: stakerAddress });
+            await erc20DistributionInstance.stake([100], {
+                from: stakerAddress,
+            });
             throw new Error("should have failed");
         } catch (error) {
             expect(error.message).to.contain(
@@ -79,7 +85,7 @@ contract("ERC20Distribution - Single reward/stakable token - Staking", () => {
             const { startingTimestamp } = await initializeDistribution({
                 from: ownerAddress,
                 erc20DistributionInstance,
-                stakableTokens: [stakableTokenInstance],
+                stakableToken: stakableTokenInstance,
                 rewardTokens: [rewardsTokenInstance],
                 rewardAmounts: [2],
                 duration: 2,
@@ -108,7 +114,7 @@ contract("ERC20Distribution - Single reward/stakable token - Staking", () => {
             const { startingTimestamp } = await initializeDistribution({
                 from: ownerAddress,
                 erc20DistributionInstance,
-                stakableTokens: [stakableTokenInstance],
+                stakableToken: stakableTokenInstance,
                 rewardTokens: [rewardsTokenInstance],
                 rewardAmounts: [3],
                 duration: 2,
@@ -132,11 +138,10 @@ contract("ERC20Distribution - Single reward/stakable token - Staking", () => {
             stakableAmount: stakedAmount,
         });
         const rewardTokens = [rewardsTokenInstance];
-        const stakableTokens = [stakableTokenInstance];
         const { startingTimestamp } = await initializeDistribution({
             from: ownerAddress,
             erc20DistributionInstance,
-            stakableTokens,
+            stakableToken: stakableTokenInstance,
             rewardTokens,
             rewardAmounts: [await toWei(1, rewardsTokenInstance)],
             duration: 2,
@@ -145,21 +150,12 @@ contract("ERC20Distribution - Single reward/stakable token - Staking", () => {
         await stakeAtTimestamp(
             erc20DistributionInstance,
             stakerAddress,
-            [stakedAmount],
+            stakedAmount,
             startingTimestamp
         );
         for (let i = 0; i < rewardTokens.length; i++) {
-            const stakableToken = stakableTokens[i];
             expect(
-                await erc20DistributionInstance.stakedTokensOf(
-                    stakerAddress,
-                    stakableToken.address
-                )
-            ).to.be.equalBn(stakedAmount);
-            expect(
-                await erc20DistributionInstance.stakedTokenAmount(
-                    stakableToken.address
-                )
+                await erc20DistributionInstance.stakedTokensOf(stakerAddress)
             ).to.be.equalBn(stakedAmount);
         }
         expect(

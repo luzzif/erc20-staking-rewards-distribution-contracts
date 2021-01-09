@@ -26,7 +26,7 @@ exports.initializeStaker = async ({
 exports.initializeDistribution = async ({
     from,
     erc20DistributionInstance,
-    stakableTokens,
+    stakableToken,
     rewardTokens,
     rewardAmounts,
     duration,
@@ -43,12 +43,12 @@ exports.initializeDistribution = async ({
     }
     if (fund) {
         for (let i = 0; i < rewardTokens.length; i++) {
-            await rewardTokens[i].mint(from, rewardAmounts[i]);
-            // approve tokens
-            await rewardTokens[i].approve(
+            // funds are sent directly to the distribution contract (this
+            // wouldn't necessarily be needed if using the factory to
+            // bootstrap distributions)
+            await rewardTokens[i].mint(
                 erc20DistributionInstance.address,
-                rewardAmounts[i],
-                { from }
+                rewardAmounts[i]
             );
         }
     }
@@ -64,7 +64,7 @@ exports.initializeDistribution = async ({
     );
     await erc20DistributionInstance.initialize(
         rewardTokens.map((instance) => instance.address),
-        stakableTokens.map((instance) => instance.address),
+        stakableToken.address,
         rewardAmounts,
         campaignStartingTimestamp,
         campaignEndingTimestamp,
@@ -80,16 +80,16 @@ exports.initializeDistribution = async ({
 exports.stake = async (
     erc20DistributionInstance,
     from,
-    amounts,
+    amount,
     waitForReceipt = true
 ) => {
     if (waitForReceipt) {
-        await erc20DistributionInstance.stake(amounts, { from });
+        await erc20DistributionInstance.stake(amount, { from });
     } else {
         // Make sure the transaction has actually been queued before returning
         return new Promise((resolve, reject) => {
             erc20DistributionInstance
-                .stake(amounts, { from })
+                .stake(amount, { from })
                 .on("transactionHash", resolve)
                 .on("error", reject)
                 .then(resolve)
@@ -101,14 +101,14 @@ exports.stake = async (
 exports.stakeAtTimestamp = async (
     erc20DistributionInstance,
     from,
-    amounts,
+    amount,
     timestamp
 ) => {
     await stopMining();
     // Make sure the transaction has actually been queued before returning
     const hash = await new Promise((resolve, reject) => {
         erc20DistributionInstance
-            .stake(amounts, { from })
+            .stake(amount, { from })
             .on("transactionHash", resolve)
             .on("error", reject)
             .then(resolve)
@@ -136,17 +136,17 @@ exports.stakeAtTimestamp = async (
 exports.withdraw = async (
     erc20DistributionInstance,
     from,
-    amounts,
+    amount,
     waitForReceipt = true
 ) => {
     if (waitForReceipt) {
-        await erc20DistributionInstance.withdraw(amounts, { from });
+        await erc20DistributionInstance.withdraw(amount, { from });
         return new BN(await web3.eth.getBlockNumber());
     } else {
         // Make sure the transaction has actually been queued before returning
         return new Promise((resolve, reject) => {
             erc20DistributionInstance
-                .withdraw(amounts, { from })
+                .withdraw(amount, { from })
                 .on("transactionHash", resolve)
                 .on("error", reject)
                 .then(resolve)
@@ -158,14 +158,14 @@ exports.withdraw = async (
 exports.withdrawAtTimestamp = async (
     erc20DistributionInstance,
     from,
-    amounts,
+    amount,
     timestamp
 ) => {
     await stopMining();
     // Make sure the transaction has actually been queued before returning
     const hash = await new Promise((resolve, reject) => {
         erc20DistributionInstance
-            .withdraw(amounts, { from })
+            .withdraw(amount, { from })
             .on("transactionHash", resolve)
             .on("error", reject)
             .then(resolve)

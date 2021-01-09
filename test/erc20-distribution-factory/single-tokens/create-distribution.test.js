@@ -15,7 +15,7 @@ contract("ERC20DistributionFactory - Distribution creation", () => {
 
     beforeEach(async () => {
         const accounts = await web3.eth.getAccounts();
-        ownerAddress = accounts[0];
+        ownerAddress = accounts[1];
         erc20DistributionFactoryInstance = await ERC20DistributionFactory.new({
             from: ownerAddress,
         });
@@ -29,7 +29,7 @@ contract("ERC20DistributionFactory - Distribution creation", () => {
             const startingTimestamp = (await getEvmTimestamp()).add(new BN(10));
             await erc20DistributionFactoryInstance.createDistribution(
                 [rewardsTokenInstance.address],
-                [stakableTokenInstance.address],
+                stakableTokenInstance.address,
                 [10],
                 startingTimestamp,
                 startingTimestamp.add(new BN(10)),
@@ -51,11 +51,12 @@ contract("ERC20DistributionFactory - Distribution creation", () => {
             const startingTimestamp = (await getEvmTimestamp()).add(new BN(10));
             await erc20DistributionFactoryInstance.createDistribution(
                 [rewardsTokenInstance.address],
-                [stakableTokenInstance.address],
+                stakableTokenInstance.address,
                 [rewardAmount],
                 startingTimestamp,
                 startingTimestamp.add(new BN(10)),
-                false
+                false,
+                { from: ownerAddress }
             );
             throw new Error("should have failed");
         } catch (error) {
@@ -76,17 +77,17 @@ contract("ERC20DistributionFactory - Distribution creation", () => {
         );
         const rewardAmounts = [rewardAmount];
         const rewardTokens = [rewardsTokenInstance.address];
-        const stakableTokens = [stakableTokenInstance.address];
         const startingTimestamp = (await getEvmTimestamp()).add(new BN(10));
         const endingTimestamp = startingTimestamp.add(new BN(10));
         const locked = false;
         await erc20DistributionFactoryInstance.createDistribution(
             rewardTokens,
-            stakableTokens,
+            stakableTokenInstance.address,
             rewardAmounts,
             startingTimestamp,
             endingTimestamp,
-            locked
+            locked,
+            { from: ownerAddress }
         );
         expect(
             await erc20DistributionFactoryInstance.getDistributionsAmount()
@@ -99,12 +100,13 @@ contract("ERC20DistributionFactory - Distribution creation", () => {
         );
 
         const onchainRewardTokens = await erc20DistributionInstance.getRewardTokens();
-        const onchainStakableTokens = await erc20DistributionInstance.getStakableTokens();
         const onchainStartingTimestamp = await erc20DistributionInstance.startingTimestamp();
         const onchainEndingTimestamp = await erc20DistributionInstance.endingTimestamp();
 
         expect(onchainRewardTokens).to.have.length(rewardTokens.length);
-        expect(onchainStakableTokens).to.have.length(stakableTokens.length);
+        expect(await erc20DistributionInstance.stakableToken()).to.be.equal(
+            stakableTokenInstance.address
+        );
         for (let i = 0; i < onchainRewardTokens.length; i++) {
             const token = onchainRewardTokens[i];
             const amount = await erc20DistributionInstance.rewardAmount(token);
@@ -112,5 +114,8 @@ contract("ERC20DistributionFactory - Distribution creation", () => {
         }
         expect(onchainStartingTimestamp).to.be.equalBn(startingTimestamp);
         expect(onchainEndingTimestamp).to.be.equalBn(endingTimestamp);
+        expect(await erc20DistributionFactoryInstance.owner()).to.be.equal(
+            ownerAddress
+        );
     });
 });

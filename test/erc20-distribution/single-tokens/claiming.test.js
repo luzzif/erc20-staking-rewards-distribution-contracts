@@ -56,7 +56,7 @@ contract("ERC20Distribution - Single reward/stakable token - Claiming", () => {
         } = await initializeDistribution({
             from: ownerAddress,
             erc20DistributionInstance,
-            stakableTokens: [stakableTokenInstance],
+            stakableToken: stakableTokenInstance,
             rewardTokens: [rewardsTokenInstance],
             rewardAmounts: [rewardsAmount],
             duration: 10,
@@ -68,7 +68,7 @@ contract("ERC20Distribution - Single reward/stakable token - Claiming", () => {
         await stakeAtTimestamp(
             erc20DistributionInstance,
             firstStakerAddress,
-            [stakedAmount],
+            stakedAmount,
             startingTimestamp
         );
         const stakerStartingTimestamp = await getEvmTimestamp();
@@ -119,7 +119,7 @@ contract("ERC20Distribution - Single reward/stakable token - Claiming", () => {
         } = await initializeDistribution({
             from: ownerAddress,
             erc20DistributionInstance,
-            stakableTokens: [stakableTokenInstance],
+            stakableToken: stakableTokenInstance,
             rewardTokens: [rewardsTokenInstance],
             rewardAmounts: [rewardsAmount],
             duration,
@@ -132,7 +132,7 @@ contract("ERC20Distribution - Single reward/stakable token - Claiming", () => {
         await stakeAtTimestamp(
             erc20DistributionInstance,
             firstStakerAddress,
-            [stakedAmount],
+            stakedAmount,
             startingTimestamp
         );
         const firstStakerStartingTimestamp = await getEvmTimestamp();
@@ -145,7 +145,7 @@ contract("ERC20Distribution - Single reward/stakable token - Claiming", () => {
         await stakeAtTimestamp(
             erc20DistributionInstance,
             secondStakerAddress,
-            [stakedAmount],
+            stakedAmount,
             startingTimestamp.add(new BN(5))
         );
         const secondStakerStartingTimestamp = await getEvmTimestamp();
@@ -183,7 +183,9 @@ contract("ERC20Distribution - Single reward/stakable token - Claiming", () => {
             await rewardsTokenInstance.balanceOf(firstStakerAddress)
         ).to.be.equalBn(expectedFirstStakerReward);
         // second staker claiming/balance checking
-        await erc20DistributionInstance.claim({ from: secondStakerAddress });
+        await erc20DistributionInstance.claim({
+            from: secondStakerAddress,
+        });
         expect(
             await rewardsTokenInstance.balanceOf(secondStakerAddress)
         ).to.be.equalBn(expectedSecondStakerReward);
@@ -217,7 +219,7 @@ contract("ERC20Distribution - Single reward/stakable token - Claiming", () => {
         } = await initializeDistribution({
             from: ownerAddress,
             erc20DistributionInstance,
-            stakableTokens: [stakableTokenInstance],
+            stakableToken: stakableTokenInstance,
             rewardTokens: [rewardsTokenInstance],
             rewardAmounts: [rewardsAmount],
             duration,
@@ -230,7 +232,7 @@ contract("ERC20Distribution - Single reward/stakable token - Claiming", () => {
         await stakeAtTimestamp(
             erc20DistributionInstance,
             firstStakerAddress,
-            [stakedAmount],
+            stakedAmount,
             startingTimestamp
         );
         const firstStakerStartingTimestamp = await getEvmTimestamp();
@@ -243,7 +245,7 @@ contract("ERC20Distribution - Single reward/stakable token - Claiming", () => {
         await stakeAtTimestamp(
             erc20DistributionInstance,
             secondStakerAddress,
-            [stakedAmount],
+            stakedAmount,
             startingTimestamp.add(new BN(6))
         );
         const secondStakerStartingTimestamp = await getEvmTimestamp();
@@ -258,7 +260,7 @@ contract("ERC20Distribution - Single reward/stakable token - Claiming", () => {
         await stakeAtTimestamp(
             erc20DistributionInstance,
             thirdStakerAddress,
-            [stakedAmount],
+            stakedAmount,
             secondStakerStartingTimestamp.add(new BN(3))
         );
         const thirdStakerStartingTimestamp = await getEvmTimestamp();
@@ -317,7 +319,9 @@ contract("ERC20Distribution - Single reward/stakable token - Claiming", () => {
         ).to.be.closeBn(expectedFirstStakerReward, MAXIMUM_VARIANCE);
 
         // second staker claim and rewards balance check
-        await erc20DistributionInstance.claim({ from: secondStakerAddress });
+        await erc20DistributionInstance.claim({
+            from: secondStakerAddress,
+        });
         expect(
             await rewardsTokenInstance.balanceOf(secondStakerAddress)
         ).to.be.closeBn(expectedSecondStakerReward, MAXIMUM_VARIANCE);
@@ -345,7 +349,7 @@ contract("ERC20Distribution - Single reward/stakable token - Claiming", () => {
         } = await initializeDistribution({
             from: ownerAddress,
             erc20DistributionInstance,
-            stakableTokens: [stakableTokenInstance],
+            stakableToken: stakableTokenInstance,
             rewardTokens: [rewardsTokenInstance],
             rewardAmounts: [rewardsAmount],
             duration,
@@ -358,7 +362,7 @@ contract("ERC20Distribution - Single reward/stakable token - Claiming", () => {
         await stakeAtTimestamp(
             erc20DistributionInstance,
             firstStakerAddress,
-            [stakedAmount],
+            stakedAmount,
             startingTimestamp.add(new BN(5))
         );
         const stakerStartingTimestamp = await getEvmTimestamp();
@@ -397,7 +401,7 @@ contract("ERC20Distribution - Single reward/stakable token - Claiming", () => {
         const { endingTimestamp } = await initializeDistribution({
             from: ownerAddress,
             erc20DistributionInstance,
-            stakableTokens: [stakableTokenInstance],
+            stakableToken: stakableTokenInstance,
             rewardTokens: [rewardsTokenInstance],
             rewardAmounts: [rewardsAmount],
             duration,
@@ -410,7 +414,7 @@ contract("ERC20Distribution - Single reward/stakable token - Claiming", () => {
         await stakeAtTimestamp(
             erc20DistributionInstance,
             firstStakerAddress,
-            [stakedAmount],
+            stakedAmount,
             stakerStartingTimestamp
         );
         expect(stakerStartingTimestamp).to.be.equalBn(await getEvmTimestamp());
@@ -438,7 +442,7 @@ contract("ERC20Distribution - Single reward/stakable token - Claiming", () => {
         const { endingTimestamp } = await initializeDistribution({
             from: ownerAddress,
             erc20DistributionInstance,
-            stakableTokens: [stakableTokenInstance],
+            stakableToken: stakableTokenInstance,
             rewardTokens: [rewardsTokenInstance],
             rewardAmounts: [rewardsAmount],
             duration,
@@ -451,7 +455,7 @@ contract("ERC20Distribution - Single reward/stakable token - Claiming", () => {
         await stakeAtTimestamp(
             erc20DistributionInstance,
             firstStakerAddress,
-            [stakedAmount],
+            stakedAmount,
             stakerStartingTimestamp
         );
         expect(stakerStartingTimestamp).to.be.equalBn(await getEvmTimestamp());
@@ -489,7 +493,7 @@ contract("ERC20Distribution - Single reward/stakable token - Claiming", () => {
         } = await initializeDistribution({
             from: ownerAddress,
             erc20DistributionInstance,
-            stakableTokens: [stakableTokenInstance],
+            stakableToken: stakableTokenInstance,
             rewardTokens: [rewardsTokenInstance],
             rewardAmounts: [rewardsAmount],
             duration,
@@ -501,7 +505,7 @@ contract("ERC20Distribution - Single reward/stakable token - Claiming", () => {
         await stakeAtTimestamp(
             erc20DistributionInstance,
             firstStakerAddress,
-            [stakedAmount],
+            stakedAmount,
             startingTimestamp
         );
         const firstStakerStartingTimestamp = await getEvmTimestamp();
@@ -513,7 +517,7 @@ contract("ERC20Distribution - Single reward/stakable token - Claiming", () => {
         await stakeAtTimestamp(
             erc20DistributionInstance,
             secondStakerAddress,
-            [stakedAmount],
+            stakedAmount,
             startingTimestamp.add(new BN(5))
         );
         const secondStakerStartingTimestamp = await getEvmTimestamp();
@@ -528,7 +532,7 @@ contract("ERC20Distribution - Single reward/stakable token - Claiming", () => {
         await withdrawAtTimestamp(
             erc20DistributionInstance,
             firstStakerAddress,
-            [stakedAmount.div(new BN(2))],
+            stakedAmount.div(new BN(2)),
             secondStakerStartingTimestamp.add(new BN(3))
         );
         const firstStakerWithdrawTimestamp = await getEvmTimestamp();
@@ -572,7 +576,9 @@ contract("ERC20Distribution - Single reward/stakable token - Claiming", () => {
             await rewardsTokenInstance.balanceOf(firstStakerAddress)
         ).to.be.closeBn(expectedFirstStakerReward, MAXIMUM_VARIANCE);
         // second staker claim and rewards balance check
-        await erc20DistributionInstance.claim({ from: secondStakerAddress });
+        await erc20DistributionInstance.claim({
+            from: secondStakerAddress,
+        });
         expect(
             await rewardsTokenInstance.balanceOf(secondStakerAddress)
         ).to.be.closeBn(expectedSecondStakerReward, MAXIMUM_VARIANCE);
@@ -597,7 +603,7 @@ contract("ERC20Distribution - Single reward/stakable token - Claiming", () => {
         const { endingTimestamp } = await initializeDistribution({
             from: ownerAddress,
             erc20DistributionInstance,
-            stakableTokens: [stakableTokenInstance],
+            stakableToken: stakableTokenInstance,
             rewardTokens: [rewardsTokenInstance],
             rewardAmounts: [rewardsAmount],
             duration,
@@ -611,13 +617,13 @@ contract("ERC20Distribution - Single reward/stakable token - Claiming", () => {
         await stakeAtTimestamp(
             erc20DistributionInstance,
             firstStakerAddress,
-            [stakedAmount],
+            stakedAmount,
             stakingTimestamp
         );
         await stakeAtTimestamp(
             erc20DistributionInstance,
             secondStakerAddress,
-            [stakedAmount],
+            stakedAmount,
             stakingTimestamp
         );
         expect(await getEvmTimestamp()).to.be.equalBn(stakingTimestamp);
@@ -645,7 +651,9 @@ contract("ERC20Distribution - Single reward/stakable token - Claiming", () => {
         ).to.be.equalBn(expectedFirstStakerReward);
 
         // second staker claim and rewards balance check
-        await erc20DistributionInstance.claim({ from: secondStakerAddress });
+        await erc20DistributionInstance.claim({
+            from: secondStakerAddress,
+        });
         expect(
             await rewardsTokenInstance.balanceOf(secondStakerAddress)
         ).to.be.equalBn(expectedSecondStakerReward);
@@ -668,7 +676,7 @@ contract("ERC20Distribution - Single reward/stakable token - Claiming", () => {
         } = await initializeDistribution({
             from: ownerAddress,
             erc20DistributionInstance,
-            stakableTokens: [stakableTokenInstance],
+            stakableToken: stakableTokenInstance,
             rewardTokens: [rewardsTokenInstance],
             rewardAmounts: [rewardsAmount],
             duration,
@@ -680,7 +688,7 @@ contract("ERC20Distribution - Single reward/stakable token - Claiming", () => {
         await stakeAtTimestamp(
             erc20DistributionInstance,
             firstStakerAddress,
-            [amountPerStake],
+            amountPerStake,
             startingTimestamp
         );
         const firstStakeStartingTimestamp = await getEvmTimestamp();
@@ -692,7 +700,7 @@ contract("ERC20Distribution - Single reward/stakable token - Claiming", () => {
         await stakeAtTimestamp(
             erc20DistributionInstance,
             firstStakerAddress,
-            [amountPerStake],
+            amountPerStake,
             startingTimestamp.add(new BN(5))
         );
         const secondStakeStartingTimestamp = await getEvmTimestamp();
@@ -736,7 +744,7 @@ contract("ERC20Distribution - Single reward/stakable token - Claiming", () => {
         } = await initializeDistribution({
             from: ownerAddress,
             erc20DistributionInstance,
-            stakableTokens: [stakableTokenInstance],
+            stakableToken: stakableTokenInstance,
             rewardTokens: [rewardsTokenInstance],
             rewardAmounts: [rewardsAmount],
             duration,
@@ -745,7 +753,7 @@ contract("ERC20Distribution - Single reward/stakable token - Claiming", () => {
         await stakeAtTimestamp(
             erc20DistributionInstance,
             firstStakerAddress,
-            [stakedAmount],
+            stakedAmount,
             startingTimestamp
         );
         const firstStakerStartingTimestamp = await getEvmTimestamp();
@@ -759,13 +767,13 @@ contract("ERC20Distribution - Single reward/stakable token - Claiming", () => {
         await stakeAtTimestamp(
             erc20DistributionInstance,
             secondStakerAddress,
-            [stakedAmount],
+            stakedAmount,
             stakeAndWithdrawTimestamp
         );
         await withdrawAtTimestamp(
             erc20DistributionInstance,
             firstStakerAddress,
-            [stakedAmount],
+            stakedAmount,
             stakeAndWithdrawTimestamp
         );
         const secondStakerStartingTimestamp = await getEvmTimestamp();
@@ -801,7 +809,9 @@ contract("ERC20Distribution - Single reward/stakable token - Claiming", () => {
         ).to.be.equalBn(expectedReward);
 
         // second staker claim and rewards balance check
-        await erc20DistributionInstance.claim({ from: secondStakerAddress });
+        await erc20DistributionInstance.claim({
+            from: secondStakerAddress,
+        });
         expect(
             await rewardsTokenInstance.balanceOf(secondStakerAddress)
         ).to.be.equalBn(expectedReward);

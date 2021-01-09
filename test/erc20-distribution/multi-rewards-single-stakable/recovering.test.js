@@ -56,7 +56,7 @@ contract(
             const { endingTimestamp } = await initializeDistribution({
                 from: ownerAddress,
                 erc20DistributionInstance,
-                stakableTokens: [stakableTokenInstance],
+                stakableToken: stakableTokenInstance,
                 rewardTokens,
                 rewardAmounts,
                 duration: 10,
@@ -99,7 +99,7 @@ contract(
             const { endingTimestamp } = await initializeDistribution({
                 from: ownerAddress,
                 erc20DistributionInstance,
-                stakableTokens: [stakableTokenInstance],
+                stakableToken: stakableTokenInstance,
                 rewardTokens,
                 rewardAmounts,
                 duration: 10,
@@ -156,7 +156,7 @@ contract(
             } = await initializeDistribution({
                 from: ownerAddress,
                 erc20DistributionInstance,
-                stakableTokens: [stakableTokenInstance],
+                stakableToken: stakableTokenInstance,
                 rewardTokens,
                 rewardAmounts,
                 duration: 10,
@@ -235,7 +235,7 @@ contract(
             } = await initializeDistribution({
                 from: ownerAddress,
                 erc20DistributionInstance,
-                stakableTokens: [stakableTokenInstance],
+                stakableToken: stakableTokenInstance,
                 rewardTokens,
                 rewardAmounts,
                 duration: 20,
@@ -332,7 +332,7 @@ contract(
             } = await initializeDistribution({
                 from: ownerAddress,
                 erc20DistributionInstance,
-                stakableTokens: [stakableTokenInstance],
+                stakableToken: stakableTokenInstance,
                 rewardTokens,
                 rewardAmounts,
                 duration: 12,
@@ -404,7 +404,7 @@ contract(
             } = await initializeDistribution({
                 from: ownerAddress,
                 erc20DistributionInstance,
-                stakableTokens: [stakableTokenInstance],
+                stakableToken: stakableTokenInstance,
                 rewardTokens,
                 rewardAmounts,
                 duration: 12,
@@ -486,7 +486,7 @@ contract(
             } = await initializeDistribution({
                 from: ownerAddress,
                 erc20DistributionInstance,
-                stakableTokens: [stakableTokenInstance],
+                stakableToken: stakableTokenInstance,
                 rewardTokens,
                 rewardAmounts,
                 duration: 12,
