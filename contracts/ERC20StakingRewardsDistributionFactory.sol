@@ -35,9 +35,8 @@ contract ERC20StakingRewardsDistributionFactory is Ownable {
         ERC20StakingRewardsDistribution _distribution =
             new ERC20StakingRewardsDistribution();
         for (uint256 _i; _i < _rewardTokenAddresses.length; _i++) {
-            ERC20 _rewardToken = ERC20(_rewardTokenAddresses[_i]);
             uint256 _relatedAmount = _rewardAmounts[_i];
-            _rewardToken.safeTransferFrom(
+            ERC20(_rewardTokenAddresses[_i]).safeTransferFrom(
                 msg.sender,
                 address(_distribution),
                 _relatedAmount
