@@ -88,7 +88,7 @@ contract ERC20StakingRewardsDistribution is Ownable {
             );
             require(
                 _rewardAmount >= _secondsDuration,
-                "ERC20StakingRewardsDistribution: seconds duration less than rewards amount"
+                "ERC20StakingRewardsDistribution: reward amount less than seconds duration"
             );
             ERC20 _rewardToken = ERC20(_rewardTokenAddress);
             require(
@@ -160,10 +160,10 @@ contract ERC20StakingRewardsDistribution is Ownable {
 
     function recoverUnassignedRewards() external onlyInitialized onlyStarted {
         consolidateReward();
-        uint256 _rewardTokensAmount = rewardTokens.length;
+        uint256 _numberOfRewardsTokens = rewardTokens.length;
         uint256[] memory _recoveredUnassignedRewards =
-            new uint256[](_rewardTokensAmount);
-        for (uint256 _i; _i < _rewardTokensAmount; _i++) {
+            new uint256[](_numberOfRewardsTokens);
+        for (uint256 _i; _i < _numberOfRewardsTokens; _i++) {
             ERC20 _relatedRewardToken = rewardTokens[_i];
 
             uint256 _relatedUnassignedReward =

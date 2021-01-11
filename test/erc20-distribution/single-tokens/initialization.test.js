@@ -281,7 +281,7 @@ contract(
                 throw new Error("should have failed");
             } catch (error) {
                 expect(error.message).to.contain(
-                    "ERC20StakingRewardsDistribution: seconds duration less than rewards amount"
+                    "ERC20StakingRewardsDistribution: reward amount less than seconds duration"
                 );
             }
         });
