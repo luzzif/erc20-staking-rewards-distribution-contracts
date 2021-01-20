@@ -90,17 +90,9 @@ contract(
                 onchainStartingTimestamp
             );
             expect(stakingDuration).to.be.equalBn(new BN(10));
-            const rewardPerSecond = await erc20DistributionInstance.rewardPerSecond(
-                rewardsTokenInstance.address
-            );
-            const firstStakerRewardsTokenBalance = await rewardsTokenInstance.balanceOf(
-                firstStakerAddress
-            );
-            expect(firstStakerRewardsTokenBalance).to.equalBn(
-                rewardPerSecond.mul(stakingDuration)
-            );
-            // additional checks to be extra safe
-            expect(firstStakerRewardsTokenBalance).to.equalBn(rewardsAmount);
+            expect(
+                await rewardsTokenInstance.balanceOf(firstStakerAddress)
+            ).to.equalBn(rewardsAmount);
         });
 
         it("should succeed in claiming two rewards if two stakers stake exactly the same amount at different times", async () => {
@@ -302,25 +294,14 @@ contract(
                 onchainEndingTimestamp.sub(thirdStakerStartingTimestamp)
             ).to.be.equalBn(new BN(3));
 
-            const rewardPerSecond = rewardsAmount.div(duration);
             // the first staker had all of the rewards for 6 seconds,
             // half of them for 3 seconds and a third for 3 seconds
-            const expectedFirstStakerReward = rewardPerSecond
-                .mul(new BN(6))
-                .add(rewardPerSecond.mul(new BN(3)).div(new BN(2)))
-                .add(rewardPerSecond.mul(new BN(3)).div(new BN(3)));
+            const expectedFirstStakerReward = new BN("7083333333333333333");
             // the second staker had half of the rewards for 6 seconds
             // and a third for 3 seconds
-            const expectedSecondStakerReward = rewardPerSecond
-                .mul(new BN(3))
-                .div(new BN(2))
-                .add(rewardPerSecond.mul(new BN(3)).div(new BN(3)));
+            const expectedSecondStakerReward = new BN("2083333333333333333");
             // the third staker had a third of the rewards for 3 seconds
-            // (math says that they'd simply get a full second reward for 3 seconds,
-            // but let's do the calculation anyway for added clarity)
-            const expectedThirdStakerReward = rewardPerSecond
-                .mul(new BN(3))
-                .div(new BN(3));
+            const expectedThirdStakerReward = new BN("833333333333333333");
 
             // first staker claiming/balance checking
             await erc20DistributionInstance.claim({ from: firstStakerAddress });

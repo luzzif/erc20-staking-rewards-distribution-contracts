@@ -199,11 +199,6 @@ contract(
                         rewardToken.address
                     )
                 ).to.be.equalBn(rewardAmount);
-                expect(
-                    await erc20DistributionInstance.rewardPerSecond(
-                        rewardToken.address
-                    )
-                ).to.be.equalBn(new BN(rewardAmount).div(duration));
             }
             const onchainStartingTimestamp = await erc20DistributionInstance.startingTimestamp();
             expect(onchainStartingTimestamp).to.be.equalBn(startingTimestamp);
@@ -236,24 +231,6 @@ contract(
             } catch (error) {
                 expect(error.message).to.contain(
                     "ERC20StakingRewardsDistribution: already initialized"
-                );
-            }
-        });
-
-        it("should fail when passing a duration which surpasses the rewards amount (reward per second to 0)", async () => {
-            try {
-                await initializeDistribution({
-                    from: ownerAddress,
-                    erc20DistributionInstance,
-                    stakableToken: stakableTokenInstance,
-                    rewardTokens: [rewardsTokenInstance],
-                    rewardAmounts: [1],
-                    duration: 10000000000,
-                });
-                throw new Error("should have failed");
-            } catch (error) {
-                expect(error.message).to.contain(
-                    "ERC20StakingRewardsDistribution: reward amount less than seconds duration"
                 );
             }
         });

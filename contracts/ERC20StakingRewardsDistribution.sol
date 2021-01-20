@@ -18,12 +18,12 @@ contract ERC20StakingRewardsDistribution is Ownable {
     ERC20[] public rewardTokens;
     ERC20 public stakableToken;
     mapping(address => uint256) public rewardAmount;
-    mapping(address => uint256) public rewardPerSecond;
     mapping(address => uint256) public stakedTokenAmount;
     uint256 public totalStakedTokensAmount;
     mapping(address => uint256) public rewardPerStakedToken;
     uint64 public startingTimestamp;
     uint64 public endingTimestamp;
+    uint64 public secondsDuration;
     bool public locked;
     bool public initialized;
     uint64 public lastConsolidationTimestamp;
@@ -74,7 +74,7 @@ contract ERC20StakingRewardsDistribution is Ownable {
             "ERC20StakingRewardsDistribution: inconsistent reward token/amount"
         );
 
-        uint256 _secondsDuration = _endingTimestamp - _startingTimestamp;
+        secondsDuration = _endingTimestamp - _startingTimestamp;
         // Initializing reward tokens and amounts
         for (uint32 _i = 0; _i < _rewardTokenAddresses.length; _i++) {
             address _rewardTokenAddress = _rewardTokenAddresses[_i];
@@ -87,19 +87,12 @@ contract ERC20StakingRewardsDistribution is Ownable {
                 _rewardAmount > 0,
                 "ERC20StakingRewardsDistribution: no reward"
             );
-            require(
-                _rewardAmount >= _secondsDuration,
-                "ERC20StakingRewardsDistribution: reward amount less than seconds duration"
-            );
             ERC20 _rewardToken = ERC20(_rewardTokenAddress);
             require(
                 _rewardToken.balanceOf(address(this)) >= _rewardAmount,
                 "ERC20StakingRewardsDistribution: no funding"
             );
             rewardTokens.push(_rewardToken);
-            rewardPerSecond[_rewardTokenAddress] = _rewardAmount.div(
-                _secondsDuration
-            );
             rewardAmount[_rewardTokenAddress] = _rewardAmount;
         }
 
@@ -132,12 +125,12 @@ contract ERC20StakingRewardsDistribution is Ownable {
         );
         // resetting reward information (both tokens and amounts)
         for (uint256 _i; _i < rewardTokens.length; _i++) {
-            ERC20 rewardToken = rewardTokens[_i];
-            address rewardTokenAddress = address(rewardToken);
-            uint256 _relatedRewardAmount = rewardAmount[rewardTokenAddress];
-            delete rewardAmount[rewardTokenAddress];
-            delete rewardPerSecond[rewardTokenAddress];
-            rewardToken.safeTransfer(owner(), _relatedRewardAmount);
+            ERC20 _rewardToken = rewardTokens[_i];
+            delete rewardAmount[address(_rewardToken)];
+            _rewardToken.safeTransfer(
+                owner(),
+                _rewardToken.balanceOf(address(this))
+            );
         }
         delete rewardTokens;
         delete stakableToken;
@@ -239,9 +232,9 @@ contract ERC20StakingRewardsDistribution is Ownable {
                 recoverableUnassignedReward[
                     _relatedRewardTokenAddress
                 ] = recoverableUnassignedReward[_relatedRewardTokenAddress].add(
-                    _lastPeriodDuration.mul(
-                        rewardPerSecond[_relatedRewardTokenAddress]
-                    )
+                    _lastPeriodDuration
+                        .mul(rewardAmount[_relatedRewardTokenAddress])
+                        .div(secondsDuration)
                 );
                 rewardPerStakedToken[_relatedRewardTokenAddress] = 0;
             } else {
@@ -249,9 +242,9 @@ contract ERC20StakingRewardsDistribution is Ownable {
                     _relatedRewardTokenAddress
                 ] = rewardPerStakedToken[_relatedRewardTokenAddress].add(
                     _lastPeriodDuration
-                        .mul(rewardPerSecond[_relatedRewardTokenAddress])
+                        .mul(rewardAmount[_relatedRewardTokenAddress])
                         .mul(MULTIPLIER)
-                        .div(totalStakedTokensAmount)
+                        .div(totalStakedTokensAmount.mul(secondsDuration))
                 );
             }
             // avoids subtraction underflow. If the rewards per staked tokens are 0,

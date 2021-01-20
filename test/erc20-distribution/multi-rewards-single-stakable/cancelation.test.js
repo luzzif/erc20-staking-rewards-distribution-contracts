@@ -71,11 +71,6 @@ contract(
                         rewardToken.address
                     )
                 ).to.be.equalBn(ZERO_BN);
-                expect(
-                    await erc20DistributionInstance.rewardPerSecond(
-                        rewardToken.address
-                    )
-                ).to.be.equalBn(ZERO_BN);
             }
             expect(
                 await erc20DistributionInstance.startingTimestamp()
