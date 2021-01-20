@@ -13,9 +13,10 @@ contract ERC20StakingRewardsDistribution is Ownable {
     using SafeMath for uint64;
     using SafeERC20 for ERC20;
 
+    uint224 constant MULTIPLIER = 2**112;
+
     ERC20[] public rewardTokens;
     ERC20 public stakableToken;
-    mapping(address => uint256) public rewardTokenMultiplier;
     mapping(address => uint256) public rewardAmount;
     mapping(address => uint256) public rewardPerSecond;
     mapping(address => uint256) public stakedTokenAmount;
@@ -95,16 +96,7 @@ contract ERC20StakingRewardsDistribution is Ownable {
                 _rewardToken.balanceOf(address(this)) >= _rewardAmount,
                 "ERC20StakingRewardsDistribution: no funding"
             );
-            // avoid overflow down the road (when consolidating rewards)
-            // by constraining the reward token decimals to a maximum of 18
-            uint256 _rewardTokenDecimals = _rewardToken.decimals();
-            require(
-                _rewardTokenDecimals > 0 && _rewardTokenDecimals <= 18,
-                "ERC20StakingRewardsDistribution: invalid decimals for reward token"
-            );
             rewardTokens.push(_rewardToken);
-            rewardTokenMultiplier[_rewardTokenAddress] =
-                uint256(10)**uint256(_rewardTokenDecimals);
             rewardPerSecond[_rewardTokenAddress] = _rewardAmount.div(
                 _secondsDuration
             );
@@ -143,7 +135,6 @@ contract ERC20StakingRewardsDistribution is Ownable {
             ERC20 rewardToken = rewardTokens[_i];
             address rewardTokenAddress = address(rewardToken);
             uint256 _relatedRewardAmount = rewardAmount[rewardTokenAddress];
-            delete rewardTokenMultiplier[rewardTokenAddress];
             delete rewardAmount[rewardTokenAddress];
             delete rewardPerSecond[rewardTokenAddress];
             rewardToken.safeTransfer(owner(), _relatedRewardAmount);
@@ -259,7 +250,7 @@ contract ERC20StakingRewardsDistribution is Ownable {
                 ] = rewardPerStakedToken[_relatedRewardTokenAddress].add(
                     _lastPeriodDuration
                         .mul(rewardPerSecond[_relatedRewardTokenAddress])
-                        .mul(rewardTokenMultiplier[_relatedRewardTokenAddress])
+                        .mul(MULTIPLIER)
                         .div(totalStakedTokensAmount)
                 );
             }
@@ -276,7 +267,7 @@ contract ERC20StakingRewardsDistribution is Ownable {
                             ]
                         )
                     )
-                        .div(rewardTokenMultiplier[_relatedRewardTokenAddress])
+                        .div(MULTIPLIER)
                     : 0;
             earnedRewards[msg.sender][
                 _relatedRewardTokenAddress

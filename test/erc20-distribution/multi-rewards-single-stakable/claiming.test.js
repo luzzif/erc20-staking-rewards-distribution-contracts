@@ -15,7 +15,9 @@ const {
     getEvmTimestamp,
 } = require("../../utils/network");
 
-const ERC20StakingRewardsDistribution = artifacts.require("ERC20StakingRewardsDistribution");
+const ERC20StakingRewardsDistribution = artifacts.require(
+    "ERC20StakingRewardsDistribution"
+);
 const FirstRewardERC20 = artifacts.require("FirstRewardERC20");
 const SecondRewardERC20 = artifacts.require("SecondRewardERC20");
 const FirstStakableERC20 = artifacts.require("FirstStakableERC20");
@@ -35,9 +37,9 @@ contract(
         beforeEach(async () => {
             const accounts = await web3.eth.getAccounts();
             ownerAddress = accounts[0];
-            erc20DistributionInstance = await ERC20StakingRewardsDistribution.new({
-                from: ownerAddress,
-            });
+            erc20DistributionInstance = await ERC20StakingRewardsDistribution.new(
+                { from: ownerAddress }
+            );
             firstRewardTokenInstance = await FirstRewardERC20.new();
             secondRewardTokenInstance = await SecondRewardERC20.new();
             stakableTokenInstance = await FirstStakableERC20.new();
@@ -613,7 +615,7 @@ contract(
             await erc20DistributionInstance.claim({ from: firstStakerAddress });
             expect(
                 await firstRewardTokenInstance.balanceOf(firstStakerAddress)
-            ).to.be.equalBn(firstRewardPerSecond, MAXIMUM_VARIANCE);
+            ).to.be.closeBn(firstRewardPerSecond, MAXIMUM_VARIANCE);
 
             const secondRewardPerSecond = secondRewardsAmount.div(duration);
             expect(
@@ -624,7 +626,7 @@ contract(
             await erc20DistributionInstance.claim({ from: firstStakerAddress });
             expect(
                 await secondRewardTokenInstance.balanceOf(firstStakerAddress)
-            ).to.be.equalBn(secondRewardPerSecond, MAXIMUM_VARIANCE);
+            ).to.be.closeBn(secondRewardPerSecond, MAXIMUM_VARIANCE);
         });
 
         it("should succeed in claiming two rewards if two stakers stake exactly the same amount at different times, and then the first staker withdraws a portion of his stake", async () => {
@@ -878,20 +880,20 @@ contract(
             await erc20DistributionInstance.claim({ from: firstStakerAddress });
             expect(
                 await firstRewardTokenInstance.balanceOf(firstStakerAddress)
-            ).to.be.equalBn(expectedFirstFirstStakerReward);
+            ).to.be.closeBn(expectedFirstFirstStakerReward, MAXIMUM_VARIANCE);
             expect(
                 await secondRewardTokenInstance.balanceOf(firstStakerAddress)
-            ).to.be.equalBn(expectedSecondFirstStakerReward);
+            ).to.be.closeBn(expectedSecondFirstStakerReward, MAXIMUM_VARIANCE);
 
             await erc20DistributionInstance.claim({
                 from: secondStakerAddress,
             });
             expect(
                 await firstRewardTokenInstance.balanceOf(secondStakerAddress)
-            ).to.be.equalBn(expectedFirstSecondStakerReward);
+            ).to.be.closeBn(expectedFirstSecondStakerReward, MAXIMUM_VARIANCE);
             expect(
                 await secondRewardTokenInstance.balanceOf(secondStakerAddress)
-            ).to.be.equalBn(expectedSecondSecondStakerReward);
+            ).to.be.closeBn(expectedSecondSecondStakerReward, MAXIMUM_VARIANCE);
         });
 
         it("should succeed in claiming a reward if a staker stakes at second n and then increases their stake", async () => {

@@ -14,15 +14,7 @@ contract ERC20StakingRewardsDistributionFactory is Ownable {
 
     ERC20StakingRewardsDistribution[] public distributions;
 
-    event Created(
-        address indexed creator,
-        address[] rewardsTokenAddresses,
-        address stakableTokenAddresses,
-        uint256[] rewardsAmounts,
-        uint256 startingTimestamp,
-        uint256 endingTimestamp,
-        bool locked
-    );
+    event DistributionCreated(address owner, address deployedAt);
 
     function createDistribution(
         address[] calldata _rewardTokenAddresses,
@@ -52,15 +44,7 @@ contract ERC20StakingRewardsDistributionFactory is Ownable {
         );
         _distribution.transferOwnership(msg.sender);
         distributions.push(_distribution);
-        emit Created(
-            msg.sender,
-            _rewardTokenAddresses,
-            _stakableTokenAddress,
-            _rewardAmounts,
-            _startingTimestamp,
-            _endingTimestmp,
-            _locked
-        );
+        emit DistributionCreated(msg.sender, address(_distribution));
     }
 
     function getDistributionsAmount() external view returns (uint256) {

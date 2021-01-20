@@ -111,11 +111,6 @@ contract(
                     rewardsAmount
                 );
                 expect(
-                    await erc20DistributionInstance.rewardTokenMultiplier(
-                        rewardToken.address
-                    )
-                ).to.be.equalBn(ZERO_BN);
-                expect(
                     await erc20DistributionInstance.rewardAmount(
                         rewardToken.address
                     )

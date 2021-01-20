@@ -10,7 +10,6 @@ const ERC20StakingRewardsDistribution = artifacts.require(
 );
 const FirstRewardERC20 = artifacts.require("FirstRewardERC20");
 const FirstStakableERC20 = artifacts.require("FirstStakableERC20");
-const HighDecimalsERC20 = artifacts.require("HighDecimalsERC20");
 
 contract(
     "ERC20StakingRewardsDistribution - Single reward/stakable token - Initialization",
@@ -18,7 +17,6 @@ contract(
         let erc20DistributionInstance,
             rewardsTokenInstance,
             stakableTokenInstance,
-            highDecimalsTokenInstance,
             ownerAddress,
             firstStakerAddress;
 
@@ -27,7 +25,6 @@ contract(
             erc20DistributionInstance = await ERC20StakingRewardsDistribution.new();
             rewardsTokenInstance = await FirstRewardERC20.new();
             stakableTokenInstance = await FirstStakableERC20.new();
-            highDecimalsTokenInstance = await HighDecimalsERC20.new();
             ownerAddress = accounts[0];
             firstStakerAddress = accounts[1];
         });
@@ -161,24 +158,6 @@ contract(
             }
         });
 
-        it("should fail when the rewards token has more than 18 decimals (avoids possible overflow)", async () => {
-            try {
-                await initializeDistribution({
-                    from: ownerAddress,
-                    erc20DistributionInstance,
-                    stakableToken: stakableTokenInstance,
-                    rewardTokens: [highDecimalsTokenInstance],
-                    rewardAmounts: [10],
-                    duration: 10,
-                });
-                throw new Error("should have failed");
-            } catch (error) {
-                expect(error.message).to.contain(
-                    "ERC20StakingRewardsDistribution: invalid decimals for reward token"
-                );
-            }
-        });
-
         it("should succeed in the right conditions", async () => {
             const rewardAmounts = [
                 new BN(await toWei(10, rewardsTokenInstance)),
@@ -210,13 +189,6 @@ contract(
             for (let i = 0; i < rewardTokens.length; i++) {
                 const rewardAmount = rewardAmounts[i];
                 const rewardToken = rewardTokens[i];
-                expect(
-                    await erc20DistributionInstance.rewardTokenMultiplier(
-                        rewardToken.address
-                    )
-                ).to.be.equalBn(
-                    new BN(1).mul(new BN(10).pow(await rewardToken.decimals()))
-                );
                 expect(
                     await rewardToken.balanceOf(
                         erc20DistributionInstance.address

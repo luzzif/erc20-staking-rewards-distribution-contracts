@@ -181,27 +181,6 @@ contract(
             }
         });
 
-        it("should fail when the second rewards token has more than 18 decimals (avoid overflow)", async () => {
-            try {
-                await initializeDistribution({
-                    from: ownerAddress,
-                    erc20DistributionInstance,
-                    stakableToken: stakableTokenInstance,
-                    rewardTokens: [
-                        firstRewardsTokenInstance,
-                        highDecimalsTokenInstance,
-                    ],
-                    rewardAmounts: [10, 10],
-                    duration: 10,
-                });
-                throw new Error("should have failed");
-            } catch (error) {
-                expect(error.message).to.contain(
-                    "ERC20StakingRewardsDistribution: invalid decimals for reward token"
-                );
-            }
-        });
-
         it("should succeed in the right conditions", async () => {
             const rewardAmounts = [
                 new BN(await toWei(10, firstRewardsTokenInstance)),
@@ -237,13 +216,6 @@ contract(
             for (let i = 0; i < rewardTokens.length; i++) {
                 const rewardAmount = rewardAmounts[i];
                 const rewardToken = rewardTokens[i];
-                expect(
-                    await erc20DistributionInstance.rewardTokenMultiplier(
-                        rewardToken.address
-                    )
-                ).to.be.equalBn(
-                    new BN(1).mul(new BN(10).pow(await rewardToken.decimals()))
-                );
                 expect(
                     await rewardToken.balanceOf(
                         erc20DistributionInstance.address
