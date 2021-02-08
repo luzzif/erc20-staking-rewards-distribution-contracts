@@ -28,6 +28,7 @@ contract ERC20StakingRewardsDistribution is Ownable {
     bool public initialized;
     uint64 public lastConsolidationTimestamp;
     mapping(address => uint256) public recoverableUnassignedReward;
+    mapping(address => uint256) public totalClaimedRewards;
 
     mapping(address => uint256) public stakedTokensOf;
     mapping(address => mapping(address => uint256))
@@ -149,12 +150,25 @@ contract ERC20StakingRewardsDistribution is Ownable {
             new uint256[](_numberOfRewardsTokens);
         for (uint256 _i; _i < _numberOfRewardsTokens; _i++) {
             ERC20 _relatedRewardToken = rewardTokens[_i];
-
-            uint256 _relatedUnassignedReward =
-                recoverableUnassignedReward[address(_relatedRewardToken)];
-            delete recoverableUnassignedReward[address(_relatedRewardToken)];
-            _recoveredUnassignedRewards[_i] = _relatedUnassignedReward;
-            _relatedRewardToken.safeTransfer(owner(), _relatedUnassignedReward);
+            address _relatedRewardTokenAddress = address(_relatedRewardToken);
+            // recoverable rewards are going to be recovered in this tx (if it does not revert),
+            // so we add them to the claimed rewards right now
+            totalClaimedRewards[
+                _relatedRewardTokenAddress
+            ] = totalClaimedRewards[_relatedRewardTokenAddress].add(
+                recoverableUnassignedReward[_relatedRewardTokenAddress]
+            );
+            uint256 _requiredFunding =
+                rewardAmount[_relatedRewardTokenAddress].sub(
+                    totalClaimedRewards[_relatedRewardTokenAddress]
+                );
+            delete recoverableUnassignedReward[_relatedRewardTokenAddress];
+            uint256 _recoverableRewards =
+                _relatedRewardToken.balanceOf(address(this)).sub(
+                    _requiredFunding
+                );
+            _recoveredUnassignedRewards[_i] = _recoverableRewards;
+            _relatedRewardToken.safeTransfer(owner(), _recoverableRewards);
         }
         emit Recovered(_recoveredUnassignedRewards);
     }
@@ -211,6 +225,11 @@ contract ERC20StakingRewardsDistribution is Ownable {
             claimedReward[msg.sender][
                 _relatedRewardTokenAddress
             ] = claimedReward[msg.sender][_relatedRewardTokenAddress].add(
+                _claimableReward
+            );
+            totalClaimedRewards[
+                _relatedRewardTokenAddress
+            ] = totalClaimedRewards[_relatedRewardTokenAddress].add(
                 _claimableReward
             );
             _relatedRewardToken.safeTransfer(msg.sender, _claimableReward);
