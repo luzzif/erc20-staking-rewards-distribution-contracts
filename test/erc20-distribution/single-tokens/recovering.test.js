@@ -6,7 +6,7 @@ const {
     initializeStaker,
     withdrawAtTimestamp,
     stakeAtTimestamp,
-    claimAtTimestamp,
+    claimAllAtTimestamp,
     recoverUnassignedRewardsAtTimestamp,
 } = require("../../utils");
 const { toWei } = require("../../utils/conversion");
@@ -186,7 +186,9 @@ contract(
                 new BN(5)
             );
             // staker claims their reward
-            await erc20DistributionInstance.claim({ from: firstStakerAddress });
+            await erc20DistributionInstance.claimAll(firstStakerAddress, {
+                from: firstStakerAddress,
+            });
             expect(
                 await rewardsTokenInstance.balanceOf(firstStakerAddress)
             ).to.be.equalBn(await toWei("50", rewardsTokenInstance));
@@ -250,11 +252,13 @@ contract(
             ).to.be.equalBn(new BN(5));
             // stakers claim their reward
             const expectedReward = await toWei("25", rewardsTokenInstance);
-            await erc20DistributionInstance.claim({ from: firstStakerAddress });
+            await erc20DistributionInstance.claimAll(firstStakerAddress, {
+                from: firstStakerAddress,
+            });
             expect(
                 await rewardsTokenInstance.balanceOf(firstStakerAddress)
             ).to.be.equalBn(expectedReward);
-            await erc20DistributionInstance.claim({
+            await erc20DistributionInstance.claimAll(secondStakerAddress, {
                 from: secondStakerAddress,
             });
             expect(
@@ -304,7 +308,9 @@ contract(
             );
             // staker claims their reward
             const expectedReward = new BN("66666666666666666666");
-            await erc20DistributionInstance.claim({ from: firstStakerAddress });
+            await erc20DistributionInstance.claimAll(firstStakerAddress, {
+                from: firstStakerAddress,
+            });
             expect(
                 await rewardsTokenInstance.balanceOf(firstStakerAddress)
             ).to.be.equalBn(expectedReward);
@@ -361,7 +367,9 @@ contract(
             );
             // staker claims their reward
             const expectedReward = new BN("33333333333333333333");
-            await erc20DistributionInstance.claim({ from: firstStakerAddress });
+            await erc20DistributionInstance.claimAll(firstStakerAddress, {
+                from: firstStakerAddress,
+            });
             expect(
                 await rewardsTokenInstance.balanceOf(firstStakerAddress)
             ).to.be.equalBn(expectedReward);
@@ -409,7 +417,9 @@ contract(
             );
             // staker claims their reward
             const expectedReward = new BN("3333333333333333333");
-            await erc20DistributionInstance.claim({ from: firstStakerAddress });
+            await erc20DistributionInstance.claimAll(firstStakerAddress, {
+                from: firstStakerAddress,
+            });
             expect(
                 await rewardsTokenInstance.balanceOf(firstStakerAddress)
             ).to.be.equalBn(expectedReward);
@@ -471,8 +481,9 @@ contract(
             await stopMining();
             await fastForwardTo({ timestamp: secondStakingTimestamp });
             // should be able to immediately claim the first unassigned rewards from the first 3 empty seconds
-            await claimAtTimestamp(
+            await claimAllAtTimestamp(
                 erc20DistributionInstance,
+                firstStakerAddress,
                 firstStakerAddress,
                 secondStakingTimestamp
             );
@@ -514,7 +525,9 @@ contract(
             // the staker staked for 6 seconds total
             const expectedReward = await toWei("50", rewardsTokenInstance);
             // claiming for the second time
-            await erc20DistributionInstance.claim({ from: firstStakerAddress });
+            await erc20DistributionInstance.claimAll(firstStakerAddress, {
+                from: firstStakerAddress,
+            });
             expect(
                 await rewardsTokenInstance.balanceOf(firstStakerAddress)
             ).to.be.equalBn(expectedReward);
@@ -539,7 +552,6 @@ contract(
                     rewardsTokenInstance.address
                 )
             ).to.be.equalBn(ZERO_BN);
-            console.log(await rewardsTokenInstance.balanceOf(ownerAddress));
             expect(
                 await rewardsTokenInstance.balanceOf(ownerAddress)
             ).to.be.equalBn(expectedRemainingReward.mul(new BN(2)));
@@ -603,8 +615,9 @@ contract(
             await stopMining();
             await fastForwardTo({ timestamp: secondStakingTimestamp });
             // should be able to immediately claim the first unassigned rewards from the first 3 empty seconds
-            await claimAtTimestamp(
+            await claimAllAtTimestamp(
                 erc20DistributionInstance,
+                firstStakerAddress,
                 firstStakerAddress,
                 secondStakingTimestamp
             );
@@ -654,7 +667,9 @@ contract(
             // the staker staked for 6 seconds total
             const expectedReward = await toWei("50", rewardsTokenInstance);
             // claiming for the second time
-            await erc20DistributionInstance.claim({ from: firstStakerAddress });
+            await erc20DistributionInstance.claimAll(firstStakerAddress, {
+                from: firstStakerAddress,
+            });
             expect(
                 await rewardsTokenInstance.balanceOf(firstStakerAddress)
             ).to.be.equalBn(expectedReward);

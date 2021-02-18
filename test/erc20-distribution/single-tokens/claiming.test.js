@@ -81,7 +81,9 @@ contract(
             expect(stakerStartingTimestamp).to.be.equalBn(startingTimestamp);
             // make sure the distribution has ended
             await fastForwardTo({ timestamp: endingTimestamp.add(new BN(1)) });
-            await erc20DistributionInstance.claim({ from: firstStakerAddress });
+            await erc20DistributionInstance.claimAll(firstStakerAddress, {
+                from: firstStakerAddress,
+            });
             const onchainStartingTimestamp = await erc20DistributionInstance.startingTimestamp();
             const onchainEndingTimestamp = await erc20DistributionInstance.endingTimestamp();
             expect(onchainStartingTimestamp).to.be.equalBn(startingTimestamp);
@@ -178,12 +180,14 @@ contract(
                 .div(new BN(2))
                 .mul(new BN(5));
             // first staker claiming/balance checking
-            await erc20DistributionInstance.claim({ from: firstStakerAddress });
+            await erc20DistributionInstance.claimAll(firstStakerAddress, {
+                from: firstStakerAddress,
+            });
             expect(
                 await rewardsTokenInstance.balanceOf(firstStakerAddress)
             ).to.be.equalBn(expectedFirstStakerReward);
             // second staker claiming/balance checking
-            await erc20DistributionInstance.claim({
+            await erc20DistributionInstance.claimAll(secondStakerAddress, {
                 from: secondStakerAddress,
             });
             expect(
@@ -304,13 +308,15 @@ contract(
             const expectedThirdStakerReward = new BN("833333333333333333");
 
             // first staker claiming/balance checking
-            await erc20DistributionInstance.claim({ from: firstStakerAddress });
+            await erc20DistributionInstance.claimAll(firstStakerAddress, {
+                from: firstStakerAddress,
+            });
             expect(
                 await rewardsTokenInstance.balanceOf(firstStakerAddress)
             ).to.be.closeBn(expectedFirstStakerReward, MAXIMUM_VARIANCE);
 
             // second staker claim and rewards balance check
-            await erc20DistributionInstance.claim({
+            await erc20DistributionInstance.claimAll(secondStakerAddress, {
                 from: secondStakerAddress,
             });
             expect(
@@ -318,7 +324,9 @@ contract(
             ).to.be.closeBn(expectedSecondStakerReward, MAXIMUM_VARIANCE);
 
             // third staker claim and rewards balance check
-            await erc20DistributionInstance.claim({ from: thirdStakerAddress });
+            await erc20DistributionInstance.claimAll(thirdStakerAddress, {
+                from: thirdStakerAddress,
+            });
             expect(
                 await rewardsTokenInstance.balanceOf(thirdStakerAddress)
             ).to.be.closeBn(expectedThirdStakerReward, MAXIMUM_VARIANCE);
@@ -373,7 +381,9 @@ contract(
             // the staker had all of the rewards for 5 seconds
             const expectedFirstStakerReward = rewardPerSecond.mul(new BN(5));
             // claim and rewards balance check
-            await erc20DistributionInstance.claim({ from: firstStakerAddress });
+            await erc20DistributionInstance.claimAll(firstStakerAddress, {
+                from: firstStakerAddress,
+            });
             expect(
                 await rewardsTokenInstance.balanceOf(firstStakerAddress)
             ).to.be.closeBn(expectedFirstStakerReward, MAXIMUM_VARIANCE);
@@ -416,7 +426,9 @@ contract(
             expect(
                 campaignEndingTimestamp.sub(stakerStartingTimestamp)
             ).to.be.equalBn(ZERO_BN);
-            await erc20DistributionInstance.claim({ from: firstStakerAddress });
+            await erc20DistributionInstance.claimAll(firstStakerAddress, {
+                from: firstStakerAddress,
+            });
             expect(
                 await rewardsTokenInstance.balanceOf(firstStakerAddress)
             ).to.be.equalBn(ZERO_BN);
@@ -460,7 +472,9 @@ contract(
                 campaignEndingTimestamp.sub(stakerStartingTimestamp)
             ).to.be.equalBn(new BN(1));
             const rewardPerSecond = rewardsAmount.div(duration);
-            await erc20DistributionInstance.claim({ from: firstStakerAddress });
+            await erc20DistributionInstance.claimAll(firstStakerAddress, {
+                from: firstStakerAddress,
+            });
             expect(
                 await rewardsTokenInstance.balanceOf(firstStakerAddress)
             ).to.be.closeBn(rewardPerSecond, MAXIMUM_VARIANCE);
@@ -570,12 +584,14 @@ contract(
                     rewardPerSecond.mul(new BN(2)).mul(new BN(2)).div(new BN(3))
                 );
             // first staker claim and rewards balance check
-            await erc20DistributionInstance.claim({ from: firstStakerAddress });
+            await erc20DistributionInstance.claimAll(firstStakerAddress, {
+                from: firstStakerAddress,
+            });
             expect(
                 await rewardsTokenInstance.balanceOf(firstStakerAddress)
             ).to.be.closeBn(expectedFirstStakerReward, MAXIMUM_VARIANCE);
             // second staker claim and rewards balance check
-            await erc20DistributionInstance.claim({
+            await erc20DistributionInstance.claimAll(secondStakerAddress, {
                 from: secondStakerAddress,
             });
             expect(
@@ -644,13 +660,15 @@ contract(
             // the second staker had half of the rewards for 1 second
             const expectedSecondStakerReward = rewardPerSecond.div(new BN(2));
 
-            await erc20DistributionInstance.claim({ from: firstStakerAddress });
+            await erc20DistributionInstance.claimAll(firstStakerAddress, {
+                from: firstStakerAddress,
+            });
             expect(
                 await rewardsTokenInstance.balanceOf(firstStakerAddress)
             ).to.be.closeBn(expectedFirstStakerReward, MAXIMUM_VARIANCE);
 
             // second staker claim and rewards balance check
-            await erc20DistributionInstance.claim({
+            await erc20DistributionInstance.claimAll(secondStakerAddress, {
                 from: secondStakerAddress,
             });
             expect(
@@ -717,7 +735,9 @@ contract(
             expect(
                 onchainEndingTimestamp.sub(secondStakeStartingTimestamp)
             ).to.be.equalBn(new BN(5));
-            await erc20DistributionInstance.claim({ from: firstStakerAddress });
+            await erc20DistributionInstance.claimAll(firstStakerAddress, {
+                from: firstStakerAddress,
+            });
             expect(
                 await rewardsTokenInstance.balanceOf(firstStakerAddress)
             ).to.be.equalBn(rewardsAmount);
@@ -806,13 +826,15 @@ contract(
             const expectedReward = rewardPerSecond.mul(new BN(5));
 
             // first staker claim and rewards balance check
-            await erc20DistributionInstance.claim({ from: firstStakerAddress });
+            await erc20DistributionInstance.claimAll(firstStakerAddress, {
+                from: firstStakerAddress,
+            });
             expect(
                 await rewardsTokenInstance.balanceOf(firstStakerAddress)
             ).to.be.equalBn(expectedReward);
 
             // second staker claim and rewards balance check
-            await erc20DistributionInstance.claim({
+            await erc20DistributionInstance.claimAll(secondStakerAddress, {
                 from: secondStakerAddress,
             });
             expect(
