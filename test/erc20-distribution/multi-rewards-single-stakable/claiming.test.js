@@ -88,7 +88,9 @@ contract(
             expect(stakerStartingTimestamp).to.be.equalBn(startingTimestamp);
             // make sure the distribution has ended
             await fastForwardTo({ timestamp: endingTimestamp.add(new BN(1)) });
-            await erc20DistributionInstance.claim({ from: firstStakerAddress });
+            await erc20DistributionInstance.claimAll(firstStakerAddress, {
+                from: firstStakerAddress,
+            });
             const onchainStartingTimestamp = await erc20DistributionInstance.startingTimestamp();
             const onchainEndingTimestamp = await erc20DistributionInstance.endingTimestamp();
             expect(onchainStartingTimestamp).to.be.equalBn(startingTimestamp);
@@ -220,7 +222,9 @@ contract(
                 .div(new BN(2))
                 .mul(new BN(5));
             // first staker claiming/balance checking
-            await erc20DistributionInstance.claim({ from: firstStakerAddress });
+            await erc20DistributionInstance.claimAll(firstStakerAddress, {
+                from: firstStakerAddress,
+            });
             expect(
                 await firstRewardTokenInstance.balanceOf(firstStakerAddress)
             ).to.be.equalBn(expectedFirstFirstStakerReward);
@@ -228,7 +232,7 @@ contract(
                 await secondRewardTokenInstance.balanceOf(firstStakerAddress)
             ).to.be.equalBn(expectedSecondFirstStakerReward);
             // second staker claiming/balance checking
-            await erc20DistributionInstance.claim({
+            await erc20DistributionInstance.claimAll(secondStakerAddress, {
                 from: secondStakerAddress,
             });
             expect(
@@ -379,7 +383,9 @@ contract(
                 .div(new BN(3));
 
             // first staker claiming/balance checking
-            await erc20DistributionInstance.claim({ from: firstStakerAddress });
+            await erc20DistributionInstance.claimAll(firstStakerAddress, {
+                from: firstStakerAddress,
+            });
             expect(
                 await firstRewardTokenInstance.balanceOf(firstStakerAddress)
             ).to.be.closeBn(expectedFirstFirstStakerReward, MAXIMUM_VARIANCE);
@@ -388,7 +394,7 @@ contract(
             ).to.be.closeBn(expectedSecondFirstStakerReward, MAXIMUM_VARIANCE);
 
             // second staker claim and rewards balance check
-            await erc20DistributionInstance.claim({
+            await erc20DistributionInstance.claimAll(secondStakerAddress, {
                 from: secondStakerAddress,
             });
             expect(
@@ -399,7 +405,9 @@ contract(
             ).to.be.closeBn(expectedSecondSecondStakerReward, MAXIMUM_VARIANCE);
 
             // third staker claim and rewards balance check
-            await erc20DistributionInstance.claim({ from: thirdStakerAddress });
+            await erc20DistributionInstance.claimAll(thirdStakerAddress, {
+                from: thirdStakerAddress,
+            });
             expect(
                 await firstRewardTokenInstance.balanceOf(thirdStakerAddress)
             ).to.be.closeBn(expectedFirstThirdStakerReward, MAXIMUM_VARIANCE);
@@ -463,7 +471,9 @@ contract(
                 onchainEndingTimestamp.sub(stakerStartingTimestamp)
             ).to.be.equalBn(new BN(5));
             // claim and rewards balance check
-            await erc20DistributionInstance.claim({ from: firstStakerAddress });
+            await erc20DistributionInstance.claimAll(firstStakerAddress, {
+                from: firstStakerAddress,
+            });
             expect(
                 await firstRewardTokenInstance.balanceOf(firstStakerAddress)
             ).to.be.equalBn(await toWei("5", firstRewardTokenInstance));
@@ -518,7 +528,9 @@ contract(
             expect(
                 campaignEndingTimestamp.sub(stakerStartingTimestamp)
             ).to.be.equalBn(ZERO_BN);
-            await erc20DistributionInstance.claim({ from: firstStakerAddress });
+            await erc20DistributionInstance.claimAll(firstStakerAddress, {
+                from: firstStakerAddress,
+            });
             expect(
                 await firstRewardTokenInstance.balanceOf(firstStakerAddress)
             ).to.be.equalBn(ZERO_BN);
@@ -575,13 +587,17 @@ contract(
             ).to.be.equalBn(new BN(1));
 
             const firstRewardPerSecond = firstRewardsAmount.div(duration);
-            await erc20DistributionInstance.claim({ from: firstStakerAddress });
+            await erc20DistributionInstance.claimAll(firstStakerAddress, {
+                from: firstStakerAddress,
+            });
             expect(
                 await firstRewardTokenInstance.balanceOf(firstStakerAddress)
             ).to.be.closeBn(firstRewardPerSecond, MAXIMUM_VARIANCE);
 
             const secondRewardPerSecond = secondRewardsAmount.div(duration);
-            await erc20DistributionInstance.claim({ from: firstStakerAddress });
+            await erc20DistributionInstance.claimAll(firstStakerAddress, {
+                from: firstStakerAddress,
+            });
             expect(
                 await secondRewardTokenInstance.balanceOf(firstStakerAddress)
             ).to.be.closeBn(secondRewardPerSecond, MAXIMUM_VARIANCE);
@@ -715,7 +731,9 @@ contract(
                         .div(new BN(3))
                 );
             // first staker claim and rewards balance check
-            await erc20DistributionInstance.claim({ from: firstStakerAddress });
+            await erc20DistributionInstance.claimAll(firstStakerAddress, {
+                from: firstStakerAddress,
+            });
             expect(
                 await firstRewardTokenInstance.balanceOf(firstStakerAddress)
             ).to.be.closeBn(expectedFirstFirstStakerReward, MAXIMUM_VARIANCE);
@@ -723,7 +741,7 @@ contract(
                 await secondRewardTokenInstance.balanceOf(firstStakerAddress)
             ).to.be.closeBn(expectedSecondFirstStakerReward, MAXIMUM_VARIANCE);
             // second staker claim and rewards balance check
-            await erc20DistributionInstance.claim({
+            await erc20DistributionInstance.claimAll(secondStakerAddress, {
                 from: secondStakerAddress,
             });
             expect(
@@ -815,7 +833,9 @@ contract(
                 new BN(2)
             );
 
-            await erc20DistributionInstance.claim({ from: firstStakerAddress });
+            await erc20DistributionInstance.claimAll(firstStakerAddress, {
+                from: firstStakerAddress,
+            });
             expect(
                 await firstRewardTokenInstance.balanceOf(firstStakerAddress)
             ).to.be.closeBn(expectedFirstFirstStakerReward, MAXIMUM_VARIANCE);
@@ -823,7 +843,7 @@ contract(
                 await secondRewardTokenInstance.balanceOf(firstStakerAddress)
             ).to.be.closeBn(expectedSecondFirstStakerReward, MAXIMUM_VARIANCE);
 
-            await erc20DistributionInstance.claim({
+            await erc20DistributionInstance.claimAll(secondStakerAddress, {
                 from: secondStakerAddress,
             });
             expect(
@@ -901,7 +921,9 @@ contract(
             expect(
                 onchainEndingTimestamp.sub(secondStakeStartingTimestamp)
             ).to.be.equalBn(new BN(5));
-            await erc20DistributionInstance.claim({ from: firstStakerAddress });
+            await erc20DistributionInstance.claimAll(firstStakerAddress, {
+                from: firstStakerAddress,
+            });
             expect(
                 await firstRewardTokenInstance.balanceOf(firstStakerAddress)
             ).to.be.equalBn(firstRewardsAmount);
@@ -1004,7 +1026,9 @@ contract(
             const expectedSecondReward = secondRewardPerSecond.mul(new BN(5));
 
             // first staker claim and rewards balance check
-            await erc20DistributionInstance.claim({ from: firstStakerAddress });
+            await erc20DistributionInstance.claimAll(firstStakerAddress, {
+                from: firstStakerAddress,
+            });
             expect(
                 await firstRewardTokenInstance.balanceOf(firstStakerAddress)
             ).to.be.equalBn(expectedFirstReward);
@@ -1013,7 +1037,7 @@ contract(
             ).to.be.equalBn(expectedSecondReward);
 
             // second staker claim and rewards balance check
-            await erc20DistributionInstance.claim({
+            await erc20DistributionInstance.claimAll(secondStakerAddress, {
                 from: secondStakerAddress,
             });
             expect(
@@ -1022,6 +1046,417 @@ contract(
             expect(
                 await secondRewardTokenInstance.balanceOf(secondStakerAddress)
             ).to.be.equalBn(expectedSecondReward);
+        });
+
+        it("should fail when trying to claim passing an excessive-length amounts array", async () => {
+            const duration = new BN(10);
+            const { startingTimestamp } = await initializeDistribution({
+                from: ownerAddress,
+                erc20DistributionInstance,
+                stakableToken: stakableTokenInstance,
+                rewardTokens: [
+                    firstRewardTokenInstance,
+                    secondRewardTokenInstance,
+                ],
+                rewardAmounts: [
+                    await toWei(10, firstRewardTokenInstance),
+                    await toWei(10, secondRewardTokenInstance),
+                ],
+                duration,
+            });
+            await fastForwardTo({ timestamp: startingTimestamp });
+            try {
+                await erc20DistributionInstance.claim(
+                    [new BN(1000), new BN(1000), new BN(1000)],
+                    firstStakerAddress
+                );
+                throw new Error("should have failed");
+            } catch (error) {
+                expect(error.message).to.contain(
+                    "ERC20StakingRewardsDistribution: inconsistent claimed amounts"
+                );
+            }
+        });
+
+        it("should fail when trying to claim passing a defective-length amounts array", async () => {
+            const duration = new BN(10);
+            const { startingTimestamp } = await initializeDistribution({
+                from: ownerAddress,
+                erc20DistributionInstance,
+                stakableToken: stakableTokenInstance,
+                rewardTokens: [
+                    firstRewardTokenInstance,
+                    secondRewardTokenInstance,
+                ],
+                rewardAmounts: [
+                    await toWei(10, secondRewardTokenInstance),
+                    await toWei(10, secondRewardTokenInstance),
+                ],
+                duration,
+            });
+            await fastForwardTo({ timestamp: startingTimestamp });
+            try {
+                await erc20DistributionInstance.claim(
+                    [new BN(1000)],
+                    firstStakerAddress
+                );
+                throw new Error("should have failed");
+            } catch (error) {
+                expect(error.message).to.contain(
+                    "ERC20StakingRewardsDistribution: inconsistent claimed amounts"
+                );
+            }
+        });
+
+        it("should fail when trying to claim only a part of the reward, if the first passed in amount is bigger than allowed", async () => {
+            const stakedAmount = await toWei(10, stakableTokenInstance);
+            const duration = new BN(10);
+            await initializeStaker({
+                erc20DistributionInstance,
+                stakableTokenInstance,
+                stakerAddress: firstStakerAddress,
+                stakableAmount: stakedAmount,
+            });
+            await initializeStaker({
+                erc20DistributionInstance,
+                stakableTokenInstance,
+                stakerAddress: secondStakerAddress,
+                stakableAmount: stakedAmount,
+            });
+            const firstRewardsAmount = await toWei(
+                10,
+                firstRewardTokenInstance
+            );
+            const secondRewardsAmount = await toWei(
+                10,
+                secondRewardTokenInstance
+            );
+            const {
+                startingTimestamp,
+                endingTimestamp,
+            } = await initializeDistribution({
+                from: ownerAddress,
+                erc20DistributionInstance,
+                stakableToken: stakableTokenInstance,
+                rewardTokens: [
+                    firstRewardTokenInstance,
+                    secondRewardTokenInstance,
+                ],
+                rewardAmounts: [firstRewardsAmount, secondRewardsAmount],
+                duration,
+            });
+            await fastForwardTo({ timestamp: startingTimestamp });
+            await stakeAtTimestamp(
+                erc20DistributionInstance,
+                firstStakerAddress,
+                stakedAmount,
+                startingTimestamp
+            );
+            await fastForwardTo({ timestamp: endingTimestamp });
+            try {
+                await erc20DistributionInstance.claim(
+                    [
+                        firstRewardsAmount.add(new BN(1000)),
+                        secondRewardsAmount.sub(new BN(1000)),
+                    ],
+                    firstStakerAddress
+                );
+                throw new Error("should have failed");
+            } catch (error) {
+                expect(error.message).to.contain(
+                    "ERC20StakingRewardsDistribution: insufficient claimable amount"
+                );
+            }
+        });
+
+        it("should fail when trying to claim only a part of the reward, if the second passed in amount is bigger than allowed", async () => {
+            const stakedAmount = await toWei(10, stakableTokenInstance);
+            const duration = new BN(10);
+            await initializeStaker({
+                erc20DistributionInstance,
+                stakableTokenInstance,
+                stakerAddress: firstStakerAddress,
+                stakableAmount: stakedAmount,
+            });
+            await initializeStaker({
+                erc20DistributionInstance,
+                stakableTokenInstance,
+                stakerAddress: secondStakerAddress,
+                stakableAmount: stakedAmount,
+            });
+            const firstRewardsAmount = await toWei(
+                10,
+                firstRewardTokenInstance
+            );
+            const secondRewardsAmount = await toWei(
+                10,
+                secondRewardTokenInstance
+            );
+            const {
+                startingTimestamp,
+                endingTimestamp,
+            } = await initializeDistribution({
+                from: ownerAddress,
+                erc20DistributionInstance,
+                stakableToken: stakableTokenInstance,
+                rewardTokens: [
+                    firstRewardTokenInstance,
+                    secondRewardTokenInstance,
+                ],
+                rewardAmounts: [firstRewardsAmount, secondRewardsAmount],
+                duration,
+            });
+            await fastForwardTo({ timestamp: startingTimestamp });
+            await stakeAtTimestamp(
+                erc20DistributionInstance,
+                firstStakerAddress,
+                stakedAmount,
+                startingTimestamp
+            );
+            await fastForwardTo({ timestamp: endingTimestamp });
+            try {
+                await erc20DistributionInstance.claim(
+                    [firstRewardsAmount, secondRewardsAmount.add(new BN(1000))],
+                    firstStakerAddress
+                );
+                throw new Error("should have failed");
+            } catch (error) {
+                expect(error.message).to.contain(
+                    "ERC20StakingRewardsDistribution: insufficient claimable amount"
+                );
+            }
+        });
+
+        it("should fail when trying to claim only a part of the reward, if the second passed in amount is bigger than allowed", async () => {
+            const stakedAmount = await toWei(10, stakableTokenInstance);
+            const duration = new BN(10);
+            await initializeStaker({
+                erc20DistributionInstance,
+                stakableTokenInstance,
+                stakerAddress: firstStakerAddress,
+                stakableAmount: stakedAmount,
+            });
+            await initializeStaker({
+                erc20DistributionInstance,
+                stakableTokenInstance,
+                stakerAddress: secondStakerAddress,
+                stakableAmount: stakedAmount,
+            });
+            const firstRewardsAmount = await toWei(
+                10,
+                firstRewardTokenInstance
+            );
+            const secondRewardsAmount = await toWei(
+                10,
+                secondRewardTokenInstance
+            );
+            const {
+                startingTimestamp,
+                endingTimestamp,
+            } = await initializeDistribution({
+                from: ownerAddress,
+                erc20DistributionInstance,
+                stakableToken: stakableTokenInstance,
+                rewardTokens: [
+                    firstRewardTokenInstance,
+                    secondRewardTokenInstance,
+                ],
+                rewardAmounts: [firstRewardsAmount, secondRewardsAmount],
+                duration,
+            });
+            await fastForwardTo({ timestamp: startingTimestamp });
+            await stakeAtTimestamp(
+                erc20DistributionInstance,
+                firstStakerAddress,
+                stakedAmount,
+                startingTimestamp
+            );
+            await fastForwardTo({ timestamp: endingTimestamp });
+            try {
+                await erc20DistributionInstance.claim(
+                    [firstRewardsAmount, secondRewardsAmount.add(new BN(1000))],
+                    firstStakerAddress
+                );
+                throw new Error("should have failed");
+            } catch (error) {
+                expect(error.message).to.contain(
+                    "ERC20StakingRewardsDistribution: insufficient claimable amount"
+                );
+            }
+        });
+
+        it("should fail when trying to claim only a part of the reward, if the second passed in amount is bigger than allowed", async () => {
+            const stakedAmount = await toWei(10, stakableTokenInstance);
+            const duration = new BN(10);
+            await initializeStaker({
+                erc20DistributionInstance,
+                stakableTokenInstance,
+                stakerAddress: firstStakerAddress,
+                stakableAmount: stakedAmount,
+            });
+            await initializeStaker({
+                erc20DistributionInstance,
+                stakableTokenInstance,
+                stakerAddress: secondStakerAddress,
+                stakableAmount: stakedAmount,
+            });
+            const firstRewardsAmount = await toWei(
+                10,
+                firstRewardTokenInstance
+            );
+            const secondRewardsAmount = await toWei(
+                10,
+                secondRewardTokenInstance
+            );
+            const {
+                startingTimestamp,
+                endingTimestamp,
+            } = await initializeDistribution({
+                from: ownerAddress,
+                erc20DistributionInstance,
+                stakableToken: stakableTokenInstance,
+                rewardTokens: [
+                    firstRewardTokenInstance,
+                    secondRewardTokenInstance,
+                ],
+                rewardAmounts: [firstRewardsAmount, secondRewardsAmount],
+                duration,
+            });
+            await fastForwardTo({ timestamp: startingTimestamp });
+            await stakeAtTimestamp(
+                erc20DistributionInstance,
+                firstStakerAddress,
+                stakedAmount,
+                startingTimestamp
+            );
+            await fastForwardTo({ timestamp: endingTimestamp });
+            try {
+                await erc20DistributionInstance.claim(
+                    [firstRewardsAmount, secondRewardsAmount.add(new BN(1000))],
+                    firstStakerAddress
+                );
+                throw new Error("should have failed");
+            } catch (error) {
+                expect(error.message).to.contain(
+                    "ERC20StakingRewardsDistribution: insufficient claimable amount"
+                );
+            }
+        });
+
+        it("should succeed in claiming specific amounts under the right conditions", async () => {
+            const stakedAmount = await toWei(10, stakableTokenInstance);
+            const duration = new BN(10);
+            await initializeStaker({
+                erc20DistributionInstance,
+                stakableTokenInstance,
+                stakerAddress: firstStakerAddress,
+                stakableAmount: stakedAmount,
+            });
+            await initializeStaker({
+                erc20DistributionInstance,
+                stakableTokenInstance,
+                stakerAddress: secondStakerAddress,
+                stakableAmount: stakedAmount,
+            });
+            const firstRewardsAmount = await toWei(
+                10,
+                firstRewardTokenInstance
+            );
+            const secondRewardsAmount = await toWei(
+                10,
+                secondRewardTokenInstance
+            );
+            const {
+                startingTimestamp,
+                endingTimestamp,
+            } = await initializeDistribution({
+                from: ownerAddress,
+                erc20DistributionInstance,
+                stakableToken: stakableTokenInstance,
+                rewardTokens: [
+                    firstRewardTokenInstance,
+                    secondRewardTokenInstance,
+                ],
+                rewardAmounts: [firstRewardsAmount, secondRewardsAmount],
+                duration,
+            });
+            await fastForwardTo({ timestamp: startingTimestamp });
+            await stakeAtTimestamp(
+                erc20DistributionInstance,
+                firstStakerAddress,
+                stakedAmount,
+                startingTimestamp
+            );
+            await fastForwardTo({ timestamp: endingTimestamp });
+            await erc20DistributionInstance.claim(
+                [firstRewardsAmount, secondRewardsAmount],
+                firstStakerAddress,
+                { from: firstStakerAddress }
+            );
+            expect(
+                await firstRewardTokenInstance.balanceOf(firstStakerAddress)
+            ).to.be.equalBn(firstRewardsAmount);
+            expect(
+                await secondRewardTokenInstance.balanceOf(firstStakerAddress)
+            ).to.be.equalBn(secondRewardsAmount);
+        });
+
+        it("should succeed in claiming specific amounts to a foreign address under the right conditions", async () => {
+            const stakedAmount = await toWei(10, stakableTokenInstance);
+            const duration = new BN(10);
+            await initializeStaker({
+                erc20DistributionInstance,
+                stakableTokenInstance,
+                stakerAddress: firstStakerAddress,
+                stakableAmount: stakedAmount,
+            });
+            await initializeStaker({
+                erc20DistributionInstance,
+                stakableTokenInstance,
+                stakerAddress: secondStakerAddress,
+                stakableAmount: stakedAmount,
+            });
+            const firstRewardsAmount = await toWei(
+                10,
+                firstRewardTokenInstance
+            );
+            const secondRewardsAmount = await toWei(
+                10,
+                secondRewardTokenInstance
+            );
+            const {
+                startingTimestamp,
+                endingTimestamp,
+            } = await initializeDistribution({
+                from: ownerAddress,
+                erc20DistributionInstance,
+                stakableToken: stakableTokenInstance,
+                rewardTokens: [
+                    firstRewardTokenInstance,
+                    secondRewardTokenInstance,
+                ],
+                rewardAmounts: [firstRewardsAmount, secondRewardsAmount],
+                duration,
+            });
+            await fastForwardTo({ timestamp: startingTimestamp });
+            await stakeAtTimestamp(
+                erc20DistributionInstance,
+                firstStakerAddress,
+                stakedAmount,
+                startingTimestamp
+            );
+            await fastForwardTo({ timestamp: endingTimestamp });
+            await erc20DistributionInstance.claim(
+                [firstRewardsAmount, secondRewardsAmount],
+                secondStakerAddress,
+                { from: firstStakerAddress }
+            );
+            expect(
+                await firstRewardTokenInstance.balanceOf(secondStakerAddress)
+            ).to.be.equalBn(firstRewardsAmount);
+            expect(
+                await secondRewardTokenInstance.balanceOf(secondStakerAddress)
+            ).to.be.equalBn(secondRewardsAmount);
         });
     }
 );

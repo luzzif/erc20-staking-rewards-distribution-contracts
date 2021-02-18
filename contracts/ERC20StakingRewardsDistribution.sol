@@ -212,7 +212,15 @@ contract ERC20StakingRewardsDistribution is Ownable {
         emit Withdrawn(msg.sender, _amount);
     }
 
-    function claim() external onlyInitialized onlyStarted {
+    function claim(uint256[] memory _amounts, address _recipient)
+        external
+        onlyInitialized
+        onlyStarted
+    {
+        require(
+            _amounts.length == rewardTokens.length,
+            "ERC20StakingRewardsDistribution: inconsistent claimed amounts"
+        );
         consolidateReward();
         uint256[] memory _claimedRewards = new uint256[](rewardTokens.length);
         for (uint256 _i; _i < rewardTokens.length; _i++) {
@@ -222,20 +230,55 @@ contract ERC20StakingRewardsDistribution is Ownable {
                 earnedRewards[msg.sender][_relatedRewardTokenAddress].sub(
                     claimedReward[msg.sender][_relatedRewardTokenAddress]
                 );
-            claimedReward[msg.sender][
-                _relatedRewardTokenAddress
-            ] = claimedReward[msg.sender][_relatedRewardTokenAddress].add(
-                _claimableReward
+            uint256 _wantedAmount = _amounts[_i];
+            require(
+                _claimableReward >= _wantedAmount,
+                "ERC20StakingRewardsDistribution: insufficient claimable amount"
             );
-            totalClaimedRewards[
-                _relatedRewardTokenAddress
-            ] = totalClaimedRewards[_relatedRewardTokenAddress].add(
-                _claimableReward
+            consolidateAndTransferClaim(
+                _relatedRewardToken,
+                _wantedAmount,
+                _recipient
             );
-            _relatedRewardToken.safeTransfer(msg.sender, _claimableReward);
+            _claimedRewards[_i] = _wantedAmount;
+        }
+        emit Claimed(msg.sender, _claimedRewards);
+    }
+
+    function claimAll(address _recipient) external onlyInitialized onlyStarted {
+        consolidateReward();
+        uint256[] memory _claimedRewards = new uint256[](rewardTokens.length);
+        for (uint256 _i; _i < rewardTokens.length; _i++) {
+            ERC20 _relatedRewardToken = rewardTokens[_i];
+            address _relatedRewardTokenAddress = address(_relatedRewardToken);
+            uint256 _claimableReward =
+                earnedRewards[msg.sender][_relatedRewardTokenAddress].sub(
+                    claimedReward[msg.sender][_relatedRewardTokenAddress]
+                );
+            consolidateAndTransferClaim(
+                _relatedRewardToken,
+                _claimableReward,
+                _recipient
+            );
             _claimedRewards[_i] = _claimableReward;
         }
         emit Claimed(msg.sender, _claimedRewards);
+    }
+
+    function consolidateAndTransferClaim(
+        ERC20 _rewardToken,
+        uint256 _amount,
+        address _recipient
+    ) private {
+        claimedReward[msg.sender][address(_rewardToken)] = claimedReward[
+            msg.sender
+        ][address(_rewardToken)]
+            .add(_amount);
+        totalClaimedRewards[address(_rewardToken)] = totalClaimedRewards[
+            address(_rewardToken)
+        ]
+            .add(_amount);
+        _rewardToken.safeTransfer(_recipient, _amount);
     }
 
     function consolidateReward() public onlyInitialized onlyStarted {
