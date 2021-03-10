@@ -54,6 +54,20 @@ contract ERC20StakingRewardsDistribution is Ownable {
         return rewardTokens;
     }
 
+    function getClaimedRewards(address _claimer)
+        external
+        view
+        returns (uint256[] memory)
+    {
+        uint256[] memory _claimedRewards = new uint256[](rewardTokens.length);
+        for (uint256 _i = 0; _i < rewardTokens.length; _i++) {
+            _claimedRewards[_i] = claimedReward[_claimer][
+                address(rewardTokens[_i])
+            ];
+        }
+        return _claimedRewards;
+    }
+
     function initialize(
         address[] calldata _rewardTokenAddresses,
         address _stakableTokenAddress,

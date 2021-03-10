@@ -645,24 +645,24 @@
     "absolutePath": "/home/luzzif/Projects/swapr-lp-staker/contracts/test/TestDependencies.sol",
     "exportedSymbols": {
       "FirstRewardERC20": [
-        1242
+        1293
       ],
       "FirstStakableERC20": [
-        1264
+        1315
       ],
       "SecondRewardERC20": [
-        1253
+        1304
       ],
       "SecondStakableERC20": [
-        1275
+        1326
       ]
     },
-    "id": 1276,
+    "id": 1327,
     "license": "GPL-3.0",
     "nodeType": "SourceUnit",
     "nodes": [
       {
-        "id": 1230,
+        "id": 1281,
         "literals": [
           "solidity",
           "^",
@@ -675,10 +675,10 @@
       {
         "absolutePath": "@openzeppelin/contracts/presets/ERC20PresetMinterPauser.sol",
         "file": "@openzeppelin/contracts/presets/ERC20PresetMinterPauser.sol",
-        "id": 1231,
+        "id": 1282,
         "nodeType": "ImportDirective",
-        "scope": 1276,
-        "sourceUnit": 2096,
+        "scope": 1327,
+        "sourceUnit": 2147,
         "src": "62:69:2",
         "symbolAliases": [],
         "unitAlias": ""
@@ -690,58 +690,58 @@
             "arguments": null,
             "baseName": {
               "contractScope": null,
-              "id": 1232,
+              "id": 1283,
               "name": "ERC20PresetMinterPauser",
               "nodeType": "UserDefinedTypeName",
-              "referencedDeclaration": 2095,
+              "referencedDeclaration": 2146,
               "src": "162:23:2",
               "typeDescriptions": {
-                "typeIdentifier": "t_contract$_ERC20PresetMinterPauser_$2095",
+                "typeIdentifier": "t_contract$_ERC20PresetMinterPauser_$2146",
                 "typeString": "contract ERC20PresetMinterPauser"
               }
             },
-            "id": 1233,
+            "id": 1284,
             "nodeType": "InheritanceSpecifier",
             "src": "162:23:2"
           }
         ],
         "contractDependencies": [
-          1298,
-          1581,
-          2095,
-          2598,
-          2657,
-          2694,
-          2772,
-          3799
+          1349,
+          1632,
+          2146,
+          2649,
+          2708,
+          2745,
+          2823,
+          3850
         ],
         "contractKind": "contract",
         "documentation": null,
         "fullyImplemented": true,
-        "id": 1242,
+        "id": 1293,
         "linearizedBaseContracts": [
-          1242,
-          2095,
-          2694,
-          3799,
-          2657,
-          2598,
-          2772,
-          1581,
-          1298
+          1293,
+          2146,
+          2745,
+          3850,
+          2708,
+          2649,
+          2823,
+          1632,
+          1349
         ],
         "name": "FirstRewardERC20",
         "nodeType": "ContractDefinition",
         "nodes": [
           {
             "body": {
-              "id": 1240,
+              "id": 1291,
               "nodeType": "Block",
               "src": "261:2:2",
               "statements": []
             },
             "documentation": null,
-            "id": 1241,
+            "id": 1292,
             "implemented": true,
             "kind": "constructor",
             "modifiers": [
@@ -750,7 +750,7 @@
                   {
                     "argumentTypes": null,
                     "hexValue": "466972737420726577617264",
-                    "id": 1236,
+                    "id": 1287,
                     "isConstant": false,
                     "isLValue": false,
                     "isPure": true,
@@ -768,7 +768,7 @@
                   {
                     "argumentTypes": null,
                     "hexValue": "52574431",
-                    "id": 1237,
+                    "id": 1288,
                     "isConstant": false,
                     "isLValue": false,
                     "isPure": true,
@@ -784,17 +784,17 @@
                     "value": "RWD1"
                   }
                 ],
-                "id": 1238,
+                "id": 1289,
                 "modifierName": {
                   "argumentTypes": null,
-                  "id": 1235,
+                  "id": 1286,
                   "name": "ERC20PresetMinterPauser",
                   "nodeType": "Identifier",
                   "overloadedDeclarations": [],
-                  "referencedDeclaration": 2095,
+                  "referencedDeclaration": 2146,
                   "src": "213:23:2",
                   "typeDescriptions": {
-                    "typeIdentifier": "t_type$_t_contract$_ERC20PresetMinterPauser_$2095_$",
+                    "typeIdentifier": "t_type$_t_contract$_ERC20PresetMinterPauser_$2146_$",
                     "typeString": "type(contract ERC20PresetMinterPauser)"
                   }
                 },
@@ -806,25 +806,25 @@
             "nodeType": "FunctionDefinition",
             "overrides": null,
             "parameters": {
-              "id": 1234,
+              "id": 1285,
               "nodeType": "ParameterList",
               "parameters": [],
               "src": "203:2:2"
             },
             "returnParameters": {
-              "id": 1239,
+              "id": 1290,
               "nodeType": "ParameterList",
               "parameters": [],
               "src": "261:0:2"
             },
-            "scope": 1242,
+            "scope": 1293,
             "src": "192:71:2",
             "stateMutability": "nonpayable",
             "virtual": false,
             "visibility": "public"
           }
         ],
-        "scope": 1276,
+        "scope": 1327,
         "src": "133:132:2"
       },
       {
@@ -834,58 +834,58 @@
             "arguments": null,
             "baseName": {
               "contractScope": null,
-              "id": 1243,
+              "id": 1294,
               "name": "ERC20PresetMinterPauser",
               "nodeType": "UserDefinedTypeName",
-              "referencedDeclaration": 2095,
+              "referencedDeclaration": 2146,
               "src": "297:23:2",
               "typeDescriptions": {
-                "typeIdentifier": "t_contract$_ERC20PresetMinterPauser_$2095",
+                "typeIdentifier": "t_contract$_ERC20PresetMinterPauser_$2146",
                 "typeString": "contract ERC20PresetMinterPauser"
               }
             },
-            "id": 1244,
+            "id": 1295,
             "nodeType": "InheritanceSpecifier",
             "src": "297:23:2"
           }
         ],
         "contractDependencies": [
-          1298,
-          1581,
-          2095,
-          2598,
-          2657,
-          2694,
-          2772,
-          3799
+          1349,
+          1632,
+          2146,
+          2649,
+          2708,
+          2745,
+          2823,
+          3850
         ],
         "contractKind": "contract",
         "documentation": null,
         "fullyImplemented": true,
-        "id": 1253,
+        "id": 1304,
         "linearizedBaseContracts": [
-          1253,
-          2095,
-          2694,
-          3799,
-          2657,
-          2598,
-          2772,
-          1581,
-          1298
+          1304,
+          2146,
+          2745,
+          3850,
+          2708,
+          2649,
+          2823,
+          1632,
+          1349
         ],
         "name": "SecondRewardERC20",
         "nodeType": "ContractDefinition",
         "nodes": [
           {
             "body": {
-              "id": 1251,
+              "id": 1302,
               "nodeType": "Block",
               "src": "397:2:2",
               "statements": []
             },
             "documentation": null,
-            "id": 1252,
+            "id": 1303,
             "implemented": true,
             "kind": "constructor",
             "modifiers": [
@@ -894,7 +894,7 @@
                   {
                     "argumentTypes": null,
                     "hexValue": "5365636f6e6420726577617264",
-                    "id": 1247,
+                    "id": 1298,
                     "isConstant": false,
                     "isLValue": false,
                     "isPure": true,
@@ -912,7 +912,7 @@
                   {
                     "argumentTypes": null,
                     "hexValue": "52574432",
-                    "id": 1248,
+                    "id": 1299,
                     "isConstant": false,
                     "isLValue": false,
                     "isPure": true,
@@ -928,17 +928,17 @@
                     "value": "RWD2"
                   }
                 ],
-                "id": 1249,
+                "id": 1300,
                 "modifierName": {
                   "argumentTypes": null,
-                  "id": 1246,
+                  "id": 1297,
                   "name": "ERC20PresetMinterPauser",
                   "nodeType": "Identifier",
                   "overloadedDeclarations": [],
-                  "referencedDeclaration": 2095,
+                  "referencedDeclaration": 2146,
                   "src": "348:23:2",
                   "typeDescriptions": {
-                    "typeIdentifier": "t_type$_t_contract$_ERC20PresetMinterPauser_$2095_$",
+                    "typeIdentifier": "t_type$_t_contract$_ERC20PresetMinterPauser_$2146_$",
                     "typeString": "type(contract ERC20PresetMinterPauser)"
                   }
                 },
@@ -950,25 +950,25 @@
             "nodeType": "FunctionDefinition",
             "overrides": null,
             "parameters": {
-              "id": 1245,
+              "id": 1296,
               "nodeType": "ParameterList",
               "parameters": [],
               "src": "338:2:2"
             },
             "returnParameters": {
-              "id": 1250,
+              "id": 1301,
               "nodeType": "ParameterList",
               "parameters": [],
               "src": "397:0:2"
             },
-            "scope": 1253,
+            "scope": 1304,
             "src": "327:72:2",
             "stateMutability": "nonpayable",
             "virtual": false,
             "visibility": "public"
           }
         ],
-        "scope": 1276,
+        "scope": 1327,
         "src": "267:134:2"
       },
       {
@@ -978,58 +978,58 @@
             "arguments": null,
             "baseName": {
               "contractScope": null,
-              "id": 1254,
+              "id": 1305,
               "name": "ERC20PresetMinterPauser",
               "nodeType": "UserDefinedTypeName",
-              "referencedDeclaration": 2095,
+              "referencedDeclaration": 2146,
               "src": "434:23:2",
               "typeDescriptions": {
-                "typeIdentifier": "t_contract$_ERC20PresetMinterPauser_$2095",
+                "typeIdentifier": "t_contract$_ERC20PresetMinterPauser_$2146",
                 "typeString": "contract ERC20PresetMinterPauser"
               }
             },
-            "id": 1255,
+            "id": 1306,
             "nodeType": "InheritanceSpecifier",
             "src": "434:23:2"
           }
         ],
         "contractDependencies": [
-          1298,
-          1581,
-          2095,
-          2598,
-          2657,
-          2694,
-          2772,
-          3799
+          1349,
+          1632,
+          2146,
+          2649,
+          2708,
+          2745,
+          2823,
+          3850
         ],
         "contractKind": "contract",
         "documentation": null,
         "fullyImplemented": true,
-        "id": 1264,
+        "id": 1315,
         "linearizedBaseContracts": [
-          1264,
-          2095,
-          2694,
-          3799,
-          2657,
-          2598,
-          2772,
-          1581,
-          1298
+          1315,
+          2146,
+          2745,
+          3850,
+          2708,
+          2649,
+          2823,
+          1632,
+          1349
         ],
         "name": "FirstStakableERC20",
         "nodeType": "ContractDefinition",
         "nodes": [
           {
             "body": {
-              "id": 1262,
+              "id": 1313,
               "nodeType": "Block",
               "src": "535:2:2",
               "statements": []
             },
             "documentation": null,
-            "id": 1263,
+            "id": 1314,
             "implemented": true,
             "kind": "constructor",
             "modifiers": [
@@ -1038,7 +1038,7 @@
                   {
                     "argumentTypes": null,
                     "hexValue": "4669727374207374616b61626c65",
-                    "id": 1258,
+                    "id": 1309,
                     "isConstant": false,
                     "isLValue": false,
                     "isPure": true,
@@ -1056,7 +1056,7 @@
                   {
                     "argumentTypes": null,
                     "hexValue": "53544b31",
-                    "id": 1259,
+                    "id": 1310,
                     "isConstant": false,
                     "isLValue": false,
                     "isPure": true,
@@ -1072,17 +1072,17 @@
                     "value": "STK1"
                   }
                 ],
-                "id": 1260,
+                "id": 1311,
                 "modifierName": {
                   "argumentTypes": null,
-                  "id": 1257,
+                  "id": 1308,
                   "name": "ERC20PresetMinterPauser",
                   "nodeType": "Identifier",
                   "overloadedDeclarations": [],
-                  "referencedDeclaration": 2095,
+                  "referencedDeclaration": 2146,
                   "src": "485:23:2",
                   "typeDescriptions": {
-                    "typeIdentifier": "t_type$_t_contract$_ERC20PresetMinterPauser_$2095_$",
+                    "typeIdentifier": "t_type$_t_contract$_ERC20PresetMinterPauser_$2146_$",
                     "typeString": "type(contract ERC20PresetMinterPauser)"
                   }
                 },
@@ -1094,25 +1094,25 @@
             "nodeType": "FunctionDefinition",
             "overrides": null,
             "parameters": {
-              "id": 1256,
+              "id": 1307,
               "nodeType": "ParameterList",
               "parameters": [],
               "src": "475:2:2"
             },
             "returnParameters": {
-              "id": 1261,
+              "id": 1312,
               "nodeType": "ParameterList",
               "parameters": [],
               "src": "535:0:2"
             },
-            "scope": 1264,
+            "scope": 1315,
             "src": "464:73:2",
             "stateMutability": "nonpayable",
             "virtual": false,
             "visibility": "public"
           }
         ],
-        "scope": 1276,
+        "scope": 1327,
         "src": "403:136:2"
       },
       {
@@ -1122,58 +1122,58 @@
             "arguments": null,
             "baseName": {
               "contractScope": null,
-              "id": 1265,
+              "id": 1316,
               "name": "ERC20PresetMinterPauser",
               "nodeType": "UserDefinedTypeName",
-              "referencedDeclaration": 2095,
+              "referencedDeclaration": 2146,
               "src": "573:23:2",
               "typeDescriptions": {
-                "typeIdentifier": "t_contract$_ERC20PresetMinterPauser_$2095",
+                "typeIdentifier": "t_contract$_ERC20PresetMinterPauser_$2146",
                 "typeString": "contract ERC20PresetMinterPauser"
               }
             },
-            "id": 1266,
+            "id": 1317,
             "nodeType": "InheritanceSpecifier",
             "src": "573:23:2"
           }
         ],
         "contractDependencies": [
-          1298,
-          1581,
-          2095,
-          2598,
-          2657,
-          2694,
-          2772,
-          3799
+          1349,
+          1632,
+          2146,
+          2649,
+          2708,
+          2745,
+          2823,
+          3850
         ],
         "contractKind": "contract",
         "documentation": null,
         "fullyImplemented": true,
-        "id": 1275,
+        "id": 1326,
         "linearizedBaseContracts": [
-          1275,
-          2095,
-          2694,
-          3799,
-          2657,
-          2598,
-          2772,
-          1581,
-          1298
+          1326,
+          2146,
+          2745,
+          3850,
+          2708,
+          2649,
+          2823,
+          1632,
+          1349
         ],
         "name": "SecondStakableERC20",
         "nodeType": "ContractDefinition",
         "nodes": [
           {
             "body": {
-              "id": 1273,
+              "id": 1324,
               "nodeType": "Block",
               "src": "675:2:2",
               "statements": []
             },
             "documentation": null,
-            "id": 1274,
+            "id": 1325,
             "implemented": true,
             "kind": "constructor",
             "modifiers": [
@@ -1182,7 +1182,7 @@
                   {
                     "argumentTypes": null,
                     "hexValue": "5365636f6e64207374616b61626c65",
-                    "id": 1269,
+                    "id": 1320,
                     "isConstant": false,
                     "isLValue": false,
                     "isPure": true,
@@ -1200,7 +1200,7 @@
                   {
                     "argumentTypes": null,
                     "hexValue": "53544b32",
-                    "id": 1270,
+                    "id": 1321,
                     "isConstant": false,
                     "isLValue": false,
                     "isPure": true,
@@ -1216,17 +1216,17 @@
                     "value": "STK2"
                   }
                 ],
-                "id": 1271,
+                "id": 1322,
                 "modifierName": {
                   "argumentTypes": null,
-                  "id": 1268,
+                  "id": 1319,
                   "name": "ERC20PresetMinterPauser",
                   "nodeType": "Identifier",
                   "overloadedDeclarations": [],
-                  "referencedDeclaration": 2095,
+                  "referencedDeclaration": 2146,
                   "src": "624:23:2",
                   "typeDescriptions": {
-                    "typeIdentifier": "t_type$_t_contract$_ERC20PresetMinterPauser_$2095_$",
+                    "typeIdentifier": "t_type$_t_contract$_ERC20PresetMinterPauser_$2146_$",
                     "typeString": "type(contract ERC20PresetMinterPauser)"
                   }
                 },
@@ -1238,25 +1238,25 @@
             "nodeType": "FunctionDefinition",
             "overrides": null,
             "parameters": {
-              "id": 1267,
+              "id": 1318,
               "nodeType": "ParameterList",
               "parameters": [],
               "src": "614:2:2"
             },
             "returnParameters": {
-              "id": 1272,
+              "id": 1323,
               "nodeType": "ParameterList",
               "parameters": [],
               "src": "675:0:2"
             },
-            "scope": 1275,
+            "scope": 1326,
             "src": "603:74:2",
             "stateMutability": "nonpayable",
             "virtual": false,
             "visibility": "public"
           }
         ],
-        "scope": 1276,
+        "scope": 1327,
         "src": "541:138:2"
       }
     ],
@@ -1267,16 +1267,16 @@
       "absolutePath": "/home/luzzif/Projects/swapr-lp-staker/contracts/test/TestDependencies.sol",
       "exportedSymbols": {
         "FirstRewardERC20": [
-          1242
+          1293
         ],
         "FirstStakableERC20": [
-          1264
+          1315
         ],
         "SecondRewardERC20": [
-          1253
+          1304
         ],
         "SecondStakableERC20": [
-          1275
+          1326
         ]
       },
       "license": "GPL-3.0"
@@ -1291,22 +1291,22 @@
             ".12"
           ]
         },
-        "id": 1230,
+        "id": 1281,
         "name": "PragmaDirective",
         "src": "36:24:2"
       },
       {
         "attributes": {
-          "SourceUnit": 2096,
+          "SourceUnit": 2147,
           "absolutePath": "@openzeppelin/contracts/presets/ERC20PresetMinterPauser.sol",
           "file": "@openzeppelin/contracts/presets/ERC20PresetMinterPauser.sol",
-          "scope": 1276,
+          "scope": 1327,
           "symbolAliases": [
             null
           ],
           "unitAlias": ""
         },
-        "id": 1231,
+        "id": 1282,
         "name": "ImportDirective",
         "src": "62:69:2"
       },
@@ -1314,31 +1314,31 @@
         "attributes": {
           "abstract": false,
           "contractDependencies": [
-            1298,
-            1581,
-            2095,
-            2598,
-            2657,
-            2694,
-            2772,
-            3799
+            1349,
+            1632,
+            2146,
+            2649,
+            2708,
+            2745,
+            2823,
+            3850
           ],
           "contractKind": "contract",
           "documentation": null,
           "fullyImplemented": true,
           "linearizedBaseContracts": [
-            1242,
-            2095,
-            2694,
-            3799,
-            2657,
-            2598,
-            2772,
-            1581,
-            1298
+            1293,
+            2146,
+            2745,
+            3850,
+            2708,
+            2649,
+            2823,
+            1632,
+            1349
           ],
           "name": "FirstRewardERC20",
-          "scope": 1276
+          "scope": 1327
         },
         "children": [
           {
@@ -1350,15 +1350,15 @@
                 "attributes": {
                   "contractScope": null,
                   "name": "ERC20PresetMinterPauser",
-                  "referencedDeclaration": 2095,
+                  "referencedDeclaration": 2146,
                   "type": "contract ERC20PresetMinterPauser"
                 },
-                "id": 1232,
+                "id": 1283,
                 "name": "UserDefinedTypeName",
                 "src": "162:23:2"
               }
             ],
-            "id": 1233,
+            "id": 1284,
             "name": "InheritanceSpecifier",
             "src": "162:23:2"
           },
@@ -1370,7 +1370,7 @@
               "kind": "constructor",
               "name": "",
               "overrides": null,
-              "scope": 1242,
+              "scope": 1293,
               "stateMutability": "nonpayable",
               "virtual": false,
               "visibility": "public"
@@ -1383,7 +1383,7 @@
                   ]
                 },
                 "children": [],
-                "id": 1234,
+                "id": 1285,
                 "name": "ParameterList",
                 "src": "203:2:2"
               },
@@ -1394,7 +1394,7 @@
                   ]
                 },
                 "children": [],
-                "id": 1239,
+                "id": 1290,
                 "name": "ParameterList",
                 "src": "261:0:2"
               },
@@ -1406,11 +1406,11 @@
                       "overloadedDeclarations": [
                         null
                       ],
-                      "referencedDeclaration": 2095,
+                      "referencedDeclaration": 2146,
                       "type": "type(contract ERC20PresetMinterPauser)",
                       "value": "ERC20PresetMinterPauser"
                     },
-                    "id": 1235,
+                    "id": 1286,
                     "name": "Identifier",
                     "src": "213:23:2"
                   },
@@ -1427,7 +1427,7 @@
                       "type": "literal_string \"First reward\"",
                       "value": "First reward"
                     },
-                    "id": 1236,
+                    "id": 1287,
                     "name": "Literal",
                     "src": "237:14:2"
                   },
@@ -1444,12 +1444,12 @@
                       "type": "literal_string \"RWD1\"",
                       "value": "RWD1"
                     },
-                    "id": 1237,
+                    "id": 1288,
                     "name": "Literal",
                     "src": "253:6:2"
                   }
                 ],
-                "id": 1238,
+                "id": 1289,
                 "name": "ModifierInvocation",
                 "src": "213:47:2"
               },
@@ -1460,17 +1460,17 @@
                   ]
                 },
                 "children": [],
-                "id": 1240,
+                "id": 1291,
                 "name": "Block",
                 "src": "261:2:2"
               }
             ],
-            "id": 1241,
+            "id": 1292,
             "name": "FunctionDefinition",
             "src": "192:71:2"
           }
         ],
-        "id": 1242,
+        "id": 1293,
         "name": "ContractDefinition",
         "src": "133:132:2"
       },
@@ -1478,31 +1478,31 @@
         "attributes": {
           "abstract": false,
           "contractDependencies": [
-            1298,
-            1581,
-            2095,
-            2598,
-            2657,
-            2694,
-            2772,
-            3799
+            1349,
+            1632,
+            2146,
+            2649,
+            2708,
+            2745,
+            2823,
+            3850
           ],
           "contractKind": "contract",
           "documentation": null,
           "fullyImplemented": true,
           "linearizedBaseContracts": [
-            1253,
-            2095,
-            2694,
-            3799,
-            2657,
-            2598,
-            2772,
-            1581,
-            1298
+            1304,
+            2146,
+            2745,
+            3850,
+            2708,
+            2649,
+            2823,
+            1632,
+            1349
           ],
           "name": "SecondRewardERC20",
-          "scope": 1276
+          "scope": 1327
         },
         "children": [
           {
@@ -1514,15 +1514,15 @@
                 "attributes": {
                   "contractScope": null,
                   "name": "ERC20PresetMinterPauser",
-                  "referencedDeclaration": 2095,
+                  "referencedDeclaration": 2146,
                   "type": "contract ERC20PresetMinterPauser"
                 },
-                "id": 1243,
+                "id": 1294,
                 "name": "UserDefinedTypeName",
                 "src": "297:23:2"
               }
             ],
-            "id": 1244,
+            "id": 1295,
             "name": "InheritanceSpecifier",
             "src": "297:23:2"
           },
@@ -1534,7 +1534,7 @@
               "kind": "constructor",
               "name": "",
               "overrides": null,
-              "scope": 1253,
+              "scope": 1304,
               "stateMutability": "nonpayable",
               "virtual": false,
               "visibility": "public"
@@ -1547,7 +1547,7 @@
                   ]
                 },
                 "children": [],
-                "id": 1245,
+                "id": 1296,
                 "name": "ParameterList",
                 "src": "338:2:2"
               },
@@ -1558,7 +1558,7 @@
                   ]
                 },
                 "children": [],
-                "id": 1250,
+                "id": 1301,
                 "name": "ParameterList",
                 "src": "397:0:2"
               },
@@ -1570,11 +1570,11 @@
                       "overloadedDeclarations": [
                         null
                       ],
-                      "referencedDeclaration": 2095,
+                      "referencedDeclaration": 2146,
                       "type": "type(contract ERC20PresetMinterPauser)",
                       "value": "ERC20PresetMinterPauser"
                     },
-                    "id": 1246,
+                    "id": 1297,
                     "name": "Identifier",
                     "src": "348:23:2"
                   },
@@ -1591,7 +1591,7 @@
                       "type": "literal_string \"Second reward\"",
                       "value": "Second reward"
                     },
-                    "id": 1247,
+                    "id": 1298,
                     "name": "Literal",
                     "src": "372:15:2"
                   },
@@ -1608,12 +1608,12 @@
                       "type": "literal_string \"RWD2\"",
                       "value": "RWD2"
                     },
-                    "id": 1248,
+                    "id": 1299,
                     "name": "Literal",
                     "src": "389:6:2"
                   }
                 ],
-                "id": 1249,
+                "id": 1300,
                 "name": "ModifierInvocation",
                 "src": "348:48:2"
               },
@@ -1624,17 +1624,17 @@
                   ]
                 },
                 "children": [],
-                "id": 1251,
+                "id": 1302,
                 "name": "Block",
                 "src": "397:2:2"
               }
             ],
-            "id": 1252,
+            "id": 1303,
             "name": "FunctionDefinition",
             "src": "327:72:2"
           }
         ],
-        "id": 1253,
+        "id": 1304,
         "name": "ContractDefinition",
         "src": "267:134:2"
       },
@@ -1642,31 +1642,31 @@
         "attributes": {
           "abstract": false,
           "contractDependencies": [
-            1298,
-            1581,
-            2095,
-            2598,
-            2657,
-            2694,
-            2772,
-            3799
+            1349,
+            1632,
+            2146,
+            2649,
+            2708,
+            2745,
+            2823,
+            3850
           ],
           "contractKind": "contract",
           "documentation": null,
           "fullyImplemented": true,
           "linearizedBaseContracts": [
-            1264,
-            2095,
-            2694,
-            3799,
-            2657,
-            2598,
-            2772,
-            1581,
-            1298
+            1315,
+            2146,
+            2745,
+            3850,
+            2708,
+            2649,
+            2823,
+            1632,
+            1349
           ],
           "name": "FirstStakableERC20",
-          "scope": 1276
+          "scope": 1327
         },
         "children": [
           {
@@ -1678,15 +1678,15 @@
                 "attributes": {
                   "contractScope": null,
                   "name": "ERC20PresetMinterPauser",
-                  "referencedDeclaration": 2095,
+                  "referencedDeclaration": 2146,
                   "type": "contract ERC20PresetMinterPauser"
                 },
-                "id": 1254,
+                "id": 1305,
                 "name": "UserDefinedTypeName",
                 "src": "434:23:2"
               }
             ],
-            "id": 1255,
+            "id": 1306,
             "name": "InheritanceSpecifier",
             "src": "434:23:2"
           },
@@ -1698,7 +1698,7 @@
               "kind": "constructor",
               "name": "",
               "overrides": null,
-              "scope": 1264,
+              "scope": 1315,
               "stateMutability": "nonpayable",
               "virtual": false,
               "visibility": "public"
@@ -1711,7 +1711,7 @@
                   ]
                 },
                 "children": [],
-                "id": 1256,
+                "id": 1307,
                 "name": "ParameterList",
                 "src": "475:2:2"
               },
@@ -1722,7 +1722,7 @@
                   ]
                 },
                 "children": [],
-                "id": 1261,
+                "id": 1312,
                 "name": "ParameterList",
                 "src": "535:0:2"
               },
@@ -1734,11 +1734,11 @@
                       "overloadedDeclarations": [
                         null
                       ],
-                      "referencedDeclaration": 2095,
+                      "referencedDeclaration": 2146,
                       "type": "type(contract ERC20PresetMinterPauser)",
                       "value": "ERC20PresetMinterPauser"
                     },
-                    "id": 1257,
+                    "id": 1308,
                     "name": "Identifier",
                     "src": "485:23:2"
                   },
@@ -1755,7 +1755,7 @@
                       "type": "literal_string \"First stakable\"",
                       "value": "First stakable"
                     },
-                    "id": 1258,
+                    "id": 1309,
                     "name": "Literal",
                     "src": "509:16:2"
                   },
@@ -1772,12 +1772,12 @@
                       "type": "literal_string \"STK1\"",
                       "value": "STK1"
                     },
-                    "id": 1259,
+                    "id": 1310,
                     "name": "Literal",
                     "src": "527:6:2"
                   }
                 ],
-                "id": 1260,
+                "id": 1311,
                 "name": "ModifierInvocation",
                 "src": "485:49:2"
               },
@@ -1788,17 +1788,17 @@
                   ]
                 },
                 "children": [],
-                "id": 1262,
+                "id": 1313,
                 "name": "Block",
                 "src": "535:2:2"
               }
             ],
-            "id": 1263,
+            "id": 1314,
             "name": "FunctionDefinition",
             "src": "464:73:2"
           }
         ],
-        "id": 1264,
+        "id": 1315,
         "name": "ContractDefinition",
         "src": "403:136:2"
       },
@@ -1806,31 +1806,31 @@
         "attributes": {
           "abstract": false,
           "contractDependencies": [
-            1298,
-            1581,
-            2095,
-            2598,
-            2657,
-            2694,
-            2772,
-            3799
+            1349,
+            1632,
+            2146,
+            2649,
+            2708,
+            2745,
+            2823,
+            3850
           ],
           "contractKind": "contract",
           "documentation": null,
           "fullyImplemented": true,
           "linearizedBaseContracts": [
-            1275,
-            2095,
-            2694,
-            3799,
-            2657,
-            2598,
-            2772,
-            1581,
-            1298
+            1326,
+            2146,
+            2745,
+            3850,
+            2708,
+            2649,
+            2823,
+            1632,
+            1349
           ],
           "name": "SecondStakableERC20",
-          "scope": 1276
+          "scope": 1327
         },
         "children": [
           {
@@ -1842,15 +1842,15 @@
                 "attributes": {
                   "contractScope": null,
                   "name": "ERC20PresetMinterPauser",
-                  "referencedDeclaration": 2095,
+                  "referencedDeclaration": 2146,
                   "type": "contract ERC20PresetMinterPauser"
                 },
-                "id": 1265,
+                "id": 1316,
                 "name": "UserDefinedTypeName",
                 "src": "573:23:2"
               }
             ],
-            "id": 1266,
+            "id": 1317,
             "name": "InheritanceSpecifier",
             "src": "573:23:2"
           },
@@ -1862,7 +1862,7 @@
               "kind": "constructor",
               "name": "",
               "overrides": null,
-              "scope": 1275,
+              "scope": 1326,
               "stateMutability": "nonpayable",
               "virtual": false,
               "visibility": "public"
@@ -1875,7 +1875,7 @@
                   ]
                 },
                 "children": [],
-                "id": 1267,
+                "id": 1318,
                 "name": "ParameterList",
                 "src": "614:2:2"
               },
@@ -1886,7 +1886,7 @@
                   ]
                 },
                 "children": [],
-                "id": 1272,
+                "id": 1323,
                 "name": "ParameterList",
                 "src": "675:0:2"
               },
@@ -1898,11 +1898,11 @@
                       "overloadedDeclarations": [
                         null
                       ],
-                      "referencedDeclaration": 2095,
+                      "referencedDeclaration": 2146,
                       "type": "type(contract ERC20PresetMinterPauser)",
                       "value": "ERC20PresetMinterPauser"
                     },
-                    "id": 1268,
+                    "id": 1319,
                     "name": "Identifier",
                     "src": "624:23:2"
                   },
@@ -1919,7 +1919,7 @@
                       "type": "literal_string \"Second stakable\"",
                       "value": "Second stakable"
                     },
-                    "id": 1269,
+                    "id": 1320,
                     "name": "Literal",
                     "src": "648:17:2"
                   },
@@ -1936,12 +1936,12 @@
                       "type": "literal_string \"STK2\"",
                       "value": "STK2"
                     },
-                    "id": 1270,
+                    "id": 1321,
                     "name": "Literal",
                     "src": "667:6:2"
                   }
                 ],
-                "id": 1271,
+                "id": 1322,
                 "name": "ModifierInvocation",
                 "src": "624:50:2"
               },
@@ -1952,22 +1952,22 @@
                   ]
                 },
                 "children": [],
-                "id": 1273,
+                "id": 1324,
                 "name": "Block",
                 "src": "675:2:2"
               }
             ],
-            "id": 1274,
+            "id": 1325,
             "name": "FunctionDefinition",
             "src": "603:74:2"
           }
         ],
-        "id": 1275,
+        "id": 1326,
         "name": "ContractDefinition",
         "src": "541:138:2"
       }
     ],
-    "id": 1276,
+    "id": 1327,
     "name": "SourceUnit",
     "src": "36:644:2"
   },
@@ -1977,7 +1977,7 @@
   },
   "networks": {},
   "schemaVersion": "3.3.3",
-  "updatedAt": "2021-02-18T14:21:14.250Z",
+  "updatedAt": "2021-03-10T22:20:49.696Z",
   "devdoc": {
     "kind": "dev",
     "methods": {
