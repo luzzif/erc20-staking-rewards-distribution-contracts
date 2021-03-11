@@ -350,6 +350,53 @@ contract ERC20StakingRewardsDistribution is Ownable {
         lastConsolidationTimestamp = _consolidationTimestamp;
     }
 
+    function claimableRewards(address _staker)
+        public
+        view
+        onlyInitialized
+        onlyStarted
+        returns (uint256[] memory)
+    {
+        uint64 _consolidationTimestamp =
+            uint64(Math.min(block.timestamp, endingTimestamp));
+        uint256 _lastPeriodDuration =
+            uint256(_consolidationTimestamp.sub(lastConsolidationTimestamp));
+        uint256[] memory _outstandingRewards =
+            new uint256[](rewardTokens.length);
+        for (uint256 _i; _i < rewardTokens.length; _i++) {
+            address _relatedRewardTokenAddress = address(rewardTokens[_i]);
+            uint256 _localRewardPerStakedToken =
+                rewardPerStakedToken[_relatedRewardTokenAddress];
+            if (totalStakedTokensAmount == 0) {
+                _localRewardPerStakedToken = 0;
+            } else {
+                _localRewardPerStakedToken = _localRewardPerStakedToken.add(
+                    _lastPeriodDuration
+                        .mul(rewardAmount[_relatedRewardTokenAddress])
+                        .mul(MULTIPLIER)
+                        .div(totalStakedTokensAmount.mul(secondsDuration))
+                );
+            }
+            uint256 _rewardsInTheCurrentPeriod =
+                _localRewardPerStakedToken > 0
+                    ? stakedTokensOf[_staker]
+                        .mul(
+                        _localRewardPerStakedToken.sub(
+                            consolidatedRewardsPerStakedToken[_staker][
+                                _relatedRewardTokenAddress
+                            ]
+                        )
+                    )
+                        .div(MULTIPLIER)
+                    : 0;
+            // the claimable reward basically is the one not yet consolidated in the current period plus any
+            // previously consolidated/earned but unclaimed reward
+            _outstandingRewards[_i] = _rewardsInTheCurrentPeriod
+                .add(earnedRewards[_staker][_relatedRewardTokenAddress])
+                .sub(claimedReward[_staker][_relatedRewardTokenAddress]);
+        }
+    }
+
     modifier onlyUninitialized() {
         require(
             !initialized,
