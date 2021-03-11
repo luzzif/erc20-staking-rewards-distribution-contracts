@@ -395,6 +395,7 @@ contract ERC20StakingRewardsDistribution is Ownable {
                 .add(earnedRewards[_staker][_relatedRewardTokenAddress])
                 .sub(claimedReward[_staker][_relatedRewardTokenAddress]);
         }
+        return _outstandingRewards;
     }
 
     modifier onlyUninitialized() {
