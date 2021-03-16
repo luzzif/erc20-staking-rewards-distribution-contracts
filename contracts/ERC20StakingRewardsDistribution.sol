@@ -279,6 +279,12 @@ contract ERC20StakingRewardsDistribution is Ownable {
         emit Claimed(msg.sender, _claimedRewards);
     }
 
+    function exit(address _recipient) external onlyInitialized onlyStarted {
+        consolidateReward();
+        claimAll(_recipient);
+        withdraw(stakedTokensOf[msg.sender])
+    }
+
     function consolidateAndTransferClaim(
         ERC20 _rewardToken,
         uint256 _amount,
