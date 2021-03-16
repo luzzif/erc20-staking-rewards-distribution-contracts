@@ -353,16 +353,20 @@ contract ERC20StakingRewardsDistribution is Ownable {
     function claimableRewards(address _staker)
         public
         view
-        onlyInitialized
-        onlyStarted
         returns (uint256[] memory)
     {
+        uint256[] memory _outstandingRewards =
+            new uint256[](rewardTokens.length);
+        if (!initialized || block.timestamp < startingTimestamp) {
+            for (uint256 _i; _i < rewardTokens.length; _i++) {
+                _outstandingRewards[_i] = 0;
+            }
+            return _outstandingRewards;
+        }
         uint64 _consolidationTimestamp =
             uint64(Math.min(block.timestamp, endingTimestamp));
         uint256 _lastPeriodDuration =
             uint256(_consolidationTimestamp.sub(lastConsolidationTimestamp));
-        uint256[] memory _outstandingRewards =
-            new uint256[](rewardTokens.length);
         for (uint256 _i; _i < rewardTokens.length; _i++) {
             address _relatedRewardTokenAddress = address(rewardTokens[_i]);
             uint256 _localRewardPerStakedToken =
