@@ -204,7 +204,7 @@ contract ERC20StakingRewardsDistribution is Ownable {
         emit Staked(msg.sender, _amount);
     }
 
-    function withdraw(uint256 _amount) external onlyInitialized onlyStarted {
+    function withdraw(uint256 _amount) public onlyInitialized onlyStarted {
         require(
             _amount > 0,
             "ERC20StakingRewardsDistribution: tried to withdraw nothing"
@@ -259,7 +259,7 @@ contract ERC20StakingRewardsDistribution is Ownable {
         emit Claimed(msg.sender, _claimedRewards);
     }
 
-    function claimAll(address _recipient) external onlyInitialized onlyStarted {
+    function claimAll(address _recipient) public onlyInitialized onlyStarted {
         consolidateReward();
         uint256[] memory _claimedRewards = new uint256[](rewardTokens.length);
         for (uint256 _i; _i < rewardTokens.length; _i++) {
@@ -282,7 +282,7 @@ contract ERC20StakingRewardsDistribution is Ownable {
     function exit(address _recipient) external onlyInitialized onlyStarted {
         consolidateReward();
         claimAll(_recipient);
-        withdraw(stakedTokensOf[msg.sender])
+        withdraw(stakedTokensOf[msg.sender]);
     }
 
     function consolidateAndTransferClaim(
