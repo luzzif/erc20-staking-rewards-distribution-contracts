@@ -22,7 +22,8 @@ contract ERC20StakingRewardsDistributionFactory is Ownable {
         uint256[] calldata _rewardAmounts,
         uint64 _startingTimestamp,
         uint64 _endingTimestmp,
-        bool _locked
+        bool _locked,
+        uint256 _stakingCap
     ) public virtual {
         ERC20StakingRewardsDistribution _distribution =
             new ERC20StakingRewardsDistribution();
@@ -40,7 +41,8 @@ contract ERC20StakingRewardsDistributionFactory is Ownable {
             _rewardAmounts,
             _startingTimestamp,
             _endingTimestmp,
-            _locked
+            _locked,
+            _stakingCap
         );
         _distribution.transferOwnership(msg.sender);
         distributions.push(_distribution);

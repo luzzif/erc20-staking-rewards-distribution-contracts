@@ -111,6 +111,8 @@ contract(
                     [1],
                     currentEvmTimestamp.sub(new BN(10)),
                     currentEvmTimestamp.add(new BN(10)),
+                    false,
+                    0,
                     { from: ownerAddress }
                 );
                 throw new Error("should have failed");
@@ -130,6 +132,8 @@ contract(
                     [1],
                     currentEvmTimestamp,
                     currentEvmTimestamp.add(new BN(10)),
+                    false,
+                    0,
                     { from: ownerAddress }
                 );
                 throw new Error("should have failed");

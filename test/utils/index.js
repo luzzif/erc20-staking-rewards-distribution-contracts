@@ -34,6 +34,7 @@ exports.initializeDistribution = async ({
     fund = true,
     skipRewardTokensAmountsConsistenyCheck,
     locked = false,
+    stakingCap = 0,
 }) => {
     if (
         !skipRewardTokensAmountsConsistenyCheck &&
@@ -69,6 +70,7 @@ exports.initializeDistribution = async ({
         campaignStartingTimestamp,
         campaignEndingTimestamp,
         locked,
+        stakingCap,
         { from }
     );
     return {

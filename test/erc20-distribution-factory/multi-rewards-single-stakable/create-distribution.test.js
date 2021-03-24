@@ -49,7 +49,8 @@ contract(
                     [10, 10],
                     startingTimestamp,
                     startingTimestamp.add(new BN(10)),
-                    false
+                    false,
+                    0
                 );
                 throw new Error("should have failed");
             } catch (error) {
@@ -81,6 +82,7 @@ contract(
                     startingTimestamp,
                     startingTimestamp.add(new BN(10)),
                     false,
+                    0,
                     { from: ownerAddress }
                 );
                 throw new Error("should have failed");
@@ -116,7 +118,8 @@ contract(
                     [firstRewardAmount, 10],
                     startingTimestamp,
                     startingTimestamp.add(new BN(10)),
-                    false
+                    false,
+                    0
                 );
                 throw new Error("should have failed");
             } catch (error) {
@@ -158,6 +161,7 @@ contract(
                     startingTimestamp,
                     startingTimestamp.add(new BN(10)),
                     false,
+                    0,
                     { from: ownerAddress }
                 );
                 throw new Error("should have failed");
@@ -205,6 +209,7 @@ contract(
                 startingTimestamp,
                 endingTimestamp,
                 locked,
+                0,
                 { from: ownerAddress }
             );
             expect(

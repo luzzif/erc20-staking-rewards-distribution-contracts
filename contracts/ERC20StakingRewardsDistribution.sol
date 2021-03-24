@@ -25,6 +25,7 @@ contract ERC20StakingRewardsDistribution is Ownable {
     uint64 public endingTimestamp;
     uint64 public secondsDuration;
     bool public locked;
+    uint256 public stakingCap;
     bool public initialized;
     uint64 public lastConsolidationTimestamp;
     mapping(address => uint256) public recoverableUnassignedReward;
@@ -42,7 +43,8 @@ contract ERC20StakingRewardsDistribution is Ownable {
         uint256[] rewardsAmounts,
         uint64 startingTimestamp,
         uint64 endingTimestamp,
-        bool locked
+        bool locked,
+        uint256 stakingCap
     );
     event Canceled();
     event Staked(address indexed staker, uint256 amount);
@@ -74,7 +76,8 @@ contract ERC20StakingRewardsDistribution is Ownable {
         uint256[] calldata _rewardAmounts,
         uint64 _startingTimestamp,
         uint64 _endingTimestamp,
-        bool _locked
+        bool _locked,
+        uint256 _stakingCap
     ) external onlyOwner onlyUninitialized {
         require(
             _startingTimestamp > block.timestamp,
@@ -121,6 +124,7 @@ contract ERC20StakingRewardsDistribution is Ownable {
         endingTimestamp = _endingTimestamp;
         lastConsolidationTimestamp = _startingTimestamp;
         locked = _locked;
+        stakingCap = _stakingCap;
 
         initialized = true;
         emit Initialized(
@@ -129,7 +133,8 @@ contract ERC20StakingRewardsDistribution is Ownable {
             _rewardAmounts,
             _startingTimestamp,
             _endingTimestamp,
-            _locked
+            _locked,
+            _stakingCap
         );
     }
 
@@ -197,6 +202,12 @@ contract ERC20StakingRewardsDistribution is Ownable {
             _amount > 0,
             "ERC20StakingRewardsDistribution: tried to stake nothing"
         );
+        if (stakingCap > 0) {
+            require(
+                totalStakedTokensAmount.add(_amount) <= stakingCap,
+                "ERC20StakingRewardsDistribution: staking cap hit"
+            );
+        }
         consolidateReward();
         stakedTokensOf[msg.sender] = stakedTokensOf[msg.sender].add(_amount);
         totalStakedTokensAmount = totalStakedTokensAmount.add(_amount);
