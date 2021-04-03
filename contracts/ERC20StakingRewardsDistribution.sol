@@ -1,20 +1,20 @@
 // SPDX-License-Identifier: GPL-3.0
 
-pragma solidity ^0.6.12;
+pragma solidity ^0.8.0;
 
-import "@openzeppelin/contracts/math/SafeMath.sol";
-import "@openzeppelin/contracts/math/Math.sol";
+import "@openzeppelin/contracts/utils/math/SafeMath.sol";
+import "@openzeppelin/contracts/utils/math/Math.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
-import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
-import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
-contract ERC20StakingRewardsDistribution is Ownable {
+contract ERC20StakingRewardsDistribution {
     using SafeMath for uint256;
     using SafeMath for uint64;
     using SafeERC20 for ERC20;
 
     uint224 constant MULTIPLIER = 2**112;
 
+    address public owner;
     ERC20[] public rewardTokens;
     ERC20 public stakableToken;
     mapping(address => uint256) public rewardAmount;
@@ -37,6 +37,10 @@ contract ERC20StakingRewardsDistribution is Ownable {
     mapping(address => mapping(address => uint256)) public earnedRewards;
     mapping(address => mapping(address => uint256)) public claimedReward;
 
+    event OwnershipTransferred(
+        address indexed previousOwner,
+        address indexed newOwner
+    );
     event Initialized(
         address[] rewardsTokenAddresses,
         address stakableTokenAddress,
@@ -78,7 +82,7 @@ contract ERC20StakingRewardsDistribution is Ownable {
         uint64 _endingTimestamp,
         bool _locked,
         uint256 _stakingCap
-    ) external onlyOwner onlyUninitialized {
+    ) external onlyUninitialized {
         require(
             _startingTimestamp > block.timestamp,
             "ERC20StakingRewardsDistribution: invalid starting timestamp"
@@ -120,6 +124,7 @@ contract ERC20StakingRewardsDistribution is Ownable {
         );
         stakableToken = ERC20(_stakableTokenAddress);
 
+        owner = msg.sender;
         startingTimestamp = _startingTimestamp;
         endingTimestamp = _endingTimestamp;
         lastConsolidationTimestamp = _startingTimestamp;
@@ -148,7 +153,7 @@ contract ERC20StakingRewardsDistribution is Ownable {
             ERC20 _rewardToken = rewardTokens[_i];
             delete rewardAmount[address(_rewardToken)];
             _rewardToken.safeTransfer(
-                owner(),
+                owner,
                 _rewardToken.balanceOf(address(this))
             );
         }
@@ -187,7 +192,7 @@ contract ERC20StakingRewardsDistribution is Ownable {
                     _requiredFunding
                 );
             _recoveredUnassignedRewards[_i] = _recoverableRewards;
-            _relatedRewardToken.safeTransfer(owner(), _recoverableRewards);
+            _relatedRewardToken.safeTransfer(owner, _recoverableRewards);
         }
         emit Recovered(_recoveredUnassignedRewards);
     }
@@ -417,6 +422,28 @@ contract ERC20StakingRewardsDistribution is Ownable {
                 .sub(claimedReward[_staker][_relatedRewardTokenAddress]);
         }
         return _outstandingRewards;
+    }
+
+    function renounceOwnership() public onlyOwner {
+        owner = address(0);
+        emit OwnershipTransferred(owner, address(0));
+    }
+
+    function transferOwnership(address _newOwner) public onlyOwner {
+        require(
+            _newOwner != address(0),
+            "ERC20StakingRewardsDistribution: 0-address owner"
+        );
+        emit OwnershipTransferred(owner, _newOwner);
+        owner = _newOwner;
+    }
+
+    modifier onlyOwner() {
+        require(
+            owner == msg.sender,
+            "ERC20StakingRewardsDistribution: caller not owner"
+        );
+        _;
     }
 
     modifier onlyUninitialized() {

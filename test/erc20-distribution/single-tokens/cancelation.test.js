@@ -5,7 +5,9 @@ const { initializeDistribution } = require("../../utils");
 const { toWei } = require("../../utils/conversion");
 const { fastForwardTo, getEvmTimestamp } = require("../../utils/network");
 
-const ERC20StakingRewardsDistribution = artifacts.require("ERC20StakingRewardsDistribution");
+const ERC20StakingRewardsDistribution = artifacts.require(
+    "ERC20StakingRewardsDistribution"
+);
 const FirstRewardERC20 = artifacts.require("FirstRewardERC20");
 const FirstStakableERC20 = artifacts.require("FirstStakableERC20");
 
@@ -21,9 +23,9 @@ contract(
         beforeEach(async () => {
             const accounts = await web3.eth.getAccounts();
             ownerAddress = accounts[0];
-            erc20DistributionInstance = await ERC20StakingRewardsDistribution.new({
-                from: ownerAddress,
-            });
+            erc20DistributionInstance = await ERC20StakingRewardsDistribution.new(
+                { from: ownerAddress }
+            );
             rewardsTokenInstance = await FirstRewardERC20.new();
             stakableTokenInstance = await FirstStakableERC20.new();
             stakerAddress = accounts[1];
@@ -54,7 +56,7 @@ contract(
                 throw new Error("should have failed");
             } catch (error) {
                 expect(error.message).to.contain(
-                    "Ownable: caller is not the owner"
+                    "ERC20StakingRewardsDistribution: caller not owner"
                 );
             }
         });

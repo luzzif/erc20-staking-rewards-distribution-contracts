@@ -8,6 +8,9 @@ const ERC20StakingRewardsDistributionFactory = artifacts.require(
 const ERC20StakingRewardsDistribution = artifacts.require(
     "ERC20StakingRewardsDistribution"
 );
+const UpgradedERC20StakingRewardsDistribution = artifacts.require(
+    "UpgradedERC20StakingRewardsDistribution"
+);
 const FirstRewardERC20 = artifacts.require("FirstRewardERC20");
 const SecondRewardERC20 = artifacts.require("SecondRewardERC20");
 const FirstStakableERC20 = artifacts.require("FirstStakableERC20");
@@ -24,10 +27,10 @@ contract(
         beforeEach(async () => {
             const accounts = await web3.eth.getAccounts();
             ownerAddress = accounts[1];
+            const implementation = await ERC20StakingRewardsDistribution.new();
             erc20DistributionFactoryInstance = await ERC20StakingRewardsDistributionFactory.new(
-                {
-                    from: ownerAddress,
-                }
+                implementation.address,
+                { from: ownerAddress }
             );
             firstRewardsTokenInstance = await FirstRewardERC20.new();
             secondRewardsTokenInstance = await SecondRewardERC20.new();
@@ -243,6 +246,100 @@ contract(
             expect(await erc20DistributionInstance.owner()).to.be.equal(
                 ownerAddress
             );
+        });
+
+        it("should succeed when upgrading the implementation on multiple proxies", async () => {
+            const firstRewardAmount = 20;
+            await firstRewardsTokenInstance.mint(
+                ownerAddress,
+                firstRewardAmount
+            );
+            await firstRewardsTokenInstance.approve(
+                erc20DistributionFactoryInstance.address,
+                firstRewardAmount,
+                { from: ownerAddress }
+            );
+
+            const secondRewardAmount = 40;
+            await secondRewardsTokenInstance.mint(
+                ownerAddress,
+                secondRewardAmount
+            );
+            await secondRewardsTokenInstance.approve(
+                erc20DistributionFactoryInstance.address,
+                secondRewardAmount,
+                { from: ownerAddress }
+            );
+            const rewardAmounts = [
+                firstRewardAmount / 2,
+                secondRewardAmount / 2,
+            ];
+            const rewardTokens = [
+                firstRewardsTokenInstance.address,
+                secondRewardsTokenInstance.address,
+            ];
+            const startingTimestamp = (await getEvmTimestamp()).add(new BN(10));
+            const endingTimestamp = startingTimestamp.add(new BN(10));
+            const locked = false;
+            // proxy 1
+            await erc20DistributionFactoryInstance.createDistribution(
+                rewardTokens,
+                stakableTokenInstance.address,
+                rewardAmounts,
+                startingTimestamp,
+                endingTimestamp,
+                locked,
+                0,
+                { from: ownerAddress }
+            );
+            // proxy 2
+            await erc20DistributionFactoryInstance.createDistribution(
+                rewardTokens,
+                stakableTokenInstance.address,
+                rewardAmounts,
+                startingTimestamp,
+                endingTimestamp,
+                locked,
+                0,
+                { from: ownerAddress }
+            );
+            expect(
+                await erc20DistributionFactoryInstance.getDistributionsAmount()
+            ).to.be.equalBn(new BN(2));
+            const proxy1Address = await erc20DistributionFactoryInstance.distributions(
+                0
+            );
+            const proxy2Address = await erc20DistributionFactoryInstance.distributions(
+                0
+            );
+            const distribution1Instance = await UpgradedERC20StakingRewardsDistribution.at(
+                proxy1Address
+            );
+            const distribution2Instance = await UpgradedERC20StakingRewardsDistribution.at(
+                proxy2Address
+            );
+
+            try {
+                await distribution1Instance.isUpgraded();
+                throw new Error("should have failed");
+            } catch (error) {
+                expect(error.message).to.contain("revert");
+            }
+            try {
+                await distribution2Instance.isUpgraded();
+                throw new Error("should have failed");
+            } catch (error) {
+                expect(error.message).to.contain("revert");
+            }
+
+            // upgrading implementation
+            const upgradedDistribution = await UpgradedERC20StakingRewardsDistribution.new();
+            await erc20DistributionFactoryInstance.upgradeTo(
+                upgradedDistribution.address,
+                { from: ownerAddress }
+            );
+            expect(await distribution1Instance.isUpgraded()).to.be.true;
+            expect(await distribution2Instance.isUpgraded()).to.be.true;
         });
     }
 );

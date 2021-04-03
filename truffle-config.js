@@ -2,7 +2,7 @@ const configuration = {
     contracts_build_directory: "build",
     compilers: {
         solc: {
-            version: "^0.6.12",
+            version: "^0.8.0",
             settings: {
                 optimizer: {
                     enabled: true,

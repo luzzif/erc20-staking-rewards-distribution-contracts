@@ -15,6 +15,7 @@ contract(
     "ERC20StakingRewardsDistributionFactory - Distribution creation",
     () => {
         let erc20DistributionFactoryInstance,
+            erc20DistributionInstance,
             rewardsTokenInstance,
             stakableTokenInstance,
             ownerAddress;
@@ -22,10 +23,10 @@ contract(
         beforeEach(async () => {
             const accounts = await web3.eth.getAccounts();
             ownerAddress = accounts[1];
+            erc20DistributionInstance = await ERC20StakingRewardsDistribution.new();
             erc20DistributionFactoryInstance = await ERC20StakingRewardsDistributionFactory.new(
-                {
-                    from: ownerAddress,
-                }
+                erc20DistributionInstance.address,
+                { from: ownerAddress }
             );
             rewardsTokenInstance = await FirstRewardERC20.new();
             stakableTokenInstance = await FirstStakableERC20.new();

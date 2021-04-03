@@ -22,7 +22,7 @@
     "author": "Federico Luzzi <fedeluzzi00@gmail.com>",
     "license": "GPL-3.0",
     "dependencies": {
-        "@openzeppelin/contracts": "^3.2.0"
+        "@openzeppelin/contracts": "^4.0.0"
     },
     "devDependencies": {
         "@commitlint/cli": "^11.0.0",

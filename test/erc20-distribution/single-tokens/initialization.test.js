@@ -17,8 +17,7 @@ contract(
         let erc20DistributionInstance,
             rewardsTokenInstance,
             stakableTokenInstance,
-            ownerAddress,
-            firstStakerAddress;
+            ownerAddress;
 
         beforeEach(async () => {
             const accounts = await web3.eth.getAccounts();
@@ -26,25 +25,6 @@ contract(
             rewardsTokenInstance = await FirstRewardERC20.new();
             stakableTokenInstance = await FirstStakableERC20.new();
             ownerAddress = accounts[0];
-            firstStakerAddress = accounts[1];
-        });
-
-        it("should fail when not called by the owner", async () => {
-            try {
-                await initializeDistribution({
-                    from: firstStakerAddress,
-                    erc20DistributionInstance,
-                    stakableToken: stakableTokenInstance,
-                    rewardTokens: [rewardsTokenInstance],
-                    rewardAmounts: [11],
-                    duration: 10,
-                });
-                throw new Error("should have failed");
-            } catch (error) {
-                expect(error.message).to.contain(
-                    "Ownable: caller is not the owner"
-                );
-            }
         });
 
         it("should fail when passing a 0-address rewards token", async () => {
