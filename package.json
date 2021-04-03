@@ -1,9 +1,10 @@
 {
     "name": "erc20-staking-rewards-distribution-contracts",
-    "version": "0.11.1",
+    "version": "0.11.2",
     "description": "Generic contracts suite to bootstrap staking campaigns in which stakers get rewarded over time. Supports multiple ERC20 reward/stakable tokens and locked staking (i.e. no withdraw until the end of the distribution if tokens are staked).",
     "files": [
-        "/*.sol",
+        "/ERC20StakingRewardsDistribution.sol",
+        "/ERC20StakingRewardsDistributionFactory.sol",
         "/build/ERC20StakingRewardsDistribution.json",
         "/build/ERC20StakingRewardsDistributionFactory.json"
     ],
