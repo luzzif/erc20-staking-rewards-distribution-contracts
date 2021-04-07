@@ -4,7 +4,9 @@
     "description": "Generic contracts suite to bootstrap staking campaigns in which stakers get rewarded over time. Supports multiple ERC20 reward/stakable tokens and locked staking (i.e. no withdraw until the end of the distribution if tokens are staked).",
     "files": [
         "/ERC20StakingRewardsDistribution.sol",
+        "/IERC20StakingRewardsDistribution.sol",
         "/ERC20StakingRewardsDistributionFactory.sol",
+        "/IERC20StakingRewardsDistributionFactory.sol",
         "/build/ERC20StakingRewardsDistribution.json",
         "/build/ERC20StakingRewardsDistributionFactory.json"
     ],
@@ -17,7 +19,7 @@
         "test:coverage": "truffle run coverage",
         "test:gasreport": "truffle test --gas-report",
         "compile": "truffle compile",
-        "prepack": "cp ./contracts/*.sol ./",
+        "prepack": "cp ./contracts/*.sol ./ && cp ./contracts/interfaces/*.sol ./",
         "postpack": "rm -rf ./*.sol"
     },
     "author": "Federico Luzzi <fedeluzzi00@gmail.com>",
