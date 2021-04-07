@@ -18,4 +18,6 @@ interface IERC20StakingRewardsDistributionFactory {
     function implementation() external view returns (address);
 
     function upgradeTo(address newImplementation) external;
+
+    function distributions(uint256 _index) external returns (address);
 }
