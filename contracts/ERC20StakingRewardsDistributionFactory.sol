@@ -2,7 +2,6 @@
 
 pragma solidity ^0.8.0;
 
-import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/proxy/beacon/UpgradeableBeacon.sol";
@@ -10,7 +9,6 @@ import "@openzeppelin/contracts/proxy/beacon/BeaconProxy.sol";
 import "./ERC20StakingRewardsDistribution.sol";
 
 contract ERC20StakingRewardsDistributionFactory is UpgradeableBeacon {
-    using SafeMath for uint256;
     using SafeERC20 for ERC20;
 
     ERC20StakingRewardsDistribution[] public distributions;
