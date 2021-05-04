@@ -178,9 +178,9 @@ contract ERC20StakingRewardsDistribution {
             address _relatedRewardTokenAddress = address(_relatedRewardToken);
             // recoverable rewards are going to be recovered in this tx (if it does not revert),
             // so we add them to the claimed rewards right now
-            totalClaimedRewards[_relatedRewardTokenAddress] =
-                totalClaimedRewards[_relatedRewardTokenAddress] +
-                recoverableUnassignedReward[_relatedRewardTokenAddress];
+            totalClaimedRewards[
+                _relatedRewardTokenAddress
+            ] += recoverableUnassignedReward[_relatedRewardTokenAddress];
             uint256 _requiredFunding =
                 rewardAmount[_relatedRewardTokenAddress] -
                     totalClaimedRewards[_relatedRewardTokenAddress];
@@ -217,8 +217,8 @@ contract ERC20StakingRewardsDistribution {
         }
         consolidateReward();
         require(_amount <= stakedTokensOf[msg.sender], "SRD13");
-        stakedTokensOf[msg.sender] = stakedTokensOf[msg.sender] - _amount;
-        totalStakedTokensAmount = totalStakedTokensAmount - _amount;
+        stakedTokensOf[msg.sender] -= _amount;
+        totalStakedTokensAmount -= _amount;
         stakableToken.safeTransfer(msg.sender, _amount);
         emit Withdrawn(msg.sender, _amount);
     }
@@ -279,12 +279,8 @@ contract ERC20StakingRewardsDistribution {
         uint256 _amount,
         address _recipient
     ) private {
-        claimedReward[msg.sender][address(_rewardToken)] =
-            claimedReward[msg.sender][address(_rewardToken)] +
-            _amount;
-        totalClaimedRewards[address(_rewardToken)] =
-            totalClaimedRewards[address(_rewardToken)] +
-            _amount;
+        claimedReward[msg.sender][address(_rewardToken)] += _amount;
+        totalClaimedRewards[address(_rewardToken)] += _amount;
         _rewardToken.safeTransfer(_recipient, _amount);
     }
 
@@ -298,19 +294,18 @@ contract ERC20StakingRewardsDistribution {
             if (totalStakedTokensAmount == 0) {
                 // If the current staked tokens amount is zero, there have been unassigned rewards in the last period.
                 // We add these unassigned rewards to the amount that can be claimed back by the contract's owner.
-                recoverableUnassignedReward[_relatedRewardTokenAddress] =
-                    recoverableUnassignedReward[_relatedRewardTokenAddress] +
-                    ((_lastPeriodDuration *
-                        rewardAmount[_relatedRewardTokenAddress]) /
-                        secondsDuration);
+                recoverableUnassignedReward[
+                    _relatedRewardTokenAddress
+                ] += ((_lastPeriodDuration *
+                    rewardAmount[_relatedRewardTokenAddress]) /
+                    secondsDuration);
                 rewardPerStakedToken[_relatedRewardTokenAddress] = 0;
             } else {
-                rewardPerStakedToken[_relatedRewardTokenAddress] =
-                    rewardPerStakedToken[_relatedRewardTokenAddress] +
-                    ((_lastPeriodDuration *
-                        rewardAmount[_relatedRewardTokenAddress] *
-                        MULTIPLIER) /
-                        (totalStakedTokensAmount * secondsDuration));
+                rewardPerStakedToken[
+                    _relatedRewardTokenAddress
+                ] += ((_lastPeriodDuration *
+                    rewardAmount[_relatedRewardTokenAddress] *
+                    MULTIPLIER) / (totalStakedTokensAmount * secondsDuration));
             }
             // avoids subtraction underflow. If the rewards per staked tokens are 0,
             // the rewards in current period must be 0 by definition, no need to
@@ -323,9 +318,9 @@ contract ERC20StakingRewardsDistribution {
                                 _relatedRewardTokenAddress
                             ])) / MULTIPLIER
                     : 0;
-            earnedRewards[msg.sender][_relatedRewardTokenAddress] =
-                earnedRewards[msg.sender][_relatedRewardTokenAddress] +
-                _rewardInCurrentPeriod;
+            earnedRewards[msg.sender][
+                _relatedRewardTokenAddress
+            ] += _rewardInCurrentPeriod;
             consolidatedRewardsPerStakedToken[msg.sender][
                 _relatedRewardTokenAddress
             ] = rewardPerStakedToken[_relatedRewardTokenAddress];
@@ -357,12 +352,9 @@ contract ERC20StakingRewardsDistribution {
             if (totalStakedTokensAmount == 0) {
                 _localRewardPerStakedToken = 0;
             } else {
-                _localRewardPerStakedToken =
-                    _localRewardPerStakedToken +
-                    ((_lastPeriodDuration *
-                        rewardAmount[_relatedRewardTokenAddress] *
-                        MULTIPLIER) /
-                        (totalStakedTokensAmount * secondsDuration));
+                _localRewardPerStakedToken += ((_lastPeriodDuration *
+                    rewardAmount[_relatedRewardTokenAddress] *
+                    MULTIPLIER) / (totalStakedTokensAmount * secondsDuration));
             }
             uint256 _rewardsInTheCurrentPeriod =
                 _localRewardPerStakedToken > 0
