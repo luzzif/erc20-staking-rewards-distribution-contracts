@@ -10,7 +10,9 @@ const {
 const { toWei } = require("../../utils/conversion");
 const { fastForwardTo, getEvmTimestamp } = require("../../utils/network");
 
-const ERC20StakingRewardsDistribution = artifacts.require("ERC20StakingRewardsDistribution");
+const ERC20StakingRewardsDistribution = artifacts.require(
+    "ERC20StakingRewardsDistribution"
+);
 const FirstRewardERC20 = artifacts.require("FirstRewardERC20");
 const FirstStakableERC20 = artifacts.require("FirstStakableERC20");
 
@@ -26,9 +28,11 @@ contract(
         beforeEach(async () => {
             const accounts = await web3.eth.getAccounts();
             ownerAddress = accounts[0];
-            erc20DistributionInstance = await ERC20StakingRewardsDistribution.new({
-                from: ownerAddress,
-            });
+            erc20DistributionInstance = await ERC20StakingRewardsDistribution.new(
+                {
+                    from: ownerAddress,
+                }
+            );
             rewardsTokenInstance = await FirstRewardERC20.new();
             stakableTokenInstance = await FirstStakableERC20.new();
             stakerAddress = accounts[1];
@@ -39,9 +43,7 @@ contract(
                 await erc20DistributionInstance.withdraw(0);
                 throw new Error("should have failed");
             } catch (error) {
-                expect(error.message).to.contain(
-                    "ERC20StakingRewardsDistribution: not initialized"
-                );
+                expect(error.message).to.contain("SRD19");
             }
         });
 
@@ -58,9 +60,7 @@ contract(
                 await erc20DistributionInstance.withdraw(0);
                 throw new Error("should have failed");
             } catch (error) {
-                expect(error.message).to.contain(
-                    "ERC20StakingRewardsDistribution: not started"
-                );
+                expect(error.message).to.contain("SRD20");
             }
         });
 
@@ -92,9 +92,7 @@ contract(
                 });
                 throw new Error("should have failed");
             } catch (error) {
-                expect(error.message).to.contain(
-                    "ERC20StakingRewardsDistribution: withdrawn amount greater than current stake"
-                );
+                expect(error.message).to.contain("SRD13");
             }
         });
 
@@ -221,9 +219,7 @@ contract(
                 );
                 throw new Error("should have failed");
             } catch (error) {
-                expect(error.message).to.contain(
-                    "ERC20StakingRewardsDistribution: funds locked until the distribution ends"
-                );
+                expect(error.message).to.contain("SRD12");
             }
         });
 
@@ -281,9 +277,7 @@ contract(
                 );
                 throw new Error("should have failed");
             } catch (error) {
-                expect(error.message).to.contain(
-                    "ERC20StakingRewardsDistribution: funds locked until the distribution ends"
-                );
+                expect(error.message).to.contain("SRD12");
             }
         });
 

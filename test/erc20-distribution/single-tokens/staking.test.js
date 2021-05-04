@@ -40,9 +40,7 @@ contract(
                 await erc20DistributionInstance.stake([0]);
                 throw new Error("should have failed");
             } catch (error) {
-                expect(error.message).to.contain(
-                    "ERC20StakingRewardsDistribution: not initialized"
-                );
+                expect(error.message).to.contain("SRD19");
             }
         });
 
@@ -61,9 +59,7 @@ contract(
                 });
                 throw new Error("should have failed");
             } catch (error) {
-                expect(error.message).to.contain(
-                    "ERC20StakingRewardsDistribution: not started"
-                );
+                expect(error.message).to.contain("SRD20");
             }
         });
 
@@ -204,9 +200,7 @@ contract(
                 });
                 throw new Error("should have failed");
             } catch (error) {
-                expect(error.message).to.contain(
-                    "ERC20StakingRewardsDistribution: staking cap hit"
-                );
+                expect(error.message).to.contain("SRD10");
             }
         });
 

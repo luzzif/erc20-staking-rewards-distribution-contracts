@@ -1072,9 +1072,7 @@ contract(
                 );
                 throw new Error("should have failed");
             } catch (error) {
-                expect(error.message).to.contain(
-                    "ERC20StakingRewardsDistribution: inconsistent claimed amounts"
-                );
+                expect(error.message).to.contain("SRD14");
             }
         });
 
@@ -1102,9 +1100,7 @@ contract(
                 );
                 throw new Error("should have failed");
             } catch (error) {
-                expect(error.message).to.contain(
-                    "ERC20StakingRewardsDistribution: inconsistent claimed amounts"
-                );
+                expect(error.message).to.contain("SRD14");
             }
         });
 
@@ -1163,9 +1159,7 @@ contract(
                 );
                 throw new Error("should have failed");
             } catch (error) {
-                expect(error.message).to.contain(
-                    "ERC20StakingRewardsDistribution: insufficient claimable amount"
-                );
+                expect(error.message).to.contain("SRD15");
             }
         });
 
@@ -1221,9 +1215,7 @@ contract(
                 );
                 throw new Error("should have failed");
             } catch (error) {
-                expect(error.message).to.contain(
-                    "ERC20StakingRewardsDistribution: insufficient claimable amount"
-                );
+                expect(error.message).to.contain("SRD15");
             }
         });
 
@@ -1279,9 +1271,7 @@ contract(
                 );
                 throw new Error("should have failed");
             } catch (error) {
-                expect(error.message).to.contain(
-                    "ERC20StakingRewardsDistribution: insufficient claimable amount"
-                );
+                expect(error.message).to.contain("SRD15");
             }
         });
 
@@ -1337,9 +1327,7 @@ contract(
                 );
                 throw new Error("should have failed");
             } catch (error) {
-                expect(error.message).to.contain(
-                    "ERC20StakingRewardsDistribution: insufficient claimable amount"
-                );
+                expect(error.message).to.contain("SRD15");
             }
         });
 

@@ -6,6 +6,31 @@ import "@openzeppelin/contracts/utils/math/Math.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
+/**
+ * Errors codes:
+ *
+ * SRD01: invalid starting timestamp
+ * SRD02: invalid time duration
+ * SRD03: inconsistent reward token/amount
+ * SRD04: 0 address as reward token
+ * SRD05: no reward
+ * SRD06: no funding
+ * SRD07: 0 address as stakable token
+ * SRD08: distribution already started
+ * SRD09: tried to stake nothing
+ * SRD10: staking cap hit
+ * SRD11: tried to withdraw nothing
+ * SRD12: funds locked until the distribution ends
+ * SRD13: withdrawn amount greater than current stake
+ * SRD14: inconsistent claimed amounts
+ * SRD15: insufficient claimable amount
+ * SRD16: 0 address owner
+ * SRD17: caller not owner
+ * SRD18: already initialized
+ * SRD19: not initialized
+ * SRD20: not started
+ * SRD21: already ended
+ */
 contract ERC20StakingRewardsDistribution {
     using SafeERC20 for IERC20;
 
@@ -80,45 +105,27 @@ contract ERC20StakingRewardsDistribution {
         bool _locked,
         uint256 _stakingCap
     ) external onlyUninitialized {
-        require(
-            _startingTimestamp > block.timestamp,
-            "ERC20StakingRewardsDistribution: invalid starting timestamp"
-        );
-        require(
-            _endingTimestamp > _startingTimestamp,
-            "ERC20StakingRewardsDistribution: invalid time duration"
-        );
-        require(
-            _rewardTokenAddresses.length == _rewardAmounts.length,
-            "ERC20StakingRewardsDistribution: inconsistent reward token/amount"
-        );
+        require(_startingTimestamp > block.timestamp, "SRD01");
+        require(_endingTimestamp > _startingTimestamp, "SRD02");
+        require(_rewardTokenAddresses.length == _rewardAmounts.length, "SRD03");
 
         secondsDuration = _endingTimestamp - _startingTimestamp;
         // Initializing reward tokens and amounts
         for (uint32 _i = 0; _i < _rewardTokenAddresses.length; _i++) {
             address _rewardTokenAddress = _rewardTokenAddresses[_i];
             uint256 _rewardAmount = _rewardAmounts[_i];
-            require(
-                _rewardTokenAddress != address(0),
-                "ERC20StakingRewardsDistribution: 0 address as reward token"
-            );
-            require(
-                _rewardAmount > 0,
-                "ERC20StakingRewardsDistribution: no reward"
-            );
+            require(_rewardTokenAddress != address(0), "SRD04");
+            require(_rewardAmount > 0, "SRD05");
             IERC20 _rewardToken = IERC20(_rewardTokenAddress);
             require(
                 _rewardToken.balanceOf(address(this)) >= _rewardAmount,
-                "ERC20StakingRewardsDistribution: no funding"
+                "SRD06"
             );
             rewardTokens.push(_rewardToken);
             rewardAmount[_rewardTokenAddress] = _rewardAmount;
         }
 
-        require(
-            _stakableTokenAddress != address(0),
-            "ERC20StakingRewardsDistribution: 0 address as stakable token"
-        );
+        require(_stakableTokenAddress != address(0), "SRD07");
         stakableToken = IERC20(_stakableTokenAddress);
 
         owner = msg.sender;
@@ -141,10 +148,7 @@ contract ERC20StakingRewardsDistribution {
     }
 
     function cancel() external onlyInitialized onlyOwner {
-        require(
-            block.timestamp < startingTimestamp,
-            "ERC20StakingRewardsDistribution: distribution already started"
-        );
+        require(block.timestamp < startingTimestamp, "SRD08");
         // resetting reward information (both tokens and amounts)
         for (uint256 _i; _i < rewardTokens.length; _i++) {
             IERC20 _rewardToken = rewardTokens[_i];
@@ -195,15 +199,9 @@ contract ERC20StakingRewardsDistribution {
         onlyStarted
         onlyRunning
     {
-        require(
-            _amount > 0,
-            "ERC20StakingRewardsDistribution: tried to stake nothing"
-        );
+        require(_amount > 0, "SRD09");
         if (stakingCap > 0) {
-            require(
-                totalStakedTokensAmount + _amount <= stakingCap,
-                "ERC20StakingRewardsDistribution: staking cap hit"
-            );
+            require(totalStakedTokensAmount + _amount <= stakingCap, "SRD10");
         }
         consolidateReward();
         stakedTokensOf[msg.sender] = stakedTokensOf[msg.sender] + _amount;
@@ -213,21 +211,12 @@ contract ERC20StakingRewardsDistribution {
     }
 
     function withdraw(uint256 _amount) public onlyInitialized onlyStarted {
-        require(
-            _amount > 0,
-            "ERC20StakingRewardsDistribution: tried to withdraw nothing"
-        );
+        require(_amount > 0, "SRD11");
         if (locked) {
-            require(
-                block.timestamp > endingTimestamp,
-                "ERC20StakingRewardsDistribution: funds locked until the distribution ends"
-            );
+            require(block.timestamp > endingTimestamp, "SRD12");
         }
         consolidateReward();
-        require(
-            _amount <= stakedTokensOf[msg.sender],
-            "ERC20StakingRewardsDistribution: withdrawn amount greater than current stake"
-        );
+        require(_amount <= stakedTokensOf[msg.sender], "SRD13");
         stakedTokensOf[msg.sender] = stakedTokensOf[msg.sender] - _amount;
         totalStakedTokensAmount = totalStakedTokensAmount - _amount;
         stakableToken.safeTransfer(msg.sender, _amount);
@@ -239,10 +228,7 @@ contract ERC20StakingRewardsDistribution {
         onlyInitialized
         onlyStarted
     {
-        require(
-            _amounts.length == rewardTokens.length,
-            "ERC20StakingRewardsDistribution: inconsistent claimed amounts"
-        );
+        require(_amounts.length == rewardTokens.length, "SRD14");
         consolidateReward();
         uint256[] memory _claimedRewards = new uint256[](rewardTokens.length);
         for (uint256 _i; _i < rewardTokens.length; _i++) {
@@ -252,10 +238,7 @@ contract ERC20StakingRewardsDistribution {
                 earnedRewards[msg.sender][_relatedRewardTokenAddress] -
                     claimedReward[msg.sender][_relatedRewardTokenAddress];
             uint256 _wantedAmount = _amounts[_i];
-            require(
-                _claimableReward >= _wantedAmount,
-                "ERC20StakingRewardsDistribution: insufficient claimable amount"
-            );
+            require(_claimableReward >= _wantedAmount, "SRD15");
             consolidateAndTransferClaim(
                 _relatedRewardToken,
                 _wantedAmount,
@@ -405,51 +388,33 @@ contract ERC20StakingRewardsDistribution {
     }
 
     function transferOwnership(address _newOwner) public onlyOwner {
-        require(
-            _newOwner != address(0),
-            "ERC20StakingRewardsDistribution: 0-address owner"
-        );
+        require(_newOwner != address(0), "SRD16");
         emit OwnershipTransferred(owner, _newOwner);
         owner = _newOwner;
     }
 
     modifier onlyOwner() {
-        require(
-            owner == msg.sender,
-            "ERC20StakingRewardsDistribution: caller not owner"
-        );
+        require(owner == msg.sender, "SRD17");
         _;
     }
 
     modifier onlyUninitialized() {
-        require(
-            !initialized,
-            "ERC20StakingRewardsDistribution: already initialized"
-        );
+        require(!initialized, "SRD18");
         _;
     }
 
     modifier onlyInitialized() {
-        require(
-            initialized,
-            "ERC20StakingRewardsDistribution: not initialized"
-        );
+        require(initialized, "SRD19");
         _;
     }
 
     modifier onlyStarted() {
-        require(
-            initialized && block.timestamp >= startingTimestamp,
-            "ERC20StakingRewardsDistribution: not started"
-        );
+        require(initialized && block.timestamp >= startingTimestamp, "SRD20");
         _;
     }
 
     modifier onlyRunning() {
-        require(
-            initialized && block.timestamp <= endingTimestamp,
-            "ERC20StakingRewardsDistribution: already ended"
-        );
+        require(initialized && block.timestamp <= endingTimestamp, "SRD21");
         _;
     }
 }

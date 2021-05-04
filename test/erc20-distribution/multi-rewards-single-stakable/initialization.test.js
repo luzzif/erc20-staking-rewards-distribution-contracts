@@ -49,9 +49,7 @@ contract(
                 });
                 throw new Error("should have failed");
             } catch (error) {
-                expect(error.message).to.contain(
-                    "ERC20StakingRewardsDistribution: inconsistent reward token/amount"
-                );
+                expect(error.message).to.contain("SRD03");
             }
         });
 
@@ -73,9 +71,7 @@ contract(
                 });
                 throw new Error("should have failed");
             } catch (error) {
-                expect(error.message).to.contain(
-                    "ERC20StakingRewardsDistribution: no funding"
-                );
+                expect(error.message).to.contain("SRD06");
             }
         });
 
@@ -102,9 +98,7 @@ contract(
                 });
                 throw new Error("should have failed");
             } catch (error) {
-                expect(error.message).to.contain(
-                    "ERC20StakingRewardsDistribution: no funding"
-                );
+                expect(error.message).to.contain("SRD06");
             }
         });
 
@@ -130,9 +124,7 @@ contract(
                 });
                 throw new Error("should have failed");
             } catch (error) {
-                expect(error.message).to.contain(
-                    "ERC20StakingRewardsDistribution: 0 address as reward token"
-                );
+                expect(error.message).to.contain("SRD04");
             }
         });
 
@@ -151,9 +143,7 @@ contract(
                 });
                 throw new Error("should have failed");
             } catch (error) {
-                expect(error.message).to.contain(
-                    "ERC20StakingRewardsDistribution: no reward"
-                );
+                expect(error.message).to.contain("SRD05");
             }
         });
 
@@ -172,9 +162,7 @@ contract(
                 });
                 throw new Error("should have failed");
             } catch (error) {
-                expect(error.message).to.contain(
-                    "ERC20StakingRewardsDistribution: no reward"
-                );
+                expect(error.message).to.contain("SRD05");
             }
         });
 
@@ -258,9 +246,7 @@ contract(
                 });
                 throw new Error("should have failed");
             } catch (error) {
-                expect(error.message).to.contain(
-                    "ERC20StakingRewardsDistribution: already initialized"
-                );
+                expect(error.message).to.contain("SRD18");
             }
         });
     }

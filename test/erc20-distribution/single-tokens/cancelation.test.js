@@ -36,9 +36,7 @@ contract(
                 await erc20DistributionInstance.cancel();
                 throw new Error("should have failed");
             } catch (error) {
-                expect(error.message).to.contain(
-                    "ERC20StakingRewardsDistribution: not initialized"
-                );
+                expect(error.message).to.contain("SRD19");
             }
         });
 
@@ -55,9 +53,7 @@ contract(
                 await erc20DistributionInstance.cancel({ from: stakerAddress });
                 throw new Error("should have failed");
             } catch (error) {
-                expect(error.message).to.contain(
-                    "ERC20StakingRewardsDistribution: caller not owner"
-                );
+                expect(error.message).to.contain("SRD17");
             }
         });
 
@@ -75,9 +71,7 @@ contract(
                 await erc20DistributionInstance.cancel({ from: ownerAddress });
                 throw new Error("should have failed");
             } catch (error) {
-                expect(error.message).to.contain(
-                    "ERC20StakingRewardsDistribution: distribution already started"
-                );
+                expect(error.message).to.contain("SRD08");
             }
         });
 

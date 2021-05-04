@@ -52,9 +52,7 @@ contract(
                 await erc20DistributionInstance.recoverUnassignedRewards();
                 throw new Error("should have failed");
             } catch (error) {
-                expect(error.message).to.contain(
-                    "ERC20StakingRewardsDistribution: not initialized"
-                );
+                expect(error.message).to.contain("SRD19");
             }
         });
 
@@ -71,9 +69,7 @@ contract(
                 await erc20DistributionInstance.recoverUnassignedRewards();
                 throw new Error("should have failed");
             } catch (error) {
-                expect(error.message).to.contain(
-                    "ERC20StakingRewardsDistribution: not started"
-                );
+                expect(error.message).to.contain("SRD20");
             }
         });
 
