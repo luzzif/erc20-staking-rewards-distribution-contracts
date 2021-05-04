@@ -147,7 +147,8 @@ contract ERC20StakingRewardsDistribution {
         );
     }
 
-    function cancel() external onlyInitialized onlyOwner {
+    function cancel() external onlyOwner {
+        require(initialized, "SRD19");
         require(block.timestamp < startingTimestamp, "SRD08");
         // resetting reward information (both tokens and amounts)
         for (uint256 _i; _i < rewardTokens.length; _i++) {
@@ -168,7 +169,7 @@ contract ERC20StakingRewardsDistribution {
         emit Canceled();
     }
 
-    function recoverUnassignedRewards() external onlyInitialized onlyStarted {
+    function recoverUnassignedRewards() external onlyStarted {
         consolidateReward();
         uint256 _numberOfRewardsTokens = rewardTokens.length;
         uint256[] memory _recoveredUnassignedRewards =
@@ -193,12 +194,7 @@ contract ERC20StakingRewardsDistribution {
         emit Recovered(_recoveredUnassignedRewards);
     }
 
-    function stake(uint256 _amount)
-        external
-        onlyInitialized
-        onlyStarted
-        onlyRunning
-    {
+    function stake(uint256 _amount) external onlyRunning {
         require(_amount > 0, "SRD09");
         if (stakingCap > 0) {
             require(totalStakedTokensAmount + _amount <= stakingCap, "SRD10");
@@ -210,7 +206,7 @@ contract ERC20StakingRewardsDistribution {
         emit Staked(msg.sender, _amount);
     }
 
-    function withdraw(uint256 _amount) public onlyInitialized onlyStarted {
+    function withdraw(uint256 _amount) public onlyStarted {
         require(_amount > 0, "SRD11");
         if (locked) {
             require(block.timestamp > endingTimestamp, "SRD12");
@@ -225,7 +221,6 @@ contract ERC20StakingRewardsDistribution {
 
     function claim(uint256[] memory _amounts, address _recipient)
         external
-        onlyInitialized
         onlyStarted
     {
         require(_amounts.length == rewardTokens.length, "SRD14");
@@ -249,7 +244,7 @@ contract ERC20StakingRewardsDistribution {
         emit Claimed(msg.sender, _claimedRewards);
     }
 
-    function claimAll(address _recipient) public onlyInitialized onlyStarted {
+    function claimAll(address _recipient) public onlyStarted {
         consolidateReward();
         uint256[] memory _claimedRewards = new uint256[](rewardTokens.length);
         for (uint256 _i; _i < rewardTokens.length; _i++) {
@@ -268,7 +263,7 @@ contract ERC20StakingRewardsDistribution {
         emit Claimed(msg.sender, _claimedRewards);
     }
 
-    function exit(address _recipient) external onlyInitialized onlyStarted {
+    function exit(address _recipient) external onlyStarted {
         consolidateReward();
         claimAll(_recipient);
         withdraw(stakedTokensOf[msg.sender]);
@@ -284,7 +279,7 @@ contract ERC20StakingRewardsDistribution {
         _rewardToken.safeTransfer(_recipient, _amount);
     }
 
-    function consolidateReward() public onlyInitialized onlyStarted {
+    function consolidateReward() public onlyStarted {
         uint64 _consolidationTimestamp =
             uint64(Math.min(block.timestamp, endingTimestamp));
         uint256 _lastPeriodDuration =
@@ -395,18 +390,18 @@ contract ERC20StakingRewardsDistribution {
         _;
     }
 
-    modifier onlyInitialized() {
-        require(initialized, "SRD19");
-        _;
-    }
-
     modifier onlyStarted() {
         require(initialized && block.timestamp >= startingTimestamp, "SRD20");
         _;
     }
 
     modifier onlyRunning() {
-        require(initialized && block.timestamp <= endingTimestamp, "SRD21");
+        require(
+            initialized &&
+                block.timestamp >= startingTimestamp &&
+                block.timestamp <= endingTimestamp,
+            "SRD21"
+        );
         _;
     }
 }

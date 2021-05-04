@@ -33,7 +33,18 @@ contract(
 
         it("should fail when initialization has not been done", async () => {
             try {
-                await erc20DistributionInstance.cancel();
+                // initializing now sets the owner
+                await initializeDistribution({
+                    from: ownerAddress,
+                    erc20DistributionInstance,
+                    stakableToken: stakableTokenInstance,
+                    rewardTokens: [rewardsTokenInstance],
+                    rewardAmounts: [2],
+                    duration: 2,
+                });
+                // canceling deinitializes the distribution
+                await erc20DistributionInstance.cancel({ from: ownerAddress });
+                await erc20DistributionInstance.cancel({ from: ownerAddress });
                 throw new Error("should have failed");
             } catch (error) {
                 expect(error.message).to.contain("SRD19");

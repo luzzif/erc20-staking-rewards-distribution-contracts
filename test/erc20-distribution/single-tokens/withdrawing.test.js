@@ -43,7 +43,7 @@ contract(
                 await erc20DistributionInstance.withdraw(0);
                 throw new Error("should have failed");
             } catch (error) {
-                expect(error.message).to.contain("SRD19");
+                expect(error.message).to.contain("SRD20");
             }
         });
 

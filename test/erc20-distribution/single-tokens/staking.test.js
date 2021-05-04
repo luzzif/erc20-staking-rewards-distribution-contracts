@@ -40,7 +40,7 @@ contract(
                 await erc20DistributionInstance.stake([0]);
                 throw new Error("should have failed");
             } catch (error) {
-                expect(error.message).to.contain("SRD19");
+                expect(error.message).to.contain("SRD21");
             }
         });
 
@@ -59,7 +59,7 @@ contract(
                 });
                 throw new Error("should have failed");
             } catch (error) {
-                expect(error.message).to.contain("SRD20");
+                expect(error.message).to.contain("SRD21");
             }
         });
 
