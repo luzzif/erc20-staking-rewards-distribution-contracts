@@ -1,19 +1,19 @@
 // SPDX-License-Identifier: GPL-3.0
 
-pragma solidity ^0.8.0;
+pragma solidity ^0.8.4;
 
 import "@openzeppelin/contracts/utils/math/Math.sol";
-import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
 contract ERC20StakingRewardsDistribution {
-    using SafeERC20 for ERC20;
+    using SafeERC20 for IERC20;
 
     uint224 constant MULTIPLIER = 2**112;
 
     address public owner;
-    ERC20[] public rewardTokens;
-    ERC20 public stakableToken;
+    IERC20[] public rewardTokens;
+    IERC20 public stakableToken;
     mapping(address => uint256) public rewardAmount;
     mapping(address => uint256) public stakedTokenAmount;
     uint256 public totalStakedTokensAmount;
@@ -53,7 +53,7 @@ contract ERC20StakingRewardsDistribution {
     event Claimed(address indexed claimer, uint256[] amounts);
     event Recovered(uint256[] amounts);
 
-    function getRewardTokens() external view returns (ERC20[] memory) {
+    function getRewardTokens() external view returns (IERC20[] memory) {
         return rewardTokens;
     }
 
@@ -106,7 +106,7 @@ contract ERC20StakingRewardsDistribution {
                 _rewardAmount > 0,
                 "ERC20StakingRewardsDistribution: no reward"
             );
-            ERC20 _rewardToken = ERC20(_rewardTokenAddress);
+            IERC20 _rewardToken = IERC20(_rewardTokenAddress);
             require(
                 _rewardToken.balanceOf(address(this)) >= _rewardAmount,
                 "ERC20StakingRewardsDistribution: no funding"
@@ -119,7 +119,7 @@ contract ERC20StakingRewardsDistribution {
             _stakableTokenAddress != address(0),
             "ERC20StakingRewardsDistribution: 0 address as stakable token"
         );
-        stakableToken = ERC20(_stakableTokenAddress);
+        stakableToken = IERC20(_stakableTokenAddress);
 
         owner = msg.sender;
         startingTimestamp = _startingTimestamp;
@@ -147,7 +147,7 @@ contract ERC20StakingRewardsDistribution {
         );
         // resetting reward information (both tokens and amounts)
         for (uint256 _i; _i < rewardTokens.length; _i++) {
-            ERC20 _rewardToken = rewardTokens[_i];
+            IERC20 _rewardToken = rewardTokens[_i];
             delete rewardAmount[address(_rewardToken)];
             _rewardToken.safeTransfer(
                 owner,
@@ -170,7 +170,7 @@ contract ERC20StakingRewardsDistribution {
         uint256[] memory _recoveredUnassignedRewards =
             new uint256[](_numberOfRewardsTokens);
         for (uint256 _i; _i < _numberOfRewardsTokens; _i++) {
-            ERC20 _relatedRewardToken = rewardTokens[_i];
+            IERC20 _relatedRewardToken = rewardTokens[_i];
             address _relatedRewardTokenAddress = address(_relatedRewardToken);
             // recoverable rewards are going to be recovered in this tx (if it does not revert),
             // so we add them to the claimed rewards right now
@@ -246,7 +246,7 @@ contract ERC20StakingRewardsDistribution {
         consolidateReward();
         uint256[] memory _claimedRewards = new uint256[](rewardTokens.length);
         for (uint256 _i; _i < rewardTokens.length; _i++) {
-            ERC20 _relatedRewardToken = rewardTokens[_i];
+            IERC20 _relatedRewardToken = rewardTokens[_i];
             address _relatedRewardTokenAddress = address(_relatedRewardToken);
             uint256 _claimableReward =
                 earnedRewards[msg.sender][_relatedRewardTokenAddress] -
@@ -270,7 +270,7 @@ contract ERC20StakingRewardsDistribution {
         consolidateReward();
         uint256[] memory _claimedRewards = new uint256[](rewardTokens.length);
         for (uint256 _i; _i < rewardTokens.length; _i++) {
-            ERC20 _relatedRewardToken = rewardTokens[_i];
+            IERC20 _relatedRewardToken = rewardTokens[_i];
             address _relatedRewardTokenAddress = address(_relatedRewardToken);
             uint256 _claimableReward =
                 earnedRewards[msg.sender][_relatedRewardTokenAddress] -
@@ -292,7 +292,7 @@ contract ERC20StakingRewardsDistribution {
     }
 
     function consolidateAndTransferClaim(
-        ERC20 _rewardToken,
+        IERC20 _rewardToken,
         uint256 _amount,
         address _recipient
     ) private {

@@ -1,17 +1,17 @@
 // SPDX-License-Identifier: GPL-3.0
 
-pragma solidity ^0.8.0;
+pragma solidity ^0.8.4;
 
-import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/proxy/beacon/UpgradeableBeacon.sol";
 import "@openzeppelin/contracts/proxy/beacon/BeaconProxy.sol";
-import "./ERC20StakingRewardsDistribution.sol";
+import "./interfaces/IERC20StakingRewardsDistribution.sol";
 
 contract ERC20StakingRewardsDistributionFactory is UpgradeableBeacon {
-    using SafeERC20 for ERC20;
+    using SafeERC20 for IERC20;
 
-    ERC20StakingRewardsDistribution[] public distributions;
+    IERC20StakingRewardsDistribution[] public distributions;
 
     event DistributionCreated(address owner, address deployedAt);
 
@@ -30,14 +30,14 @@ contract ERC20StakingRewardsDistributionFactory is UpgradeableBeacon {
             new BeaconProxy(address(this), bytes(""));
         for (uint256 _i; _i < _rewardTokenAddresses.length; _i++) {
             uint256 _relatedAmount = _rewardAmounts[_i];
-            ERC20(_rewardTokenAddresses[_i]).safeTransferFrom(
+            IERC20(_rewardTokenAddresses[_i]).safeTransferFrom(
                 msg.sender,
                 address(_distributionProxy),
                 _relatedAmount
             );
         }
-        ERC20StakingRewardsDistribution _distribution =
-            ERC20StakingRewardsDistribution(address(_distributionProxy));
+        IERC20StakingRewardsDistribution _distribution =
+            IERC20StakingRewardsDistribution(address(_distributionProxy));
         _distribution.initialize(
             _rewardTokenAddresses,
             _stakableTokenAddress,
