@@ -248,7 +248,7 @@ contract(
             );
         });
 
-        it("should succeed when upgrading the implementation on multiple proxies", async () => {
+        it("should succeed when upgrading the implementation (new campaigns must use the new impl, old ones the previous one)", async () => {
             const firstRewardAmount = 20;
             await firstRewardsTokenInstance.mint(
                 ownerAddress,
@@ -292,6 +292,14 @@ contract(
                 0,
                 { from: ownerAddress }
             );
+
+            // upgrading implementation
+            const upgradedDistribution = await UpgradedERC20StakingRewardsDistribution.new();
+            await erc20DistributionFactoryInstance.upgradeImplementation(
+                upgradedDistribution.address,
+                { from: ownerAddress }
+            );
+
             // proxy 2
             await erc20DistributionFactoryInstance.createDistribution(
                 rewardTokens,
@@ -310,7 +318,7 @@ contract(
                 0
             );
             const proxy2Address = await erc20DistributionFactoryInstance.distributions(
-                0
+                1
             );
             const distribution1Instance = await UpgradedERC20StakingRewardsDistribution.at(
                 proxy1Address
@@ -325,20 +333,7 @@ contract(
             } catch (error) {
                 expect(error.message).to.contain("revert");
             }
-            try {
-                await distribution2Instance.isUpgraded();
-                throw new Error("should have failed");
-            } catch (error) {
-                expect(error.message).to.contain("revert");
-            }
 
-            // upgrading implementation
-            const upgradedDistribution = await UpgradedERC20StakingRewardsDistribution.new();
-            await erc20DistributionFactoryInstance.upgradeTo(
-                upgradedDistribution.address,
-                { from: ownerAddress }
-            );
-            expect(await distribution1Instance.isUpgraded()).to.be.true;
             expect(await distribution2Instance.isUpgraded()).to.be.true;
         });
     }

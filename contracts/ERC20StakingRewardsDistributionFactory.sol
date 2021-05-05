@@ -4,18 +4,25 @@ pragma solidity ^0.8.4;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import "@openzeppelin/contracts/proxy/beacon/UpgradeableBeacon.sol";
-import "@openzeppelin/contracts/proxy/beacon/BeaconProxy.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/proxy/Clones.sol";
 import "./interfaces/IERC20StakingRewardsDistribution.sol";
 
-contract ERC20StakingRewardsDistributionFactory is UpgradeableBeacon {
+contract ERC20StakingRewardsDistributionFactory is Ownable {
     using SafeERC20 for IERC20;
 
+    address public implementation;
     IERC20StakingRewardsDistribution[] public distributions;
 
     event DistributionCreated(address owner, address deployedAt);
 
-    constructor(address _implementation) UpgradeableBeacon(_implementation) {}
+    constructor(address _implementation) {
+        implementation = _implementation;
+    }
+
+    function upgradeImplementation(address _implementation) external onlyOwner {
+        implementation = _implementation;
+    }
 
     function createDistribution(
         address[] calldata _rewardTokenAddresses,
@@ -26,8 +33,7 @@ contract ERC20StakingRewardsDistributionFactory is UpgradeableBeacon {
         bool _locked,
         uint256 _stakingCap
     ) public virtual {
-        BeaconProxy _distributionProxy =
-            new BeaconProxy(address(this), bytes(""));
+        address _distributionProxy = Clones.clone(implementation);
         for (uint256 _i; _i < _rewardTokenAddresses.length; _i++) {
             uint256 _relatedAmount = _rewardAmounts[_i];
             IERC20(_rewardTokenAddresses[_i]).safeTransferFrom(
@@ -37,7 +43,7 @@ contract ERC20StakingRewardsDistributionFactory is UpgradeableBeacon {
             );
         }
         IERC20StakingRewardsDistribution _distribution =
-            IERC20StakingRewardsDistribution(address(_distributionProxy));
+            IERC20StakingRewardsDistribution(_distributionProxy);
         _distribution.initialize(
             _rewardTokenAddresses,
             _stakableTokenAddress,
