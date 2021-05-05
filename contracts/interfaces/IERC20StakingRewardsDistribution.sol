@@ -10,6 +10,8 @@ interface IERC20StakingRewardsDistribution {
         view
         returns (uint256);
 
+    function stakedTokensOf(address _staker) external view returns (uint256);
+
     function getRewardTokens() external view returns (address[] memory);
 
     function getClaimedRewards(address _claimer)
