@@ -100,13 +100,6 @@ contract(
                 startingTimestamp: (await getEvmTimestamp()).add(new BN(60)),
             });
             await erc20DistributionInstance.cancel({ from: ownerAddress });
-
-            expect(
-                await erc20DistributionInstance.getRewardTokens()
-            ).to.have.length(0);
-            expect(await erc20DistributionInstance.stakableToken()).to.be.equal(
-                "0x0000000000000000000000000000000000000000"
-            );
             for (let i = 0; i < rewardTokens.length; i++) {
                 const rewardToken = rewardTokens[i];
                 expect(
@@ -121,21 +114,13 @@ contract(
                     await erc20DistributionInstance.rewardAmount(
                         rewardToken.address
                     )
-                ).to.be.equalBn(ZERO_BN);
+                ).to.be.equalBn(rewardsAmount);
             }
-            expect(
-                await erc20DistributionInstance.startingTimestamp()
-            ).to.be.equalBn(ZERO_BN);
-            expect(
-                await erc20DistributionInstance.endingTimestamp()
-            ).to.be.equalBn(ZERO_BN);
-            expect(
-                await erc20DistributionInstance.lastConsolidationTimestamp()
-            ).to.be.equalBn(ZERO_BN);
-            expect(await erc20DistributionInstance.initialized()).to.be.false;
+            expect(await erc20DistributionInstance.initialized()).to.be.true;
+            expect(await erc20DistributionInstance.canceled()).to.be.true;
         });
 
-        it("should allow for a second initialization on success", async () => {
+        it("shouldn't allow for a second initialization on success", async () => {
             const rewardsAmount = await toWei(10, rewardsTokenInstance);
             await initializeDistribution({
                 from: ownerAddress,
@@ -148,7 +133,23 @@ contract(
                 startingTimestamp: (await getEvmTimestamp()).add(new BN(60)),
             });
             await erc20DistributionInstance.cancel({ from: ownerAddress });
-            // resending funds since the ones sent before have been sent back
+            try {
+                await initializeDistribution({
+                    from: ownerAddress,
+                    erc20DistributionInstance,
+                    stakableToken: stakableTokenInstance,
+                    rewardTokens: [rewardsTokenInstance],
+                    rewardAmounts: [rewardsAmount],
+                    duration: 2,
+                });
+                throw new Error("should have failed");
+            } catch (error) {
+                expect(error.message).to.contain("SRD18");
+            }
+        });
+
+        it("shouldn't allow for a second cancelation on success", async () => {
+            const rewardsAmount = await toWei(10, rewardsTokenInstance);
             await initializeDistribution({
                 from: ownerAddress,
                 erc20DistributionInstance,
@@ -156,7 +157,16 @@ contract(
                 rewardTokens: [rewardsTokenInstance],
                 rewardAmounts: [rewardsAmount],
                 duration: 2,
+                // far-future timestamp
+                startingTimestamp: (await getEvmTimestamp()).add(new BN(60)),
             });
+            await erc20DistributionInstance.cancel({ from: ownerAddress });
+            try {
+                await erc20DistributionInstance.cancel({ from: ownerAddress });
+                throw new Error("should have failed");
+            } catch (error) {
+                expect(error.message).to.contain("SRD19");
+            }
         });
     }
 );

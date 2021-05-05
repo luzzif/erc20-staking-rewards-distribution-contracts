@@ -27,7 +27,7 @@ import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
  * SRD16: 0 address owner
  * SRD17: caller not owner
  * SRD18: already initialized
- * SRD19: not initialized
+ * SRD19: invalid state for cancel to be called
  * SRD20: not started
  * SRD21: already ended
  */
@@ -51,18 +51,19 @@ contract ERC20StakingRewardsDistribution {
         mapping(address => uint256) claimed;
     }
 
-    address public owner;
     Reward[] public rewards;
-    IERC20 public stakableToken;
-    uint256 public totalStakedTokensAmount;
+    mapping(address => Staker) stakers;
     uint64 public startingTimestamp;
     uint64 public endingTimestamp;
     uint64 public secondsDuration;
-    bool public locked;
-    uint256 public stakingCap;
-    bool public initialized;
     uint64 public lastConsolidationTimestamp;
-    mapping(address => Staker) stakers;
+    IERC20 public stakableToken;
+    address public owner;
+    bool public locked;
+    bool public canceled;
+    bool public initialized;
+    uint256 public totalStakedTokensAmount;
+    uint256 public stakingCap;
 
     event OwnershipTransferred(
         address indexed previousOwner,
@@ -82,56 +83,6 @@ contract ERC20StakingRewardsDistribution {
     event Withdrawn(address indexed withdrawer, uint256 amount);
     event Claimed(address indexed claimer, uint256[] amounts);
     event Recovered(uint256[] amounts);
-
-    function getRewardTokens() external view returns (address[] memory) {
-        address[] memory _rewardTokens = new address[](rewards.length);
-        for (uint256 _i = 0; _i < rewards.length; _i++) {
-            _rewardTokens[_i] = rewards[_i].token;
-        }
-        return _rewardTokens;
-    }
-
-    function rewardAmount(address _rewardToken)
-        external
-        view
-        returns (uint256)
-    {
-        for (uint256 _i = 0; _i < rewards.length; _i++) {
-            Reward storage _reward = rewards[_i];
-            if (_rewardToken == _reward.token) return _reward.amount;
-        }
-        return 0;
-    }
-
-    function stakedTokensOf(address _staker) external view returns (uint256) {
-        return stakers[_staker].stake;
-    }
-
-    function recoverableUnassignedReward(address _rewardToken)
-        external
-        view
-        returns (uint256)
-    {
-        for (uint256 _i = 0; _i < rewards.length; _i++) {
-            Reward storage _reward = rewards[_i];
-            if (_rewardToken == _reward.token) return _reward.recoverable;
-        }
-        return 0;
-    }
-
-    function getClaimedRewards(address _claimer)
-        external
-        view
-        returns (uint256[] memory)
-    {
-        Staker storage _staker = stakers[_claimer];
-        uint256[] memory _claimedRewards = new uint256[](rewards.length);
-        for (uint256 _i = 0; _i < rewards.length; _i++) {
-            Reward storage _reward = rewards[_i];
-            _claimedRewards[_i] = _staker.claimed[_reward.token];
-        }
-        return _claimedRewards;
-    }
 
     function initialize(
         address[] calldata _rewardTokenAddresses,
@@ -178,8 +129,9 @@ contract ERC20StakingRewardsDistribution {
         lastConsolidationTimestamp = _startingTimestamp;
         locked = _locked;
         stakingCap = _stakingCap;
-
         initialized = true;
+        canceled = false;
+
         emit Initialized(
             _rewardTokenAddresses,
             _stakableTokenAddress,
@@ -192,24 +144,16 @@ contract ERC20StakingRewardsDistribution {
     }
 
     function cancel() external onlyOwner {
-        require(initialized, "SRD19");
+        require(initialized && !canceled, "SRD19");
         require(block.timestamp < startingTimestamp, "SRD08");
-        // resetting reward information (both tokens and amounts)
         for (uint256 _i; _i < rewards.length; _i++) {
             Reward storage _reward = rewards[_i];
-            delete _reward.amount;
             IERC20(_reward.token).safeTransfer(
                 owner,
                 IERC20(_reward.token).balanceOf(address(this))
             );
         }
-        delete rewards;
-        delete stakableToken;
-        startingTimestamp = 0;
-        endingTimestamp = 0;
-        lastConsolidationTimestamp = 0;
-        initialized = false;
-        locked = false;
+        canceled = true;
         emit Canceled();
     }
 
@@ -399,6 +343,56 @@ contract ERC20StakingRewardsDistribution {
         return _outstandingRewards;
     }
 
+    function getRewardTokens() external view returns (address[] memory) {
+        address[] memory _rewardTokens = new address[](rewards.length);
+        for (uint256 _i = 0; _i < rewards.length; _i++) {
+            _rewardTokens[_i] = rewards[_i].token;
+        }
+        return _rewardTokens;
+    }
+
+    function rewardAmount(address _rewardToken)
+        external
+        view
+        returns (uint256)
+    {
+        for (uint256 _i = 0; _i < rewards.length; _i++) {
+            Reward storage _reward = rewards[_i];
+            if (_rewardToken == _reward.token) return _reward.amount;
+        }
+        return 0;
+    }
+
+    function stakedTokensOf(address _staker) external view returns (uint256) {
+        return stakers[_staker].stake;
+    }
+
+    function recoverableUnassignedReward(address _rewardToken)
+        external
+        view
+        returns (uint256)
+    {
+        for (uint256 _i = 0; _i < rewards.length; _i++) {
+            Reward storage _reward = rewards[_i];
+            if (_rewardToken == _reward.token) return _reward.recoverable;
+        }
+        return 0;
+    }
+
+    function getClaimedRewards(address _claimer)
+        external
+        view
+        returns (uint256[] memory)
+    {
+        Staker storage _staker = stakers[_claimer];
+        uint256[] memory _claimedRewards = new uint256[](rewards.length);
+        for (uint256 _i = 0; _i < rewards.length; _i++) {
+            Reward storage _reward = rewards[_i];
+            _claimedRewards[_i] = _staker.claimed[_reward.token];
+        }
+        return _claimedRewards;
+    }
+
     function renounceOwnership() public onlyOwner {
         owner = address(0);
         emit OwnershipTransferred(owner, address(0));
@@ -421,13 +415,17 @@ contract ERC20StakingRewardsDistribution {
     }
 
     modifier onlyStarted() {
-        require(initialized && block.timestamp >= startingTimestamp, "SRD20");
+        require(
+            initialized && !canceled && block.timestamp >= startingTimestamp,
+            "SRD20"
+        );
         _;
     }
 
     modifier onlyRunning() {
         require(
             initialized &&
+                !canceled &&
                 block.timestamp >= startingTimestamp &&
                 block.timestamp <= endingTimestamp,
             "SRD21"
