@@ -325,35 +325,32 @@ contract ERC20StakingRewardsDistribution {
             uint64(Math.min(block.timestamp, endingTimestamp));
         uint256 _lastPeriodDuration =
             uint256(_consolidationTimestamp - lastConsolidationTimestamp);
+        lastConsolidationTimestamp = _consolidationTimestamp;
         Staker storage _staker = stakers[msg.sender];
-        for (uint256 _i; _i < rewards.length; _i++) {
-            Reward storage _reward = rewards[_i];
-            if (totalStakedTokensAmount == 0) {
-                // If the current staked tokens amount is zero, there have been unassigned rewards in the last period.
-                // We add these unassigned rewards to the amount that can be claimed back by the contract's owner.
+        if (totalStakedTokensAmount == 0) {
+            for (uint256 _i; _i < rewards.length; _i++) {
+                Reward storage _reward = rewards[_i];
                 _reward.recoverable += ((_lastPeriodDuration * _reward.amount) /
                     secondsDuration);
                 _reward.perStakedToken = 0;
                 _staker.consolidatedPerStakedToken[_reward.token] = 0;
-                continue;
-            } else {
-                _reward.perStakedToken += ((_lastPeriodDuration *
-                    _reward.amount *
-                    MULTIPLIER) / (totalStakedTokensAmount * secondsDuration));
             }
+            return;
+        }
+        for (uint256 _i; _i < rewards.length; _i++) {
+            Reward storage _reward = rewards[_i];
+            _reward.perStakedToken += ((_lastPeriodDuration *
+                _reward.amount *
+                MULTIPLIER) / (totalStakedTokensAmount * secondsDuration));
             uint256 _rewardInCurrentPeriod =
-                _reward.perStakedToken > 0
-                    ? (_staker.stake *
-                        (_reward.perStakedToken -
-                            _staker.consolidatedPerStakedToken[
-                                _reward.token
-                            ])) / MULTIPLIER
-                    : 0;
+                (_staker.stake *
+                    (_reward.perStakedToken -
+                        _staker.consolidatedPerStakedToken[_reward.token])) /
+                    MULTIPLIER;
             _staker.earned[_reward.token] += _rewardInCurrentPeriod;
             _staker.consolidatedPerStakedToken[_reward.token] = _reward
                 .perStakedToken;
         }
-        lastConsolidationTimestamp = _consolidationTimestamp;
     }
 
     function claimableRewards(address _account)
