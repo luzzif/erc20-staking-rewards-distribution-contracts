@@ -2,10 +2,15 @@
 
 pragma solidity >=0.8.0;
 
-import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
-
 interface IERC20StakingRewardsDistribution {
-    function getRewardTokens() external view returns (ERC20[] memory);
+    function rewardAmount(address _rewardToken) external view returns (uint256);
+
+    function recoverableUnassignedReward(address _rewardToken)
+        external
+        view
+        returns (uint256);
+
+    function getRewardTokens() external view returns (address[] memory);
 
     function getClaimedRewards(address _claimer)
         external
