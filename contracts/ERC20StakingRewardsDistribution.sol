@@ -314,28 +314,22 @@ contract ERC20StakingRewardsDistribution {
         for (uint256 _i; _i < rewards.length; _i++) {
             Reward storage _reward = rewards[_i];
             uint256 _localRewardPerStakedToken = _reward.perStakedToken;
-            _outstandingRewards[_i] =
-                _staker.earned[_reward.token] -
-                _staker.claimed[_reward.token];
-            if (totalStakedTokensAmount == 0) {
-                // no rewards in the current period, skip rest of the calculations
-                continue;
-            } else {
+            // only update reward per staked token if the last period had staked tokens
+            if (totalStakedTokensAmount > 0) {
                 _localRewardPerStakedToken += ((_lastPeriodDuration *
                     _reward.amount *
                     MULTIPLIER) / (totalStakedTokensAmount * secondsDuration));
             }
-            uint256 _rewardsInTheCurrentPeriod =
-                _localRewardPerStakedToken > 0
-                    ? (_staker.stake *
-                        (_localRewardPerStakedToken -
-                            _staker.consolidatedPerStakedToken[
-                                _reward.token
-                            ])) / MULTIPLIER
-                    : 0;
-            // the claimable reward basically is the one not yet consolidated in the current period plus any
-            // previously consolidated/earned but unclaimed reward
-            _outstandingRewards[_i] += _rewardsInTheCurrentPeriod;
+            // calculate outstanding reward since the last time the staker actively consolidated
+            uint256 _rewardSinceLastConsolidation =
+                (_staker.stake *
+                    (_reward.perStakedToken -
+                        _staker.consolidatedPerStakedToken[_reward.token])) /
+                    MULTIPLIER;
+            _outstandingRewards[_i] =
+                _rewardSinceLastConsolidation +
+                (_staker.earned[_reward.token] -
+                    _staker.claimed[_reward.token]);
         }
         return _outstandingRewards;
     }

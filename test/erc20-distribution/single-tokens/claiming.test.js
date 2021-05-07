@@ -6,6 +6,7 @@ const {
     initializeStaker,
     stakeAtTimestamp,
     withdrawAtTimestamp,
+    claimAllAtTimestamp,
 } = require("../../utils");
 const { toWei } = require("../../utils/conversion");
 const {
@@ -840,6 +841,206 @@ contract(
             expect(
                 await rewardsTokenInstance.balanceOf(secondStakerAddress)
             ).to.be.equalBn(expectedReward);
+        });
+
+        it("should succeed when staggered operations happen (test that found a previous bug)", async () => {
+            // what happens here:
+            // - First staker stakes
+            // - Second staker stakes
+            // - First staker fully withdraws
+            // - Second staker fully withdraws (no more staked tokens in the contract)
+            // - First staker claims all
+            // - Second staker claims all
+            // - First staker restakes right in the ending 2 seconds
+            // - First staker claims accrued rewards after the campaign ended
+
+            const stakedAmount = await toWei(10, stakableTokenInstance);
+            await initializeStaker({
+                erc20DistributionInstance,
+                stakableTokenInstance,
+                stakerAddress: firstStakerAddress,
+                stakableAmount: stakedAmount.mul(new BN(2)),
+            });
+            await initializeStaker({
+                erc20DistributionInstance,
+                stakableTokenInstance,
+                stakerAddress: secondStakerAddress,
+                stakableAmount: stakedAmount,
+            });
+            const {
+                startingTimestamp,
+                endingTimestamp,
+            } = await initializeDistribution({
+                from: ownerAddress,
+                erc20DistributionInstance,
+                stakableToken: stakableTokenInstance,
+                rewardTokens: [rewardsTokenInstance],
+                rewardAmounts: [await toWei(10, rewardsTokenInstance)],
+                duration: 10,
+                stakingCap: 0,
+            });
+
+            // first staker stakes at the start
+            await fastForwardTo({ timestamp: startingTimestamp });
+            await stakeAtTimestamp(
+                erc20DistributionInstance,
+                firstStakerAddress,
+                stakedAmount,
+                startingTimestamp
+            );
+
+            // second staker stakes at 3 seconds
+            const secondStakingTimestamp = startingTimestamp.add(new BN(3));
+            await fastForwardTo({ timestamp: secondStakingTimestamp });
+            await stakeAtTimestamp(
+                erc20DistributionInstance,
+                secondStakerAddress,
+                stakedAmount,
+                secondStakingTimestamp
+            );
+
+            // first staker withdraws at 5 seconds
+            const firstWithdrawingTimestamp = secondStakingTimestamp.add(
+                new BN(2)
+            );
+            await fastForwardTo({ timestamp: firstWithdrawingTimestamp });
+            await withdrawAtTimestamp(
+                erc20DistributionInstance,
+                firstStakerAddress,
+                stakedAmount,
+                firstWithdrawingTimestamp
+            );
+
+            // second staker withdraws at 6 seconds
+            const secondWithdrawingTimestamp = firstWithdrawingTimestamp.add(
+                new BN(1)
+            );
+            await fastForwardTo({ timestamp: secondWithdrawingTimestamp });
+            await withdrawAtTimestamp(
+                erc20DistributionInstance,
+                secondStakerAddress,
+                stakedAmount,
+                secondWithdrawingTimestamp
+            );
+
+            // first staker claims reward and at stakes at 8 seconds
+            await stopMining();
+            const firstClaimAndRestakeTimestamp = secondWithdrawingTimestamp.add(
+                new BN(2)
+            );
+            await fastForwardTo({
+                timestamp: firstClaimAndRestakeTimestamp,
+                mineBlockAfter: false,
+            });
+            await claimAllAtTimestamp(
+                erc20DistributionInstance,
+                firstStakerAddress,
+                firstStakerAddress,
+                firstClaimAndRestakeTimestamp
+            );
+            await stakeAtTimestamp(
+                erc20DistributionInstance,
+                firstStakerAddress,
+                stakedAmount,
+                firstClaimAndRestakeTimestamp
+            );
+            expect(await getEvmTimestamp()).to.be.equalBn(
+                firstClaimAndRestakeTimestamp
+            );
+            await startMining();
+
+            // second staker now claims their previously accrued rewards. With the found and now fixed bug, this
+            // would have reverted due to the fact that when the first staker claimed, the reward per staked token for
+            // each reward token was put to 0, alongside the consolidated reward per staked token FOR THE FIRST STAKER ONLY.
+            // Issue is that the consolidated reward per staked token of the second staker wasn't put to zero.
+            // When then consolidating the reward in the last consolidation period for the second staker, when claiming
+            // their reward in the following instruction, a calculation was made:
+            // `reward.perStakedToken - staker.consolidatedRewardPerStakedToken[reward.token]`, to account for the last
+            // consolidation checkpointing. In this scenario, reward.perStakedToken was zero,
+            // while the consolidated amount wasn't. This caused an underflow, which now reverts in Solidity 0.8.0.
+            const secondClaimTimestamp = firstClaimAndRestakeTimestamp.add(
+                new BN(1)
+            );
+            await fastForwardTo({
+                timestamp: secondClaimTimestamp,
+            });
+            await claimAllAtTimestamp(
+                erc20DistributionInstance,
+                secondStakerAddress,
+                secondStakerAddress,
+                secondClaimTimestamp
+            );
+
+            // fast forwarding to the end of the campaign
+            await fastForwardTo({
+                timestamp: endingTimestamp,
+            });
+
+            // first staker staked at the start for 5 seconds, while the second staked at 3 seconds
+            // for 3 seconds. The two stakers overlapped by a grand total of 2 seconds.
+            // The first staker then staked again in the last 2 seconds, but we'll account for
+            // this and claim these rewards later in the test.
+
+            // First staker got full rewards for 3 seconds and half rewards for 2 seconds. At a rate
+            // of 1 reward token/second, this translates to a reward of 3 + (0.5 * 2) = 4
+            const expectedFirstStakerReward = new BN(
+                await toWei(4, rewardsTokenInstance)
+            );
+
+            // Second staker got full rewards for 1 second and half rewards for 2 seconds. At a rate
+            // of 1 reward token/second, this translates to a reward of 1 + (0.5 * 2) = 2
+            const expectedSecondStakerReward = new BN(
+                await toWei(2, rewardsTokenInstance)
+            );
+
+            expect(
+                await rewardsTokenInstance.balanceOf(firstStakerAddress)
+            ).to.be.closeBn(expectedFirstStakerReward, MAXIMUM_VARIANCE);
+            expect(
+                await rewardsTokenInstance.balanceOf(secondStakerAddress)
+            ).to.be.closeBn(expectedSecondStakerReward, MAXIMUM_VARIANCE);
+
+            // used to see how much stuff was actually claimed in the second claim
+            const preClaimBalance = await rewardsTokenInstance.balanceOf(
+                firstStakerAddress
+            );
+            // now claiming the remaining rewards for the first staker (mentioned in the comment above)
+            await erc20DistributionInstance.claimAll(firstStakerAddress, {
+                from: firstStakerAddress,
+            });
+            // the first staker staked at the end for 2 seconds. At a reward rate of 1 token/second,
+            // 2 reward tokens are expected to be claimed
+            const postClaimBalance = await rewardsTokenInstance.balanceOf(
+                firstStakerAddress
+            );
+            const expectedRemainingReward = await toWei(
+                2,
+                rewardsTokenInstance
+            );
+            expect(postClaimBalance.sub(preClaimBalance)).to.be.closeBn(
+                expectedRemainingReward,
+                MAXIMUM_VARIANCE
+            );
+
+            // we also test recovery for good measure. There have been staked tokens in the contract
+            // for all but 2 seconds (first staker staked at the start for 5 seconds and second staker
+            // staked at second 3 for 3 seconds, overlapping for 2, and then first staker restaked
+            // at the 8th second until the end)
+            await erc20DistributionInstance.recoverUnassignedRewards({
+                from: ownerAddress,
+            });
+            const expectedRecoveredReward = await toWei(
+                2,
+                rewardsTokenInstance
+            );
+            expect(
+                await rewardsTokenInstance.balanceOf(ownerAddress)
+            ).to.be.closeBn(expectedRecoveredReward, MAXIMUM_VARIANCE);
+
+            // At this point all the tokens minus some wei due to integer truncation should
+            // have been recovered from the contract.
+            // Initial reward was 10 tokens, the first staker got 6 in total, the second staker
+            // 2, and the owner recovered 2.
         });
     }
 );
