@@ -98,6 +98,62 @@ contract(
             ).to.equalBn(rewardsAmount);
         });
 
+        it("should fail when claiming zero rewards (claimAll)", async () => {
+            const stakedAmount = await toWei(20, stakableTokenInstance);
+            await initializeStaker({
+                erc20DistributionInstance,
+                stakableTokenInstance,
+                stakerAddress: firstStakerAddress,
+                stakableAmount: stakedAmount,
+            });
+            const rewardsAmount = await toWei(10, rewardsTokenInstance);
+            const { startingTimestamp } = await initializeDistribution({
+                from: ownerAddress,
+                erc20DistributionInstance,
+                stakableToken: stakableTokenInstance,
+                rewardTokens: [rewardsTokenInstance],
+                rewardAmounts: [rewardsAmount],
+                duration: 10,
+            });
+            await fastForwardTo({ timestamp: startingTimestamp });
+            try {
+                await erc20DistributionInstance.claimAll(firstStakerAddress, {
+                    from: firstStakerAddress,
+                });
+                throw new Error("should have failed");
+            } catch (error) {
+                expect(error.message).to.contain("SRD23");
+            }
+        });
+
+        it("should fail when claiming zero rewards (claim)", async () => {
+            const stakedAmount = await toWei(20, stakableTokenInstance);
+            await initializeStaker({
+                erc20DistributionInstance,
+                stakableTokenInstance,
+                stakerAddress: firstStakerAddress,
+                stakableAmount: stakedAmount,
+            });
+            const rewardsAmount = await toWei(10, rewardsTokenInstance);
+            const { startingTimestamp } = await initializeDistribution({
+                from: ownerAddress,
+                erc20DistributionInstance,
+                stakableToken: stakableTokenInstance,
+                rewardTokens: [rewardsTokenInstance],
+                rewardAmounts: [rewardsAmount],
+                duration: 10,
+            });
+            await fastForwardTo({ timestamp: startingTimestamp });
+            try {
+                await erc20DistributionInstance.claim([0], firstStakerAddress, {
+                    from: firstStakerAddress,
+                });
+                throw new Error("should have failed");
+            } catch (error) {
+                expect(error.message).to.contain("SRD24");
+            }
+        });
+
         it("should succeed in claiming two rewards if two stakers stake exactly the same amount at different times", async () => {
             const stakedAmount = await toWei(10, stakableTokenInstance);
             const duration = new BN(10);
@@ -390,7 +446,7 @@ contract(
             ).to.be.closeBn(expectedFirstStakerReward, MAXIMUM_VARIANCE);
         });
 
-        it("should succeed in claiming 0 rewards if a staker stakes at the last second (literally)", async () => {
+        it("should fail in claiming 0 rewards if a staker stakes at the last second (literally)", async () => {
             const stakedAmount = await toWei(10, stakableTokenInstance);
             const duration = new BN(10);
             await initializeStaker({
@@ -427,12 +483,14 @@ contract(
             expect(
                 campaignEndingTimestamp.sub(stakerStartingTimestamp)
             ).to.be.equalBn(ZERO_BN);
-            await erc20DistributionInstance.claimAll(firstStakerAddress, {
-                from: firstStakerAddress,
-            });
-            expect(
-                await rewardsTokenInstance.balanceOf(firstStakerAddress)
-            ).to.be.equalBn(ZERO_BN);
+            try {
+                await erc20DistributionInstance.claimAll(firstStakerAddress, {
+                    from: firstStakerAddress,
+                });
+                throw new Error("should have failed");
+            } catch (error) {
+                expect(error.message).to.contain("SRD23");
+            }
         });
 
         it("should succeed in claiming one rewards if a staker stakes at the last valid distribution second", async () => {

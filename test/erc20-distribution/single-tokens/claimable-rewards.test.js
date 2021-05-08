@@ -1,6 +1,20 @@
 const BN = require("bn.js");
 const { expect } = require("chai");
-const { initializeDistribution } = require("../../utils");
+const { MAXIMUM_VARIANCE } = require("../../constants");
+const {
+    initializeDistribution,
+    initializeStaker,
+    stakeAtTimestamp,
+    withdrawAtTimestamp,
+    claimAllAtTimestamp,
+} = require("../../utils");
+const { toWei } = require("../../utils/conversion");
+const {
+    fastForwardTo,
+    stopMining,
+    getEvmTimestamp,
+    startMining,
+} = require("../../utils/network");
 
 const ERC20StakingRewardsDistribution = artifacts.require(
     "ERC20StakingRewardsDistribution"
@@ -17,7 +31,8 @@ contract(
             secondRewardTokenInstance,
             stakableTokenInstance,
             ownerAddress,
-            firstStakerAddress;
+            firstStakerAddress,
+            secondStakerAddress;
 
         beforeEach(async () => {
             const accounts = await web3.eth.getAccounts();
@@ -28,6 +43,7 @@ contract(
                 }
             );
             firstStakerAddress = accounts[1];
+            secondStakerAddress = accounts[2];
             firstRewardTokenInstance = await FirstRewardERC20.new();
             secondRewardTokenInstance = await SecondRewardERC20.new();
             stakableTokenInstance = await FirstStakableERC20.new();

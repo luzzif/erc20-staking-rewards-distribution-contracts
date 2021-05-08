@@ -30,6 +30,9 @@ import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
  * SRD19: invalid state for cancel to be called
  * SRD20: not started
  * SRD21: already ended
+ * SRD22: no rewards are recoverable
+ * SRD23: no rewards are claimable while claiming all
+ * SRD24: no rewards are claimable while manually claiming an arbitrary amount of rewards
  */
 contract ERC20StakingRewardsDistribution {
     using SafeERC20 for IERC20;
@@ -40,7 +43,7 @@ contract ERC20StakingRewardsDistribution {
         address token;
         uint256 amount;
         uint256 perStakedToken;
-        uint256 recoverable;
+        uint256 recoverableSeconds;
         uint256 claimed;
     }
 
@@ -118,7 +121,7 @@ contract ERC20StakingRewardsDistribution {
                     token: _rewardTokenAddress,
                     amount: _rewardAmount,
                     perStakedToken: 0,
-                    recoverable: 0,
+                    recoverableSeconds: 0,
                     claimed: 0
                 })
             );
@@ -165,18 +168,24 @@ contract ERC20StakingRewardsDistribution {
         consolidateReward();
         uint256[] memory _recoveredUnassignedRewards =
             new uint256[](rewards.length);
+        bool _atLeastOneNonZeroRecovery = false;
         for (uint256 _i; _i < rewards.length; _i++) {
             Reward storage _reward = rewards[_i];
             // recoverable rewards are going to be recovered in this tx (if it does not revert),
             // so we add them to the claimed rewards right now
-            _reward.claimed += _reward.recoverable;
-            delete _reward.recoverable;
+            _reward.claimed +=
+                (_reward.recoverableSeconds * _reward.amount) /
+                secondsDuration;
+            delete _reward.recoverableSeconds;
             uint256 _recoverableRewards =
                 IERC20(_reward.token).balanceOf(address(this)) -
                     (_reward.amount - _reward.claimed);
+            if (!_atLeastOneNonZeroRecovery && _recoverableRewards > 0)
+                _atLeastOneNonZeroRecovery = true;
             _recoveredUnassignedRewards[_i] = _recoverableRewards;
             IERC20(_reward.token).safeTransfer(owner, _recoverableRewards);
         }
+        require(_atLeastOneNonZeroRecovery, "SRD22");
         emit Recovered(_recoveredUnassignedRewards);
     }
 
@@ -215,6 +224,7 @@ contract ERC20StakingRewardsDistribution {
         consolidateReward();
         Staker storage _staker = stakers[msg.sender];
         uint256[] memory _claimedRewards = new uint256[](rewards.length);
+        bool _atLeastOneNonZeroClaim = false;
         for (uint256 _i; _i < rewards.length; _i++) {
             Reward storage _reward = rewards[_i];
             StakerRewardInfo storage _stakerRewardInfo =
@@ -223,6 +233,8 @@ contract ERC20StakingRewardsDistribution {
                 _stakerRewardInfo.earned - _stakerRewardInfo.claimed;
             uint256 _wantedAmount = _amounts[_i];
             require(_claimableReward >= _wantedAmount, "SRD15");
+            if (!_atLeastOneNonZeroClaim && _wantedAmount > 0)
+                _atLeastOneNonZeroClaim = true;
             consolidateAndTransferClaim(
                 _reward,
                 _staker,
@@ -231,6 +243,7 @@ contract ERC20StakingRewardsDistribution {
             );
             _claimedRewards[_i] = _wantedAmount;
         }
+        require(_atLeastOneNonZeroClaim, "SRD24");
         emit Claimed(msg.sender, _claimedRewards);
     }
 
@@ -238,12 +251,15 @@ contract ERC20StakingRewardsDistribution {
         consolidateReward();
         Staker storage _staker = stakers[msg.sender];
         uint256[] memory _claimedRewards = new uint256[](rewards.length);
+        bool _atLeastOneNonZeroClaim = false;
         for (uint256 _i; _i < rewards.length; _i++) {
             Reward storage _reward = rewards[_i];
             StakerRewardInfo storage _stakerRewardInfo =
                 _staker.rewardInfo[_reward.token];
             uint256 _claimableReward =
                 _stakerRewardInfo.earned - _stakerRewardInfo.claimed;
+            if (!_atLeastOneNonZeroClaim && _claimableReward > 0)
+                _atLeastOneNonZeroClaim = true;
             consolidateAndTransferClaim(
                 _reward,
                 _staker,
@@ -252,11 +268,11 @@ contract ERC20StakingRewardsDistribution {
             );
             _claimedRewards[_i] = _claimableReward;
         }
+        require(_atLeastOneNonZeroClaim, "SRD23");
         emit Claimed(msg.sender, _claimedRewards);
     }
 
     function exit(address _recipient) external onlyStarted {
-        consolidateReward();
         claimAll(_recipient);
         withdraw(stakers[msg.sender].stake);
     }
@@ -272,7 +288,7 @@ contract ERC20StakingRewardsDistribution {
         IERC20(_reward.token).safeTransfer(_recipient, _amount);
     }
 
-    function consolidateReward() public onlyStarted {
+    function consolidateReward() private {
         uint64 _consolidationTimestamp =
             uint64(Math.min(block.timestamp, endingTimestamp));
         uint256 _lastPeriodDuration =
@@ -283,8 +299,9 @@ contract ERC20StakingRewardsDistribution {
             StakerRewardInfo storage _stakerRewardInfo =
                 _staker.rewardInfo[_reward.token];
             if (totalStakedTokensAmount == 0) {
-                _reward.recoverable += ((_lastPeriodDuration * _reward.amount) /
-                    secondsDuration);
+                if (_lastPeriodDuration > 0) {
+                    _reward.recoverableSeconds += _lastPeriodDuration;
+                }
                 // no need to update the reward per staked token since in this period
                 // there have been no staked tokens, so no reward has been given out to stakers
             } else {
@@ -376,7 +393,10 @@ contract ERC20StakingRewardsDistribution {
     {
         for (uint256 _i = 0; _i < rewards.length; _i++) {
             Reward storage _reward = rewards[_i];
-            if (_rewardToken == _reward.token) return _reward.recoverable;
+            if (_rewardToken == _reward.token)
+                return
+                    (_reward.recoverableSeconds * _reward.amount) /
+                    secondsDuration;
         }
         return 0;
     }
