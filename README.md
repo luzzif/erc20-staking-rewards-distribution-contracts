@@ -1,9 +1,11 @@
 # ERC20 staking rewards distribution contracts
 
 A generic contracts suite to bootstrap staking campaigns in which stakers get
-distributed rewarded over time in relation to their share of the total staked
-tokens. Supports multiple ERC20 reward tokens and locked campaigns (i.e. no
-withdrawals until the end of the distribution if tokens are staked).
+distributed rewards over time in relation to their share of the total staked
+tokens. Supports multiple ERC20 reward tokens, locked campaigns (i.e. no
+withdrawals until the end of the distribution if tokens are staked), capped
+campaigns, and rewards recovery by the owner for those dead moments in which no
+tokens are staked.
 
 ## Getting started
 
