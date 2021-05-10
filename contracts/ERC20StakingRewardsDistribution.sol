@@ -298,16 +298,17 @@ contract ERC20StakingRewardsDistribution {
             Reward storage _reward = rewards[_i];
             StakerRewardInfo storage _stakerRewardInfo =
                 _staker.rewardInfo[_reward.token];
-            if (totalStakedTokensAmount == 0) {
-                if (_lastPeriodDuration > 0) {
+            if (_lastPeriodDuration > 0) {
+                if (totalStakedTokensAmount == 0) {
                     _reward.recoverableSeconds += _lastPeriodDuration;
+                    // no need to update the reward per staked token since in this period
+                    // there have been no staked tokens, so no reward has been given out to stakers
+                } else {
+                    _reward.perStakedToken += ((_lastPeriodDuration *
+                        _reward.amount *
+                        MULTIPLIER) /
+                        (totalStakedTokensAmount * secondsDuration));
                 }
-                // no need to update the reward per staked token since in this period
-                // there have been no staked tokens, so no reward has been given out to stakers
-            } else {
-                _reward.perStakedToken += ((_lastPeriodDuration *
-                    _reward.amount *
-                    MULTIPLIER) / (totalStakedTokensAmount * secondsDuration));
             }
             uint256 _rewardSinceLastConsolidation =
                 (_staker.stake *
