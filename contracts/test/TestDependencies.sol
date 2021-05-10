@@ -13,6 +13,14 @@ contract SecondRewardERC20 is ERC20PresetMinterPauser {
     constructor() ERC20PresetMinterPauser("Second reward", "RWD2") {}
 }
 
+contract ZeroDecimalsRewardERC20 is ERC20PresetMinterPauser {
+    constructor() ERC20PresetMinterPauser("Second reward", "RWD2") {}
+
+    function decimals() public pure override returns (uint8) {
+        return 0;
+    }
+}
+
 contract FirstStakableERC20 is ERC20PresetMinterPauser {
     constructor() ERC20PresetMinterPauser("First stakable", "STK1") {}
 }

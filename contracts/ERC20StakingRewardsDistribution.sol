@@ -59,7 +59,7 @@ contract ERC20StakingRewardsDistribution {
     }
 
     Reward[] public rewards;
-    mapping(address => Staker) stakers;
+    mapping(address => Staker) public stakers;
     uint64 public startingTimestamp;
     uint64 public endingTimestamp;
     uint64 public secondsDuration;
@@ -315,7 +315,9 @@ contract ERC20StakingRewardsDistribution {
                     (_reward.perStakedToken -
                         _stakerRewardInfo.consolidatedPerStakedToken)) /
                     MULTIPLIER;
-            _stakerRewardInfo.earned += _rewardSinceLastConsolidation;
+            if (_rewardSinceLastConsolidation > 0) {
+                _stakerRewardInfo.earned += _rewardSinceLastConsolidation;
+            }
             _stakerRewardInfo.consolidatedPerStakedToken = _reward
                 .perStakedToken;
         }
@@ -385,6 +387,22 @@ contract ERC20StakingRewardsDistribution {
 
     function stakedTokensOf(address _staker) external view returns (uint256) {
         return stakers[_staker].stake;
+    }
+
+    function earnedRewardsOf(address _staker)
+        external
+        view
+        returns (uint256[] memory)
+    {
+        Staker storage _stakerFromStorage = stakers[_staker];
+        uint256[] memory _earnedRewards = new uint256[](rewards.length);
+        for (uint256 _i; _i < rewards.length; _i++) {
+            _earnedRewards[_i] = _stakerFromStorage.rewardInfo[
+                rewards[_i].token
+            ]
+                .earned;
+        }
+        return _earnedRewards;
     }
 
     function recoverableUnassignedReward(address _rewardToken)

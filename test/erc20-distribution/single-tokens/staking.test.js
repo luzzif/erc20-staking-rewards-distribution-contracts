@@ -6,11 +6,15 @@ const {
 } = require("../../utils");
 const { toWei } = require("../../utils/conversion");
 const { fastForwardTo, mineBlock } = require("../../utils/network");
+const { Duration } = require("luxon");
+const { ZERO_BN, MAXIMUM_VARIANCE } = require("../../constants");
+const BN = require("bn.js");
 
 const ERC20StakingRewardsDistribution = artifacts.require(
     "ERC20StakingRewardsDistribution"
 );
 const FirstRewardERC20 = artifacts.require("FirstRewardERC20");
+const ZeroDecimalsRewardERC20 = artifacts.require("ZeroDecimalsRewardERC20");
 const FirstStakableERC20 = artifacts.require("FirstStakableERC20");
 
 contract(
@@ -18,6 +22,7 @@ contract(
     () => {
         let erc20DistributionInstance,
             rewardsTokenInstance,
+            zeroDecimalsRewardTokenInstance,
             stakableTokenInstance,
             ownerAddress,
             stakerAddress;
@@ -31,6 +36,7 @@ contract(
                 }
             );
             rewardsTokenInstance = await FirstRewardERC20.new();
+            zeroDecimalsRewardTokenInstance = await ZeroDecimalsRewardERC20.new();
             stakableTokenInstance = await FirstStakableERC20.new();
             stakerAddress = accounts[1];
         });
@@ -226,6 +232,80 @@ contract(
             await erc20DistributionInstance.stake(stakedAmount, {
                 from: stakerAddress,
             });
+        });
+
+        it("should correctly consolidate rewards when the user stakes 2 times with a low decimals token, in a lengthy campaign", async () => {
+            const stakedAmount = await toWei(10, stakableTokenInstance);
+            await initializeStaker({
+                erc20DistributionInstance,
+                stakableTokenInstance,
+                stakerAddress,
+                stakableAmount: stakedAmount,
+            });
+            const rewardAmount = await toWei(
+                10000,
+                zeroDecimalsRewardTokenInstance
+            );
+            const duration = new BN(
+                Math.floor(Duration.fromObject({ months: 1 }).toMillis() / 1000)
+            );
+            const { startingTimestamp } = await initializeDistribution({
+                from: ownerAddress,
+                erc20DistributionInstance,
+                stakableToken: stakableTokenInstance,
+                rewardTokens: [zeroDecimalsRewardTokenInstance],
+                rewardAmounts: [rewardAmount],
+                duration,
+                stakingCap: 0,
+            });
+            await fastForwardTo({ timestamp: startingTimestamp });
+            const halfStakableAmount = stakedAmount.div(new BN(2));
+            await stakeAtTimestamp(
+                erc20DistributionInstance,
+                stakerAddress,
+                halfStakableAmount,
+                startingTimestamp
+            );
+            const preSecondStakeReward = await erc20DistributionInstance.rewards(
+                0
+            );
+            expect(preSecondStakeReward.perStakedToken).to.be.equalBn(ZERO_BN);
+            // fast forwarding to 1/20th of the campaign
+            const secondStakingTimestamp = startingTimestamp.add(
+                duration.div(new BN(20))
+            );
+            await fastForwardTo({ timestamp: secondStakingTimestamp });
+            await stakeAtTimestamp(
+                erc20DistributionInstance,
+                stakerAddress,
+                halfStakableAmount,
+                secondStakingTimestamp
+            );
+            const postSecondStakeRewards = await erc20DistributionInstance.rewards(
+                0
+            );
+            // in the first stint, the staker staked alone for 1/10th of the distribution
+            // calculate expected reward per staked token as if it were done onchain
+            const firstStintDuration = secondStakingTimestamp.sub(
+                startingTimestamp
+            );
+            const expectedRewardPerStakedToken = firstStintDuration
+                .mul(rewardAmount)
+                .mul(new BN(2).pow(new BN(112)))
+                .div(halfStakableAmount.mul(duration));
+            expect(postSecondStakeRewards.perStakedToken).to.be.equalBn(
+                expectedRewardPerStakedToken
+            );
+            const onChainEarnedAmount = await erc20DistributionInstance.earnedRewardsOf(
+                stakerAddress
+            );
+            expect(onChainEarnedAmount).to.have.length(1);
+            expect(onChainEarnedAmount[0]).to.be.closeBn(
+                halfStakableAmount // in order to check the consolidation of the first stint we need to use the staked amount in the first stint here, not the current onchain value, which is doubled
+                    .mul(expectedRewardPerStakedToken)
+                    .div(new BN(2).pow(new BN(112))),
+                MAXIMUM_VARIANCE
+            );
         });
     }
 );
