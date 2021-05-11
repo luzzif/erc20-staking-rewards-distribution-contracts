@@ -14,7 +14,7 @@ contract SecondRewardERC20 is ERC20PresetMinterPauser {
 }
 
 contract ZeroDecimalsRewardERC20 is ERC20PresetMinterPauser {
-    constructor() ERC20PresetMinterPauser("Second reward", "RWD2") {}
+    constructor() ERC20PresetMinterPauser("Zero decimals reward", "ZDRWD") {}
 
     function decimals() public pure override returns (uint8) {
         return 0;

@@ -35,11 +35,10 @@ contract ERC20StakingRewardsDistributionFactory is Ownable {
     ) public virtual {
         address _distributionProxy = Clones.clone(implementation);
         for (uint256 _i; _i < _rewardTokenAddresses.length; _i++) {
-            uint256 _relatedAmount = _rewardAmounts[_i];
             IERC20(_rewardTokenAddresses[_i]).safeTransferFrom(
                 msg.sender,
-                address(_distributionProxy),
-                _relatedAmount
+                _distributionProxy,
+                _rewardAmounts[_i]
             );
         }
         IERC20StakingRewardsDistribution _distribution =
