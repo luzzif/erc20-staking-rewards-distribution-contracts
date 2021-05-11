@@ -3,9 +3,13 @@ const { expect } = require("chai");
 const { ZERO_ADDRESS } = require("../../constants");
 const { initializeDistribution } = require("../../utils");
 const { toWei } = require("../../utils/conversion");
+const { getEvmTimestamp } = require("../../utils/network");
 
 const ERC20StakingRewardsDistribution = artifacts.require(
     "ERC20StakingRewardsDistribution"
+);
+const ERC20StakingRewardsDistributionFactory = artifacts.require(
+    "ERC20StakingRewardsDistributionFactory"
 );
 const FirstRewardERC20 = artifacts.require("FirstRewardERC20");
 const SecondRewardERC20 = artifacts.require("SecondRewardERC20");
@@ -14,7 +18,7 @@ const FirstStakableERC20 = artifacts.require("FirstStakableERC20");
 contract(
     "ERC20StakingRewardsDistribution - Multi rewards, single stakable token - Initialization",
     () => {
-        let erc20DistributionInstance,
+        let erc20DistributionFactoryInstance,
             firstRewardsTokenInstance,
             secondRewardsTokenInstance,
             stakableTokenInstance,
@@ -23,7 +27,11 @@ contract(
         beforeEach(async () => {
             const accounts = await web3.eth.getAccounts();
             ownerAddress = accounts[0];
-            erc20DistributionInstance = await ERC20StakingRewardsDistribution.new(
+            const erc20DistributionInstance = await ERC20StakingRewardsDistribution.new(
+                { from: ownerAddress }
+            );
+            erc20DistributionFactoryInstance = await ERC20StakingRewardsDistributionFactory.new(
+                erc20DistributionInstance.address,
                 { from: ownerAddress }
             );
             firstRewardsTokenInstance = await FirstRewardERC20.new();
@@ -33,20 +41,21 @@ contract(
 
         it("should fail when reward tokens/amounts arrays have inconsistent lengths", async () => {
             try {
-                await initializeDistribution({
-                    from: ownerAddress,
-                    erc20DistributionInstance,
-                    stakableToken: stakableTokenInstance,
-                    rewardTokens: [
-                        firstRewardsTokenInstance,
-                        secondRewardsTokenInstance,
+                const erc20DistributionInstance = await ERC20StakingRewardsDistribution.new(
+                    { from: ownerAddress }
+                );
+                await erc20DistributionInstance.initialize(
+                    [
+                        firstRewardsTokenInstance.address,
+                        secondRewardsTokenInstance.address,
                     ],
-                    rewardAmounts: [11],
-                    duration: 10,
-                    skipRewardTokensAmountsConsistenyCheck: true,
-                    // skip funding to avoid errors that happen before the contract is actually called
-                    fund: false,
-                });
+                    stakableTokenInstance.address,
+                    [11],
+                    100000000000,
+                    1000000000000,
+                    false,
+                    0
+                );
                 throw new Error("should have failed");
             } catch (error) {
                 expect(error.message).to.contain("SRD03");
@@ -55,20 +64,21 @@ contract(
 
         it("should fail when funding for the first reward token has not been sent to the contract before calling initialize", async () => {
             try {
-                await initializeDistribution({
-                    from: ownerAddress,
-                    erc20DistributionInstance,
-                    stakableToken: stakableTokenInstance,
-                    rewardTokens: [
-                        firstRewardsTokenInstance,
-                        secondRewardsTokenInstance,
+                const erc20DistributionInstance = await ERC20StakingRewardsDistribution.new(
+                    { from: ownerAddress }
+                );
+                await erc20DistributionInstance.initialize(
+                    [
+                        firstRewardsTokenInstance.address,
+                        secondRewardsTokenInstance.address,
                     ],
-                    rewardAmounts: [10, 10],
-                    duration: 10,
-                    skipRewardTokensAmountsConsistenyCheck: true,
-                    // skip funding to avoid errors that happen before the contract is actually called
-                    fund: false,
-                });
+                    stakableTokenInstance.address,
+                    [11, 36],
+                    100000000000,
+                    1000000000000,
+                    false,
+                    0
+                );
                 throw new Error("should have failed");
             } catch (error) {
                 expect(error.message).to.contain("SRD06");
@@ -77,25 +87,25 @@ contract(
 
         it("should fail when funding for the second reward token has not been sent to the contract before calling initialize", async () => {
             try {
-                const rewardAmounts = [10, 10];
+                const erc20DistributionInstance = await ERC20StakingRewardsDistribution.new(
+                    { from: ownerAddress }
+                );
                 await firstRewardsTokenInstance.mint(
                     erc20DistributionInstance.address,
-                    rewardAmounts[0]
+                    11
                 );
-                await initializeDistribution({
-                    from: ownerAddress,
-                    erc20DistributionInstance,
-                    stakableToken: stakableTokenInstance,
-                    rewardTokens: [
-                        firstRewardsTokenInstance,
-                        secondRewardsTokenInstance,
+                await erc20DistributionInstance.initialize(
+                    [
+                        firstRewardsTokenInstance.address,
+                        secondRewardsTokenInstance.address,
                     ],
-                    rewardAmounts,
-                    duration: 10,
-                    skipRewardTokensAmountsConsistenyCheck: true,
-                    // skip funding to avoid errors that happen before the contract is actually called
-                    fund: false,
-                });
+                    stakableTokenInstance.address,
+                    [11, 36],
+                    100000000000,
+                    1000000000000,
+                    false,
+                    0
+                );
                 throw new Error("should have failed");
             } catch (error) {
                 expect(error.message).to.contain("SRD06");
@@ -104,24 +114,22 @@ contract(
 
         it("should fail when passing a 0-address second reward token", async () => {
             try {
-                // manual funding to avoid error on zero-address token
-                const rewardAmounts = [10, 10];
+                const erc20DistributionInstance = await ERC20StakingRewardsDistribution.new(
+                    { from: ownerAddress }
+                );
                 await firstRewardsTokenInstance.mint(
                     erc20DistributionInstance.address,
-                    rewardAmounts[0]
+                    11
                 );
-                await initializeDistribution({
-                    from: ownerAddress,
-                    erc20DistributionInstance,
-                    stakableToken: stakableTokenInstance,
-                    rewardTokens: [
-                        firstRewardsTokenInstance,
-                        { address: ZERO_ADDRESS },
-                    ],
-                    rewardAmounts,
-                    duration: 10,
-                    fund: false,
-                });
+                await erc20DistributionInstance.initialize(
+                    [firstRewardsTokenInstance.address, ZERO_ADDRESS],
+                    stakableTokenInstance.address,
+                    [11, 36],
+                    100000000000,
+                    1000000000000,
+                    false,
+                    0
+                );
                 throw new Error("should have failed");
             } catch (error) {
                 expect(error.message).to.contain("SRD04");
@@ -132,7 +140,7 @@ contract(
             try {
                 await initializeDistribution({
                     from: ownerAddress,
-                    erc20DistributionInstance,
+                    erc20DistributionFactoryInstance,
                     stakableToken: stakableTokenInstance,
                     rewardTokens: [
                         firstRewardsTokenInstance,
@@ -151,7 +159,7 @@ contract(
             try {
                 await initializeDistribution({
                     from: ownerAddress,
-                    erc20DistributionInstance,
+                    erc20DistributionFactoryInstance,
                     stakableToken: stakableTokenInstance,
                     rewardTokens: [
                         firstRewardsTokenInstance,
@@ -176,9 +184,12 @@ contract(
                 firstRewardsTokenInstance,
                 secondRewardsTokenInstance,
             ];
-            const { startingTimestamp } = await initializeDistribution({
-                from: ownerAddress,
+            const {
+                startingTimestamp,
                 erc20DistributionInstance,
+            } = await initializeDistribution({
+                from: ownerAddress,
+                erc20DistributionFactoryInstance,
                 stakableToken: stakableTokenInstance,
                 rewardTokens,
                 rewardAmounts,
@@ -222,9 +233,11 @@ contract(
 
         it("should fail when trying to initialize a second time", async () => {
             try {
-                await initializeDistribution({
-                    from: ownerAddress,
+                const {
                     erc20DistributionInstance,
+                } = await initializeDistribution({
+                    from: ownerAddress,
+                    erc20DistributionFactoryInstance,
                     stakableToken: stakableTokenInstance,
                     rewardTokens: [
                         firstRewardsTokenInstance,
@@ -233,17 +246,19 @@ contract(
                     rewardAmounts: [11, 14],
                     duration: 2,
                 });
-                await initializeDistribution({
-                    from: ownerAddress,
-                    erc20DistributionInstance,
-                    stakableToken: stakableTokenInstance,
-                    rewardTokens: [
-                        firstRewardsTokenInstance,
-                        secondRewardsTokenInstance,
+                const currentTimestamp = await getEvmTimestamp();
+                await erc20DistributionInstance.initialize(
+                    [
+                        firstRewardsTokenInstance.address,
+                        secondRewardsTokenInstance.address,
                     ],
-                    rewardAmounts: [17, 12],
-                    duration: 2,
-                });
+                    stakableTokenInstance.address,
+                    [17, 12],
+                    currentTimestamp.add(new BN(10)),
+                    currentTimestamp.add(new BN(20)),
+                    false,
+                    0
+                );
                 throw new Error("should have failed");
             } catch (error) {
                 expect(error.message).to.contain("SRD18");

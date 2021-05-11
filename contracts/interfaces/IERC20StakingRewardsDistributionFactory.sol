@@ -20,4 +20,6 @@ interface IERC20StakingRewardsDistributionFactory {
     function upgradeTo(address newImplementation) external;
 
     function distributions(uint256 _index) external returns (address);
+
+    function stakingPaused() external returns (bool);
 }

@@ -18,6 +18,9 @@ const {
 const ERC20StakingRewardsDistribution = artifacts.require(
     "ERC20StakingRewardsDistribution"
 );
+const ERC20StakingRewardsDistributionFactory = artifacts.require(
+    "ERC20StakingRewardsDistributionFactory"
+);
 const FirstRewardERC20 = artifacts.require("FirstRewardERC20");
 const SecondRewardERC20 = artifacts.require("SecondRewardERC20");
 const FirstStakableERC20 = artifacts.require("FirstStakableERC20");
@@ -25,7 +28,7 @@ const FirstStakableERC20 = artifacts.require("FirstStakableERC20");
 contract(
     "ERC20StakingRewardsDistribution - Multi rewards, single stakable token - Reward recovery",
     () => {
-        let erc20DistributionInstance,
+        let erc20DistributionFactoryInstance,
             firstRewardsTokenInstance,
             secondRewardsTokenInstance,
             stakableTokenInstance,
@@ -36,10 +39,12 @@ contract(
         beforeEach(async () => {
             const accounts = await web3.eth.getAccounts();
             ownerAddress = accounts[0];
-            erc20DistributionInstance = await ERC20StakingRewardsDistribution.new(
-                {
-                    from: ownerAddress,
-                }
+            const erc20DistributionInstance = await ERC20StakingRewardsDistribution.new(
+                { from: ownerAddress }
+            );
+            erc20DistributionFactoryInstance = await ERC20StakingRewardsDistributionFactory.new(
+                erc20DistributionInstance.address,
+                { from: ownerAddress }
             );
             firstRewardsTokenInstance = await FirstRewardERC20.new();
             secondRewardsTokenInstance = await SecondRewardERC20.new();
@@ -57,9 +62,12 @@ contract(
                 await toWei(100, firstRewardsTokenInstance),
                 await toWei(10, secondRewardsTokenInstance),
             ];
-            const { endingTimestamp } = await initializeDistribution({
-                from: ownerAddress,
+            const {
+                endingTimestamp,
                 erc20DistributionInstance,
+            } = await initializeDistribution({
+                from: ownerAddress,
+                erc20DistributionFactoryInstance,
                 stakableToken: stakableTokenInstance,
                 rewardTokens,
                 rewardAmounts,
@@ -100,9 +108,12 @@ contract(
                 await toWei(100, firstRewardsTokenInstance),
                 await toWei(10, secondRewardsTokenInstance),
             ];
-            const { endingTimestamp } = await initializeDistribution({
-                from: ownerAddress,
+            const {
+                endingTimestamp,
                 erc20DistributionInstance,
+            } = await initializeDistribution({
+                from: ownerAddress,
+                erc20DistributionFactoryInstance,
                 stakableToken: stakableTokenInstance,
                 rewardTokens,
                 rewardAmounts,
@@ -148,23 +159,25 @@ contract(
                 await toWei(10, firstRewardsTokenInstance),
                 await toWei(100, secondRewardsTokenInstance),
             ];
+            const {
+                startingTimestamp,
+                endingTimestamp,
+                erc20DistributionInstance,
+            } = await initializeDistribution({
+                from: ownerAddress,
+                erc20DistributionFactoryInstance,
+                stakableToken: stakableTokenInstance,
+                rewardTokens,
+                rewardAmounts,
+                duration: 10,
+            });
             await initializeStaker({
                 erc20DistributionInstance,
                 stakableTokenInstance,
                 stakerAddress: firstStakerAddress,
                 stakableAmount: 1,
             });
-            const {
-                startingTimestamp,
-                endingTimestamp,
-            } = await initializeDistribution({
-                from: ownerAddress,
-                erc20DistributionInstance,
-                stakableToken: stakableTokenInstance,
-                rewardTokens,
-                rewardAmounts,
-                duration: 10,
-            });
+            await fastForwardTo({ timestamp: startingTimestamp });
             expect(
                 await firstRewardsTokenInstance.balanceOf(ownerAddress)
             ).to.be.equalBn(ZERO_BN);
@@ -220,6 +233,18 @@ contract(
                 await toWei(10, firstRewardsTokenInstance),
                 await toWei(100, secondRewardsTokenInstance),
             ];
+            const {
+                startingTimestamp,
+                endingTimestamp,
+                erc20DistributionInstance,
+            } = await initializeDistribution({
+                from: ownerAddress,
+                erc20DistributionFactoryInstance,
+                stakableToken: stakableTokenInstance,
+                rewardTokens,
+                rewardAmounts,
+                duration: 20,
+            });
             await initializeStaker({
                 erc20DistributionInstance,
                 stakableTokenInstance,
@@ -232,17 +257,7 @@ contract(
                 stakerAddress: secondStakerAddress,
                 stakableAmount: 1,
             });
-            const {
-                startingTimestamp,
-                endingTimestamp,
-            } = await initializeDistribution({
-                from: ownerAddress,
-                erc20DistributionInstance,
-                stakableToken: stakableTokenInstance,
-                rewardTokens,
-                rewardAmounts,
-                duration: 20,
-            });
+            await fastForwardTo({ timestamp: startingTimestamp });
             expect(
                 await firstRewardsTokenInstance.balanceOf(ownerAddress)
             ).to.be.equalBn(ZERO_BN);
@@ -322,23 +337,25 @@ contract(
                 await toWei(10, firstRewardsTokenInstance),
                 await toWei(100, secondRewardsTokenInstance),
             ];
+            const {
+                startingTimestamp,
+                endingTimestamp,
+                erc20DistributionInstance,
+            } = await initializeDistribution({
+                from: ownerAddress,
+                erc20DistributionFactoryInstance,
+                stakableToken: stakableTokenInstance,
+                rewardTokens,
+                rewardAmounts,
+                duration: 12,
+            });
             await initializeStaker({
                 erc20DistributionInstance,
                 stakableTokenInstance,
                 stakerAddress: firstStakerAddress,
                 stakableAmount: 1,
             });
-            const {
-                startingTimestamp,
-                endingTimestamp,
-            } = await initializeDistribution({
-                from: ownerAddress,
-                erc20DistributionInstance,
-                stakableToken: stakableTokenInstance,
-                rewardTokens,
-                rewardAmounts,
-                duration: 12,
-            });
+            await fastForwardTo({ timestamp: startingTimestamp });
             expect(
                 await firstRewardsTokenInstance.balanceOf(ownerAddress)
             ).to.be.equalBn(ZERO_BN);
@@ -390,23 +407,25 @@ contract(
                 await toWei(10, firstRewardsTokenInstance),
                 await toWei(100, secondRewardsTokenInstance),
             ];
+            const {
+                startingTimestamp,
+                endingTimestamp,
+                erc20DistributionInstance,
+            } = await initializeDistribution({
+                from: ownerAddress,
+                erc20DistributionFactoryInstance,
+                stakableToken: stakableTokenInstance,
+                rewardTokens,
+                rewardAmounts,
+                duration: 12,
+            });
             await initializeStaker({
                 erc20DistributionInstance,
                 stakableTokenInstance,
                 stakerAddress: firstStakerAddress,
                 stakableAmount: 1,
             });
-            const {
-                startingTimestamp,
-                endingTimestamp,
-            } = await initializeDistribution({
-                from: ownerAddress,
-                erc20DistributionInstance,
-                stakableToken: stakableTokenInstance,
-                rewardTokens,
-                rewardAmounts,
-                duration: 12,
-            });
+            await fastForwardTo({ timestamp: startingTimestamp });
             expect(
                 await firstRewardsTokenInstance.balanceOf(ownerAddress)
             ).to.be.equalBn(ZERO_BN);
@@ -470,23 +489,25 @@ contract(
                 await toWei(10, firstRewardsTokenInstance),
                 await toWei(100, secondRewardsTokenInstance),
             ];
+            const {
+                startingTimestamp,
+                endingTimestamp,
+                erc20DistributionInstance,
+            } = await initializeDistribution({
+                from: ownerAddress,
+                erc20DistributionFactoryInstance,
+                stakableToken: stakableTokenInstance,
+                rewardTokens,
+                rewardAmounts,
+                duration: 12,
+            });
             await initializeStaker({
                 erc20DistributionInstance,
                 stakableTokenInstance,
                 stakerAddress: firstStakerAddress,
                 stakableAmount: 1,
             });
-            const {
-                startingTimestamp,
-                endingTimestamp,
-            } = await initializeDistribution({
-                from: ownerAddress,
-                erc20DistributionInstance,
-                stakableToken: stakableTokenInstance,
-                rewardTokens,
-                rewardAmounts,
-                duration: 12,
-            });
+            await fastForwardTo({ timestamp: startingTimestamp });
             expect(
                 await firstRewardsTokenInstance.balanceOf(ownerAddress)
             ).to.be.equalBn(ZERO_BN);

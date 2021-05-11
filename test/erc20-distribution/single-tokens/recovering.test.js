@@ -20,13 +20,16 @@ const {
 const ERC20StakingRewardsDistribution = artifacts.require(
     "ERC20StakingRewardsDistribution"
 );
+const ERC20StakingRewardsDistributionFactory = artifacts.require(
+    "ERC20StakingRewardsDistributionFactory"
+);
 const FirstRewardERC20 = artifacts.require("FirstRewardERC20");
 const FirstStakableERC20 = artifacts.require("FirstStakableERC20");
 
 contract(
     "ERC20StakingRewardsDistribution - Single reward/stakable token - Reward recovery",
     () => {
-        let erc20DistributionInstance,
+        let erc20DistributionFactoryInstance,
             rewardsTokenInstance,
             stakableTokenInstance,
             ownerAddress,
@@ -36,10 +39,12 @@ contract(
         beforeEach(async () => {
             const accounts = await web3.eth.getAccounts();
             ownerAddress = accounts[0];
-            erc20DistributionInstance = await ERC20StakingRewardsDistribution.new(
-                {
-                    from: ownerAddress,
-                }
+            const erc20DistributionInstance = await ERC20StakingRewardsDistribution.new(
+                { from: ownerAddress }
+            );
+            erc20DistributionFactoryInstance = await ERC20StakingRewardsDistributionFactory.new(
+                erc20DistributionInstance.address,
+                { from: ownerAddress }
             );
             rewardsTokenInstance = await FirstRewardERC20.new();
             stakableTokenInstance = await FirstStakableERC20.new();
@@ -49,6 +54,9 @@ contract(
 
         it("should fail when the distribution is not initialized", async () => {
             try {
+                const erc20DistributionInstance = await ERC20StakingRewardsDistribution.new(
+                    { from: ownerAddress }
+                );
                 await erc20DistributionInstance.recoverUnassignedRewards();
                 throw new Error("should have failed");
             } catch (error) {
@@ -58,9 +66,11 @@ contract(
 
         it("should fail when the distribution has not yet started", async () => {
             try {
-                await initializeDistribution({
-                    from: ownerAddress,
+                const {
                     erc20DistributionInstance,
+                } = await initializeDistribution({
+                    from: ownerAddress,
+                    erc20DistributionFactoryInstance,
                     stakableToken: stakableTokenInstance,
                     rewardTokens: [rewardsTokenInstance],
                     rewardAmounts: [11],
@@ -75,9 +85,12 @@ contract(
 
         it("should recover all of the rewards when the distribution ended and no staker joined", async () => {
             const rewardsAmount = await toWei(100, rewardsTokenInstance);
-            const { endingTimestamp } = await initializeDistribution({
-                from: ownerAddress,
+            const {
+                endingTimestamp,
                 erc20DistributionInstance,
+            } = await initializeDistribution({
+                from: ownerAddress,
+                erc20DistributionFactoryInstance,
                 stakableToken: stakableTokenInstance,
                 rewardTokens: [rewardsTokenInstance],
                 rewardAmounts: [rewardsAmount],
@@ -97,9 +110,12 @@ contract(
 
         it("should put the recoverable rewards variable to 0 when recovered", async () => {
             const rewardsAmount = await toWei(100, rewardsTokenInstance);
-            const { endingTimestamp } = await initializeDistribution({
-                from: ownerAddress,
+            const {
+                endingTimestamp,
                 erc20DistributionInstance,
+            } = await initializeDistribution({
+                from: ownerAddress,
+                erc20DistributionFactoryInstance,
                 stakableToken: stakableTokenInstance,
                 rewardTokens: [rewardsTokenInstance],
                 rewardAmounts: [rewardsAmount],
@@ -119,9 +135,12 @@ contract(
 
         it("should always send funds to the contract's owner, even when called by another account", async () => {
             const rewardsAmount = await toWei(100, rewardsTokenInstance);
-            const { endingTimestamp } = await initializeDistribution({
-                from: ownerAddress,
+            const {
+                endingTimestamp,
                 erc20DistributionInstance,
+            } = await initializeDistribution({
+                from: ownerAddress,
+                erc20DistributionFactoryInstance,
                 stakableToken: stakableTokenInstance,
                 rewardTokens: [rewardsTokenInstance],
                 rewardAmounts: [rewardsAmount],
@@ -146,22 +165,23 @@ contract(
 
         it("should recover half of the rewards when only one staker joined for half of the duration", async () => {
             const rewardsAmount = await toWei(100, rewardsTokenInstance);
+            const {
+                startingTimestamp,
+                endingTimestamp,
+                erc20DistributionInstance,
+            } = await initializeDistribution({
+                from: ownerAddress,
+                erc20DistributionFactoryInstance,
+                stakableToken: stakableTokenInstance,
+                rewardTokens: [rewardsTokenInstance],
+                rewardAmounts: [rewardsAmount],
+                duration: 10,
+            });
             await initializeStaker({
                 erc20DistributionInstance,
                 stakableTokenInstance,
                 stakerAddress: firstStakerAddress,
                 stakableAmount: 1,
-            });
-            const {
-                startingTimestamp,
-                endingTimestamp,
-            } = await initializeDistribution({
-                from: ownerAddress,
-                erc20DistributionInstance,
-                stakableToken: stakableTokenInstance,
-                rewardTokens: [rewardsTokenInstance],
-                rewardAmounts: [rewardsAmount],
-                duration: 10,
             });
             expect(
                 await rewardsTokenInstance.balanceOf(ownerAddress)
@@ -196,6 +216,18 @@ contract(
 
         it("should recover half of the rewards when two stakers stake the same time", async () => {
             const rewardsAmount = await toWei(100, rewardsTokenInstance);
+            const {
+                startingTimestamp,
+                endingTimestamp,
+                erc20DistributionInstance,
+            } = await initializeDistribution({
+                from: ownerAddress,
+                erc20DistributionFactoryInstance,
+                stakableToken: stakableTokenInstance,
+                rewardTokens: [rewardsTokenInstance],
+                rewardAmounts: [rewardsAmount],
+                duration: 10,
+            });
             await initializeStaker({
                 erc20DistributionInstance,
                 stakableTokenInstance,
@@ -207,17 +239,6 @@ contract(
                 stakableTokenInstance,
                 stakerAddress: secondStakerAddress,
                 stakableAmount: 1,
-            });
-            const {
-                startingTimestamp,
-                endingTimestamp,
-            } = await initializeDistribution({
-                from: ownerAddress,
-                erc20DistributionInstance,
-                stakableToken: stakableTokenInstance,
-                rewardTokens: [rewardsTokenInstance],
-                rewardAmounts: [rewardsAmount],
-                duration: 10,
             });
             expect(
                 await rewardsTokenInstance.balanceOf(ownerAddress)
@@ -268,22 +289,23 @@ contract(
 
         it("should recover a third of the rewards when a staker stakes for two thirds of the distribution duration", async () => {
             const rewardsAmount = await toWei(100, rewardsTokenInstance);
+            const {
+                startingTimestamp,
+                endingTimestamp,
+                erc20DistributionInstance,
+            } = await initializeDistribution({
+                from: ownerAddress,
+                erc20DistributionFactoryInstance,
+                stakableToken: stakableTokenInstance,
+                rewardTokens: [rewardsTokenInstance],
+                rewardAmounts: [rewardsAmount],
+                duration: 12,
+            });
             await initializeStaker({
                 erc20DistributionInstance,
                 stakableTokenInstance,
                 stakerAddress: firstStakerAddress,
                 stakableAmount: 1,
-            });
-            const {
-                startingTimestamp,
-                endingTimestamp,
-            } = await initializeDistribution({
-                from: ownerAddress,
-                erc20DistributionInstance,
-                stakableToken: stakableTokenInstance,
-                rewardTokens: [rewardsTokenInstance],
-                rewardAmounts: [rewardsAmount],
-                duration: 12,
             });
             expect(
                 await rewardsTokenInstance.balanceOf(ownerAddress)
@@ -318,22 +340,23 @@ contract(
 
         it("should recover two thirds of the rewards when a staker stakes for a third of the distribution duration, right in the middle", async () => {
             const rewardsAmount = await toWei(100, rewardsTokenInstance);
+            const {
+                startingTimestamp,
+                endingTimestamp,
+                erc20DistributionInstance,
+            } = await initializeDistribution({
+                from: ownerAddress,
+                erc20DistributionFactoryInstance,
+                stakableToken: stakableTokenInstance,
+                rewardTokens: [rewardsTokenInstance],
+                rewardAmounts: [rewardsAmount],
+                duration: 12,
+            });
             await initializeStaker({
                 erc20DistributionInstance,
                 stakableTokenInstance,
                 stakerAddress: firstStakerAddress,
                 stakableAmount: 1,
-            });
-            const {
-                startingTimestamp,
-                endingTimestamp,
-            } = await initializeDistribution({
-                from: ownerAddress,
-                erc20DistributionInstance,
-                stakableToken: stakableTokenInstance,
-                rewardTokens: [rewardsTokenInstance],
-                rewardAmounts: [rewardsAmount],
-                duration: 12,
             });
             expect(
                 await rewardsTokenInstance.balanceOf(ownerAddress)
@@ -377,22 +400,23 @@ contract(
 
         it("should recover two thirds of the rewards when a staker stakes for a third of the distribution duration, in the end period", async () => {
             const rewardsAmount = await toWei(10, rewardsTokenInstance);
+            const {
+                startingTimestamp,
+                endingTimestamp,
+                erc20DistributionInstance,
+            } = await initializeDistribution({
+                from: ownerAddress,
+                erc20DistributionFactoryInstance,
+                stakableToken: stakableTokenInstance,
+                rewardTokens: [rewardsTokenInstance],
+                rewardAmounts: [rewardsAmount],
+                duration: 12,
+            });
             await initializeStaker({
                 erc20DistributionInstance,
                 stakableTokenInstance,
                 stakerAddress: firstStakerAddress,
                 stakableAmount: 1,
-            });
-            const {
-                startingTimestamp,
-                endingTimestamp,
-            } = await initializeDistribution({
-                from: ownerAddress,
-                erc20DistributionInstance,
-                stakableToken: stakableTokenInstance,
-                rewardTokens: [rewardsTokenInstance],
-                rewardAmounts: [rewardsAmount],
-                duration: 12,
             });
             expect(
                 await rewardsTokenInstance.balanceOf(ownerAddress)
@@ -427,22 +451,23 @@ contract(
 
         it("should recover the unassigned rewards when a staker stakes for a certain period, withdraws, stakes again, and withdraws again", async () => {
             const rewardsAmount = await toWei(100, rewardsTokenInstance);
+            const {
+                startingTimestamp,
+                endingTimestamp,
+                erc20DistributionInstance,
+            } = await initializeDistribution({
+                from: ownerAddress,
+                erc20DistributionFactoryInstance,
+                stakableToken: stakableTokenInstance,
+                rewardTokens: [rewardsTokenInstance],
+                rewardAmounts: [rewardsAmount],
+                duration: 12,
+            });
             await initializeStaker({
                 erc20DistributionInstance,
                 stakableTokenInstance,
                 stakerAddress: firstStakerAddress,
                 stakableAmount: 1,
-            });
-            const {
-                startingTimestamp,
-                endingTimestamp,
-            } = await initializeDistribution({
-                from: ownerAddress,
-                erc20DistributionInstance,
-                stakableToken: stakableTokenInstance,
-                rewardTokens: [rewardsTokenInstance],
-                rewardAmounts: [rewardsAmount],
-                duration: 12,
             });
             expect(
                 await rewardsTokenInstance.balanceOf(ownerAddress)
@@ -555,22 +580,23 @@ contract(
 
         it("should recover the unassigned rewards when a staker stakes for a certain period, withdraws, stakes again, withdraws again, and there's a direct transfer of rewards in the contract", async () => {
             const rewardsAmount = await toWei(100, rewardsTokenInstance);
+            const {
+                startingTimestamp,
+                endingTimestamp,
+                erc20DistributionInstance,
+            } = await initializeDistribution({
+                from: ownerAddress,
+                erc20DistributionFactoryInstance,
+                stakableToken: stakableTokenInstance,
+                rewardTokens: [rewardsTokenInstance],
+                rewardAmounts: [rewardsAmount],
+                duration: 12,
+            });
             await initializeStaker({
                 erc20DistributionInstance,
                 stakableTokenInstance,
                 stakerAddress: firstStakerAddress,
                 stakableAmount: 1,
-            });
-            const {
-                startingTimestamp,
-                endingTimestamp,
-            } = await initializeDistribution({
-                from: ownerAddress,
-                erc20DistributionInstance,
-                stakableToken: stakableTokenInstance,
-                rewardTokens: [rewardsTokenInstance],
-                rewardAmounts: [rewardsAmount],
-                duration: 12,
             });
             // directly mint rewards to the contract (should be recovered at the first recover call)
             const firstMintedAmount = await toWei(10, rewardsTokenInstance);

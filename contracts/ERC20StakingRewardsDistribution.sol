@@ -5,6 +5,7 @@ pragma solidity ^0.8.4;
 import "@openzeppelin/contracts/utils/math/Math.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import "./interfaces/IERC20StakingRewardsDistributionFactory.sol";
 
 /**
  * Errors codes:
@@ -33,6 +34,7 @@ import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
  * SRD22: no rewards are recoverable
  * SRD23: no rewards are claimable while claiming all
  * SRD24: no rewards are claimable while manually claiming an arbitrary amount of rewards
+ * SRD25: staking is currently paused
  */
 contract ERC20StakingRewardsDistribution {
     using SafeERC20 for IERC20;
@@ -66,6 +68,7 @@ contract ERC20StakingRewardsDistribution {
     uint64 public lastConsolidationTimestamp;
     IERC20 public stakableToken;
     address public owner;
+    address public factory;
     bool public locked;
     bool public canceled;
     bool public initialized;
@@ -131,6 +134,7 @@ contract ERC20StakingRewardsDistribution {
         stakableToken = IERC20(_stakableTokenAddress);
 
         owner = msg.sender;
+        factory = msg.sender;
         startingTimestamp = _startingTimestamp;
         endingTimestamp = _endingTimestamp;
         lastConsolidationTimestamp = _startingTimestamp;
@@ -191,6 +195,10 @@ contract ERC20StakingRewardsDistribution {
     }
 
     function stake(uint256 _amount) external onlyRunning {
+        require(
+            !IERC20StakingRewardsDistributionFactory(factory).stakingPaused(),
+            "SRD25"
+        );
         require(_amount > 0, "SRD09");
         if (stakingCap > 0) {
             require(totalStakedTokensAmount + _amount <= stakingCap, "SRD10");

@@ -13,13 +13,16 @@ const { fastForwardTo, getEvmTimestamp } = require("../../utils/network");
 const ERC20StakingRewardsDistribution = artifacts.require(
     "ERC20StakingRewardsDistribution"
 );
+const ERC20StakingRewardsDistributionFactory = artifacts.require(
+    "ERC20StakingRewardsDistributionFactory"
+);
 const FirstRewardERC20 = artifacts.require("FirstRewardERC20");
 const FirstStakableERC20 = artifacts.require("FirstStakableERC20");
 
 contract(
     "ERC20StakingRewardsDistribution - Single reward/stakable token - Withdrawing",
     () => {
-        let erc20DistributionInstance,
+        let erc20DistributionFactoryInstance,
             rewardsTokenInstance,
             stakableTokenInstance,
             ownerAddress,
@@ -28,10 +31,12 @@ contract(
         beforeEach(async () => {
             const accounts = await web3.eth.getAccounts();
             ownerAddress = accounts[0];
-            erc20DistributionInstance = await ERC20StakingRewardsDistribution.new(
-                {
-                    from: ownerAddress,
-                }
+            const erc20DistributionInstance = await ERC20StakingRewardsDistribution.new(
+                { from: ownerAddress }
+            );
+            erc20DistributionFactoryInstance = await ERC20StakingRewardsDistributionFactory.new(
+                erc20DistributionInstance.address,
+                { from: ownerAddress }
             );
             rewardsTokenInstance = await FirstRewardERC20.new();
             stakableTokenInstance = await FirstStakableERC20.new();
@@ -40,6 +45,9 @@ contract(
 
         it("should fail when initialization has not been done", async () => {
             try {
+                const erc20DistributionInstance = await ERC20StakingRewardsDistribution.new(
+                    { from: ownerAddress }
+                );
                 await erc20DistributionInstance.withdraw(0);
                 throw new Error("should have failed");
             } catch (error) {
@@ -49,9 +57,11 @@ contract(
 
         it("should fail when the distribution has not yet started", async () => {
             try {
-                await initializeDistribution({
-                    from: ownerAddress,
+                const {
                     erc20DistributionInstance,
+                } = await initializeDistribution({
+                    from: ownerAddress,
+                    erc20DistributionFactoryInstance,
                     stakableToken: stakableTokenInstance,
                     rewardTokens: [rewardsTokenInstance],
                     rewardAmounts: [2],
@@ -66,19 +76,22 @@ contract(
 
         it("should fail when the staker tries to withdraw more than what they staked", async () => {
             try {
+                const {
+                    startingTimestamp,
+                    erc20DistributionInstance,
+                } = await initializeDistribution({
+                    from: ownerAddress,
+                    erc20DistributionFactoryInstance,
+                    stakableToken: stakableTokenInstance,
+                    rewardTokens: [rewardsTokenInstance],
+                    rewardAmounts: [20],
+                    duration: 10,
+                });
                 await initializeStaker({
                     erc20DistributionInstance,
                     stakableTokenInstance,
                     stakerAddress: stakerAddress,
                     stakableAmount: 1,
-                });
-                const { startingTimestamp } = await initializeDistribution({
-                    from: ownerAddress,
-                    erc20DistributionInstance,
-                    stakableToken: stakableTokenInstance,
-                    rewardTokens: [rewardsTokenInstance],
-                    rewardAmounts: [20],
-                    duration: 10,
                 });
                 await fastForwardTo({ timestamp: startingTimestamp });
                 await stakeAtTimestamp(
@@ -98,19 +111,22 @@ contract(
 
         it("should succeed in the right conditions, when the distribution has not yet ended", async () => {
             const stakedAmount = await toWei(10, stakableTokenInstance);
+            const {
+                startingTimestamp,
+                erc20DistributionInstance,
+            } = await initializeDistribution({
+                from: ownerAddress,
+                erc20DistributionFactoryInstance,
+                stakableToken: stakableTokenInstance,
+                rewardTokens: [rewardsTokenInstance],
+                rewardAmounts: [await toWei(1, rewardsTokenInstance)],
+                duration: 10,
+            });
             await initializeStaker({
                 erc20DistributionInstance,
                 stakableTokenInstance,
                 stakerAddress: stakerAddress,
                 stakableAmount: stakedAmount,
-            });
-            const { startingTimestamp } = await initializeDistribution({
-                from: ownerAddress,
-                erc20DistributionInstance,
-                stakableToken: stakableTokenInstance,
-                rewardTokens: [rewardsTokenInstance],
-                rewardAmounts: [await toWei(1, rewardsTokenInstance)],
-                duration: 10,
             });
             await fastForwardTo({ timestamp: startingTimestamp });
             await stakeAtTimestamp(
@@ -137,22 +153,23 @@ contract(
 
         it("should succeed in the right conditions, when the distribution has already ended", async () => {
             const stakedAmount = await toWei(10, stakableTokenInstance);
+            const {
+                startingTimestamp,
+                endingTimestamp,
+                erc20DistributionInstance,
+            } = await initializeDistribution({
+                from: ownerAddress,
+                erc20DistributionFactoryInstance,
+                stakableToken: stakableTokenInstance,
+                rewardTokens: [rewardsTokenInstance],
+                rewardAmounts: [await toWei(1, rewardsTokenInstance)],
+                duration: 10,
+            });
             await initializeStaker({
                 erc20DistributionInstance,
                 stakableTokenInstance,
                 stakerAddress: stakerAddress,
                 stakableAmount: stakedAmount,
-            });
-            const {
-                startingTimestamp,
-                endingTimestamp,
-            } = await initializeDistribution({
-                from: ownerAddress,
-                erc20DistributionInstance,
-                stakableToken: stakableTokenInstance,
-                rewardTokens: [rewardsTokenInstance],
-                rewardAmounts: [await toWei(1, rewardsTokenInstance)],
-                duration: 10,
             });
             await fastForwardTo({ timestamp: startingTimestamp });
             await stakeAtTimestamp(
@@ -182,20 +199,23 @@ contract(
         it("should fail when trying to withdraw from a non-ended locked distribution, right in the middle of it", async () => {
             try {
                 const stakedAmount = await toWei(10, stakableTokenInstance);
-                await initializeStaker({
+                const {
+                    startingTimestamp,
                     erc20DistributionInstance,
-                    stakableTokenInstance,
-                    stakerAddress: stakerAddress,
-                    stakableAmount: stakedAmount,
-                });
-                const { startingTimestamp } = await initializeDistribution({
+                } = await initializeDistribution({
                     from: ownerAddress,
-                    erc20DistributionInstance,
+                    erc20DistributionFactoryInstance,
                     stakableToken: stakableTokenInstance,
                     rewardTokens: [rewardsTokenInstance],
                     rewardAmounts: [await toWei(1, rewardsTokenInstance)],
                     duration: 10,
                     locked: true,
+                });
+                await initializeStaker({
+                    erc20DistributionInstance,
+                    stakableTokenInstance,
+                    stakerAddress: stakerAddress,
+                    stakableAmount: stakedAmount,
                 });
                 await fastForwardTo({ timestamp: startingTimestamp });
                 await stakeAtTimestamp(
@@ -226,6 +246,19 @@ contract(
         it("should fail when trying to withdraw from a non-ended locked distribution, right at the last second of it", async () => {
             try {
                 const stakedAmount = await toWei(10, stakableTokenInstance);
+                const {
+                    startingTimestamp,
+                    endingTimestamp,
+                    erc20DistributionInstance,
+                } = await initializeDistribution({
+                    from: ownerAddress,
+                    erc20DistributionFactoryInstance,
+                    stakableToken: stakableTokenInstance,
+                    rewardTokens: [rewardsTokenInstance],
+                    rewardAmounts: [await toWei(1, rewardsTokenInstance)],
+                    duration: 10,
+                    locked: true,
+                });
                 await initializeStaker({
                     erc20DistributionInstance,
                     stakableTokenInstance,
@@ -235,18 +268,6 @@ contract(
                 expect(
                     await stakableTokenInstance.balanceOf(stakerAddress)
                 ).to.be.equalBn(stakedAmount);
-                const {
-                    startingTimestamp,
-                    endingTimestamp,
-                } = await initializeDistribution({
-                    from: ownerAddress,
-                    erc20DistributionInstance,
-                    stakableToken: stakableTokenInstance,
-                    rewardTokens: [rewardsTokenInstance],
-                    rewardAmounts: [await toWei(1, rewardsTokenInstance)],
-                    duration: 10,
-                    locked: true,
-                });
                 expect(await erc20DistributionInstance.locked()).to.be.true;
                 await fastForwardTo({ timestamp: startingTimestamp });
                 await stakeAtTimestamp(
@@ -283,23 +304,24 @@ contract(
 
         it("should succeed when withdrawing from an ended locked distribution", async () => {
             const stakedAmount = await toWei(10, stakableTokenInstance);
-            await initializeStaker({
-                erc20DistributionInstance,
-                stakableTokenInstance,
-                stakerAddress: stakerAddress,
-                stakableAmount: stakedAmount,
-            });
             const {
                 startingTimestamp,
                 endingTimestamp,
+                erc20DistributionInstance,
             } = await initializeDistribution({
                 from: ownerAddress,
-                erc20DistributionInstance,
+                erc20DistributionFactoryInstance,
                 stakableToken: stakableTokenInstance,
                 rewardTokens: [rewardsTokenInstance],
                 rewardAmounts: [await toWei(1, rewardsTokenInstance)],
                 duration: 10,
                 locked: true,
+            });
+            await initializeStaker({
+                erc20DistributionInstance,
+                stakableTokenInstance,
+                stakerAddress: stakerAddress,
+                stakableAmount: stakedAmount,
             });
             await fastForwardTo({ timestamp: startingTimestamp });
             await stakeAtTimestamp(

@@ -8,36 +8,48 @@ const { getEvmTimestamp, fastForwardTo } = require("../../utils/network");
 const ERC20StakingRewardsDistribution = artifacts.require(
     "ERC20StakingRewardsDistribution"
 );
+const ERC20StakingRewardsDistributionFactory = artifacts.require(
+    "ERC20StakingRewardsDistributionFactory"
+);
 const FirstRewardERC20 = artifacts.require("FirstRewardERC20");
 const FirstStakableERC20 = artifacts.require("FirstStakableERC20");
 
 contract(
     "ERC20StakingRewardsDistribution - Single reward/stakable token - Initialization",
     () => {
-        let erc20DistributionInstance,
+        let erc20DistributionFactoryInstance,
             rewardsTokenInstance,
             stakableTokenInstance,
             ownerAddress;
 
         beforeEach(async () => {
             const accounts = await web3.eth.getAccounts();
-            erc20DistributionInstance = await ERC20StakingRewardsDistribution.new();
+            ownerAddress = accounts[0];
+            const erc20DistributionInstance = await ERC20StakingRewardsDistribution.new(
+                { from: ownerAddress }
+            );
+            erc20DistributionFactoryInstance = await ERC20StakingRewardsDistributionFactory.new(
+                erc20DistributionInstance.address,
+                { from: ownerAddress }
+            );
             rewardsTokenInstance = await FirstRewardERC20.new();
             stakableTokenInstance = await FirstStakableERC20.new();
-            ownerAddress = accounts[0];
         });
 
         it("should fail when passing a 0-address rewards token", async () => {
             try {
-                await initializeDistribution({
-                    from: ownerAddress,
-                    erc20DistributionInstance,
-                    stakableToken: stakableTokenInstance,
-                    rewardTokens: [{ address: ZERO_ADDRESS }],
-                    rewardAmounts: [10],
-                    duration: 10,
-                    fund: false,
-                });
+                const erc20DistributionInstance = await ERC20StakingRewardsDistribution.new(
+                    { from: ownerAddress }
+                );
+                await erc20DistributionInstance.initialize(
+                    [ZERO_ADDRESS],
+                    stakableTokenInstance.address,
+                    [10],
+                    10000000000,
+                    100000000000,
+                    false,
+                    0
+                );
                 throw new Error("should have failed");
             } catch (error) {
                 expect(error.message).to.contain("SRD04");
@@ -48,7 +60,7 @@ contract(
             try {
                 await initializeDistribution({
                     from: ownerAddress,
-                    erc20DistributionInstance,
+                    erc20DistributionFactoryInstance,
                     stakableToken: { address: ZERO_ADDRESS },
                     rewardTokens: [rewardsTokenInstance],
                     rewardAmounts: [14],
@@ -64,7 +76,7 @@ contract(
             try {
                 await initializeDistribution({
                     from: ownerAddress,
-                    erc20DistributionInstance,
+                    erc20DistributionFactoryInstance,
                     stakableToken: stakableTokenInstance,
                     rewardTokens: [rewardsTokenInstance],
                     rewardAmounts: [0],
@@ -79,6 +91,9 @@ contract(
         it("should fail when passing a lower starting timestamp than the current one", async () => {
             try {
                 const currentEvmTimestamp = await getEvmTimestamp();
+                const erc20DistributionInstance = await ERC20StakingRewardsDistribution.new(
+                    { from: ownerAddress }
+                );
                 await erc20DistributionInstance.initialize(
                     [rewardsTokenInstance.address],
                     stakableTokenInstance.address,
@@ -98,6 +113,9 @@ contract(
         it("should fail when passing the same starting timestamp as the current one", async () => {
             try {
                 const currentEvmTimestamp = await getEvmTimestamp();
+                const erc20DistributionInstance = await ERC20StakingRewardsDistribution.new(
+                    { from: ownerAddress }
+                );
                 await erc20DistributionInstance.initialize(
                     [rewardsTokenInstance.address],
                     stakableTokenInstance.address,
@@ -118,7 +136,7 @@ contract(
             try {
                 await initializeDistribution({
                     from: ownerAddress,
-                    erc20DistributionInstance,
+                    erc20DistributionFactoryInstance,
                     stakableToken: stakableTokenInstance,
                     rewardTokens: [rewardsTokenInstance],
                     rewardAmounts: [1],
@@ -139,9 +157,10 @@ contract(
             const {
                 startingTimestamp,
                 endingTimestamp,
+                erc20DistributionInstance,
             } = await initializeDistribution({
                 from: ownerAddress,
-                erc20DistributionInstance,
+                erc20DistributionFactoryInstance,
                 stakableToken: stakableTokenInstance,
                 rewardTokens,
                 rewardAmounts,
@@ -183,22 +202,25 @@ contract(
 
         it("should fail when trying to initialize a second time", async () => {
             try {
-                await initializeDistribution({
-                    from: ownerAddress,
+                const {
                     erc20DistributionInstance,
+                } = await initializeDistribution({
+                    from: ownerAddress,
+                    erc20DistributionFactoryInstance,
                     stakableToken: stakableTokenInstance,
                     rewardTokens: [rewardsTokenInstance],
                     rewardAmounts: [2],
                     duration: 2,
                 });
-                await initializeDistribution({
-                    from: ownerAddress,
-                    erc20DistributionInstance,
-                    stakableToken: stakableTokenInstance,
-                    rewardTokens: [rewardsTokenInstance],
-                    rewardAmounts: [7],
-                    duration: 2,
-                });
+                await erc20DistributionInstance.initialize(
+                    [rewardsTokenInstance.address],
+                    stakableTokenInstance.address,
+                    [7],
+                    1000000000000,
+                    10000000000000,
+                    false,
+                    0
+                );
                 throw new Error("should have failed");
             } catch (error) {
                 expect(error.message).to.contain("SRD18");

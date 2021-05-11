@@ -1,10 +1,15 @@
 const BN = require("bn.js");
+const { ZERO_ADDRESS } = require("../constants");
 const {
     getEvmTimestamp,
     stopMining,
     startMining,
     mineBlock,
 } = require("./network");
+
+const ERC20StakingRewardsDistribution = artifacts.require(
+    "ERC20StakingRewardsDistribution"
+);
 
 exports.initializeStaker = async ({
     erc20DistributionInstance,
@@ -25,7 +30,7 @@ exports.initializeStaker = async ({
 
 exports.initializeDistribution = async ({
     from,
-    erc20DistributionInstance,
+    erc20DistributionFactoryInstance,
     stakableToken,
     rewardTokens,
     rewardAmounts,
@@ -47,8 +52,10 @@ exports.initializeDistribution = async ({
             // funds are sent directly to the distribution contract (this
             // wouldn't necessarily be needed if using the factory to
             // bootstrap distributions)
-            await rewardTokens[i].mint(
-                erc20DistributionInstance.address,
+            if (rewardTokens[i].address === ZERO_ADDRESS) continue;
+            await rewardTokens[i].mint(from, rewardAmounts[i]);
+            await rewardTokens[i].approve(
+                erc20DistributionFactoryInstance.address,
                 rewardAmounts[i]
             );
         }
@@ -63,7 +70,7 @@ exports.initializeDistribution = async ({
     const campaignEndingTimestamp = campaignStartingTimestamp.add(
         new BN(duration)
     );
-    await erc20DistributionInstance.initialize(
+    await erc20DistributionFactoryInstance.createDistribution(
         rewardTokens.map((instance) => instance.address),
         stakableToken.address,
         rewardAmounts,
@@ -74,6 +81,72 @@ exports.initializeDistribution = async ({
         { from }
     );
     return {
+        erc20DistributionInstance: await ERC20StakingRewardsDistribution.at(
+            await erc20DistributionFactoryInstance.distributions(
+                (await erc20DistributionFactoryInstance.getDistributionsAmount()) -
+                    1
+            )
+        ),
+        startingTimestamp: campaignStartingTimestamp,
+        endingTimestamp: campaignEndingTimestamp,
+    };
+};
+
+exports.initializeDistributionFromFactory = async ({
+    from,
+    erc20DistributionFactoryInstance,
+    stakableToken,
+    rewardTokens,
+    rewardAmounts,
+    duration,
+    startingTimestamp,
+    fund = true,
+    skipRewardTokensAmountsConsistenyCheck,
+    locked = false,
+    stakingCap = 0,
+}) => {
+    if (
+        !skipRewardTokensAmountsConsistenyCheck &&
+        rewardTokens.length !== rewardAmounts.length
+    ) {
+        throw new Error("reward tokens and amounts need to be the same length");
+    }
+    if (fund) {
+        for (let i = 0; i < rewardTokens.length; i++) {
+            await rewardTokens[i].mint(from, rewardAmounts[i]);
+            await rewardTokens[i].approve(
+                erc20DistributionFactoryInstance.address,
+                rewardAmounts[i]
+            );
+        }
+    }
+    // if not specified, the distribution starts the next 10 second from now
+    const currentEvmTimestamp = await getEvmTimestamp();
+    const campaignStartingTimestamp =
+        startingTimestamp && startingTimestamp.gte(currentEvmTimestamp)
+            ? new BN(startingTimestamp)
+            : // defaults to 10 seconds in the future
+              currentEvmTimestamp.add(new BN(10));
+    const campaignEndingTimestamp = campaignStartingTimestamp.add(
+        new BN(duration)
+    );
+    await erc20DistributionFactoryInstance.createDistribution(
+        rewardTokens.map((instance) => instance.address),
+        stakableToken.address,
+        rewardAmounts,
+        campaignStartingTimestamp,
+        campaignEndingTimestamp,
+        locked,
+        stakingCap,
+        { from }
+    );
+    return {
+        initializedErc20DistributionInstance: ERC20StakingRewardsDistribution.at(
+            await erc20DistributionFactoryInstance.distributions(
+                (await erc20DistributionFactoryInstance.getDistributionsAmount()) -
+                    1
+            )
+        ),
         startingTimestamp: campaignStartingTimestamp,
         endingTimestamp: campaignEndingTimestamp,
     };

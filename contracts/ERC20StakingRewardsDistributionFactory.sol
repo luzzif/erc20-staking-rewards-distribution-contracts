@@ -8,10 +8,17 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/proxy/Clones.sol";
 import "./interfaces/IERC20StakingRewardsDistribution.sol";
 
+/**
+ * Errors codes:
+ *
+ * SRF01: cannot pause staking (already paused)
+ * SRF02: cannot resume staking (already active)
+ */
 contract ERC20StakingRewardsDistributionFactory is Ownable {
     using SafeERC20 for IERC20;
 
     address public implementation;
+    bool public stakingPaused;
     IERC20StakingRewardsDistribution[] public distributions;
 
     event DistributionCreated(address owner, address deployedAt);
@@ -22,6 +29,16 @@ contract ERC20StakingRewardsDistributionFactory is Ownable {
 
     function upgradeImplementation(address _implementation) external onlyOwner {
         implementation = _implementation;
+    }
+
+    function pauseStaking() external onlyOwner {
+        require(!stakingPaused, "SRF01");
+        stakingPaused = true;
+    }
+
+    function resumeStaking() external onlyOwner {
+        require(stakingPaused, "SRF02");
+        stakingPaused = false;
     }
 
     function createDistribution(
