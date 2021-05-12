@@ -19,8 +19,8 @@
         "test:coverage": "truffle run coverage",
         "test:gasreport": "truffle test --gas-report",
         "compile": "truffle compile",
-        "prepack": "cp ./contracts/*.sol ./ && cp ./contracts/interfaces/*.sol ./",
-        "postpack": "rm -rf ./*.sol"
+        "prepack": "cp ./contracts/*.sol ./ && mkdir ./interfaces && cp ./contracts/interfaces/*.sol ./interfaces",
+        "postpack": "rm -rf ./*.sol rm -rf ./interfaces"
     },
     "author": "Federico Luzzi <fedeluzzi00@gmail.com>",
     "license": "GPL-3.0",
