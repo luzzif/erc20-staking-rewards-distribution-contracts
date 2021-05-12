@@ -4,9 +4,9 @@
     "description": "Generic contracts suite to bootstrap staking campaigns in which stakers get rewarded over time. Supports multiple ERC20 reward/stakable tokens and locked staking (i.e. no withdraw until the end of the distribution if tokens are staked).",
     "files": [
         "/ERC20StakingRewardsDistribution.sol",
-        "/IERC20StakingRewardsDistribution.sol",
+        "/interfaces/IERC20StakingRewardsDistribution.sol",
         "/ERC20StakingRewardsDistributionFactory.sol",
-        "/IERC20StakingRewardsDistributionFactory.sol",
+        "/interfaces/IERC20StakingRewardsDistributionFactory.sol",
         "/build/ERC20StakingRewardsDistribution.json",
         "/build/ERC20StakingRewardsDistributionFactory.json"
     ],
