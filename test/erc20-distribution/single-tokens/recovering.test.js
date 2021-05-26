@@ -703,8 +703,17 @@ contract(
             ).to.be.equalBn(
                 firstMintedAmount.add(await toWei(25, rewardsTokenInstance))
             );
-            // claiming the unassigned rewards that accrued starting from the second withdraw
+            // at this point recoverable rewards should be the minted amount sent to the contract
+            // (20) plus 3 seconds when the contract did not have any staked amount  (at 100 total
+            // reward tokens for a 12 seconds duration, this would be 100/12*3 = 25).
+            // The total amount recoverable should be 45
+            expect(
+                await erc20DistributionInstance.recoverableUnassignedReward(
+                    rewardsTokenInstance.address
+                )
+            ).to.be.equalBn(await toWei(45, rewardsTokenInstance));
             await erc20DistributionInstance.recoverUnassignedRewards();
+            // claiming the unassigned rewards that accrued starting from the second withdraw
             expect(
                 await erc20DistributionInstance.recoverableUnassignedReward(
                     rewardsTokenInstance.address

@@ -177,10 +177,8 @@ contract ERC20StakingRewardsDistribution {
             Reward storage _reward = rewards[_i];
             // recoverable rewards are going to be recovered in this tx (if it does not revert),
             // so we add them to the claimed rewards right now
-            _reward.claimed +=
-                ((_reward.recoverableSeconds * _reward.amount) /
-                    secondsDuration) /
-                MULTIPLIER;
+            _reward.claimed += ((_reward.recoverableSeconds * _reward.amount) /
+                (secondsDuration * MULTIPLIER));
             delete _reward.recoverableSeconds;
             uint256 _recoverableRewards =
                 IERC20(_reward.token).balanceOf(address(this)) -
@@ -404,10 +402,15 @@ contract ERC20StakingRewardsDistribution {
     {
         for (uint256 _i = 0; _i < rewards.length; _i++) {
             Reward storage _reward = rewards[_i];
-            if (_rewardToken == _reward.token)
+            if (_reward.token == _rewardToken) {
+                uint256 _nonRequiredFunds =
+                    _reward.claimed +
+                        ((_reward.recoverableSeconds * _reward.amount) /
+                            (secondsDuration * MULTIPLIER));
                 return
-                    ((_reward.recoverableSeconds * _reward.amount) /
-                        secondsDuration) / MULTIPLIER;
+                    IERC20(_reward.token).balanceOf(address(this)) -
+                    (_reward.amount - _nonRequiredFunds);
+            }
         }
         return 0;
     }
