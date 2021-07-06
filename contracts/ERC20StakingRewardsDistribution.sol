@@ -12,7 +12,7 @@ import "./interfaces/IERC20StakingRewardsDistributionFactory.sol";
  *
  * SRD01: invalid starting timestamp
  * SRD02: invalid time duration
- * SRD03: inconsistent reward token/amount
+ * SRD03: inconsistent reward tokens/amounts, or 0-length reward tokens/amounts
  * SRD04: 0 address as reward token
  * SRD05: no reward
  * SRD06: no funding
@@ -44,8 +44,8 @@ contract ERC20StakingRewardsDistribution {
     struct Reward {
         address token;
         uint256 amount;
+        uint256 recoverableAmount;
         uint256 perStakedToken;
-        uint256 recoverableSeconds;
         uint256 claimed;
     }
 
@@ -57,14 +57,23 @@ contract ERC20StakingRewardsDistribution {
 
     struct Staker {
         uint256 stake;
+        uint256 lastConsolidationEpoch;
+        uint256 lastConsolidationTimestamp;
         mapping(address => StakerRewardInfo) rewardInfo;
     }
 
-    Reward[] public rewards;
+    struct Epoch {
+        uint256 startingTimestamp;
+        uint256 endingTimestamp;
+        uint256 secondsDuration;
+        uint256[] rewardAmounts;
+    }
+
+    Epoch[] epochs;
+    Reward[] rewards;
     mapping(address => Staker) public stakers;
     uint64 public startingTimestamp;
     uint64 public endingTimestamp;
-    uint64 public secondsDuration;
     uint64 public lastConsolidationTimestamp;
     IERC20 public stakableToken;
     address public owner;
@@ -72,21 +81,23 @@ contract ERC20StakingRewardsDistribution {
     bool public locked;
     bool public canceled;
     bool public initialized;
+    uint256 public lastConsolidationEpoch;
     uint256 public totalStakedTokensAmount;
     uint256 public stakingCap;
+    uint256 activeEpochIndex;
 
     event OwnershipTransferred(
         address indexed previousOwner,
         address indexed newOwner
     );
     event Initialized(
-        address[] rewardsTokenAddresses,
+        address[] rewardTokenAddresses,
         address stakableTokenAddress,
-        uint256[] rewardsAmounts,
-        uint64 startingTimestamp,
-        uint64 endingTimestamp,
-        bool locked,
-        uint256 stakingCap
+        uint256[] epochStartingTimestamps,
+        uint256[] epochEndingTimestamps,
+        uint256[][] epochRewardsBreakdown,
+        bool _locked,
+        uint256 _stakingCap
     );
     event Canceled();
     event Staked(address indexed staker, uint256 amount);
@@ -95,28 +106,69 @@ contract ERC20StakingRewardsDistribution {
     event Recovered(uint256[] amounts);
 
     function initialize(
+        uint256[] calldata _epochStartingTimestamps,
+        uint256[] calldata _epochEndingTimestamps,
+        uint256[][] calldata _epochRewardsBreakdown,
         address[] calldata _rewardTokenAddresses,
         address _stakableTokenAddress,
-        uint256[] calldata _rewardAmounts,
-        uint64 _startingTimestamp,
-        uint64 _endingTimestamp,
         bool _locked,
         uint256 _stakingCap
     ) external onlyUninitialized {
-        require(_startingTimestamp > block.timestamp, "SRD01");
-        require(_endingTimestamp > _startingTimestamp, "SRD02");
-        require(_rewardTokenAddresses.length == _rewardAmounts.length, "SRD03");
+        require(_epochStartingTimestamps.length > 0, "TODO");
+        require(
+            _epochStartingTimestamps.length == _epochEndingTimestamps.length,
+            "TODO"
+        );
+        require(
+            _epochRewardsBreakdown.length == _epochStartingTimestamps.length,
+            "TODO"
+        );
+        uint256 _startingTimestamp = _epochStartingTimestamps[0];
+        require(_startingTimestamp >= block.timestamp, "SRD01");
 
-        secondsDuration = _endingTimestamp - _startingTimestamp;
-        // Initializing reward tokens and amounts
-        for (uint32 _i = 0; _i < _rewardTokenAddresses.length; _i++) {
+        uint256[] memory _totalFunding =
+            new uint256[](_rewardTokenAddresses.length);
+        // determining ending timestamp and aggregated total funding
+        // based on epochs (so that multiple epoch with same reward tokens
+        // and potentially different amount are not funded using 2
+        // transferFrom calls, considerably saving gas)
+        for (uint256 _i = 0; _i < _epochStartingTimestamps.length; _i++) {
+            uint256 _epochStartingTimestamp = _epochStartingTimestamps[_i];
+            uint256 _epochEndingTimestamp = _epochEndingTimestamps[_i];
+            require(_epochEndingTimestamp > _epochStartingTimestamp, "TODO");
+            if (_i > 0) {
+                // requires that epochs are adjacent
+                require(
+                    _epochStartingTimestamp == _epochEndingTimestamps[_i - 1],
+                    "TODO"
+                );
+            }
+            uint256 _rewardsLength = _rewardTokenAddresses.length;
+            uint256[] memory _epochRewardAmounts = _epochRewardsBreakdown[_i];
+            require(_epochRewardAmounts.length == _rewardsLength, "TODO");
+            for (uint256 _j = 0; _j = _rewardsLength; _j++) {
+                _totalFunding[_j] += _epochRewardAmounts[_j];
+            }
+            epochs.push(
+                Epoch({
+                    startingTimestamp: _epochStartingTimestamp,
+                    endingTimestamp: _epochEndingTimestamp,
+                    secondsDuration: _epochEndingTimestamp -
+                        _epochStartingTimestamp,
+                    rewardAmounts: _epochRewardAmounts
+                })
+            );
+        }
+
+        // funding-related checks and pushing reward token addresses in the state
+        for (uint32 _i = 0; _i < _totalFunding.length; _i++) {
             address _rewardTokenAddress = _rewardTokenAddresses[_i];
-            uint256 _rewardAmount = _rewardAmounts[_i];
+            uint256 _rewardAmount = _totalFunding[_i];
             require(_rewardTokenAddress != address(0), "SRD04");
             require(_rewardAmount > 0, "SRD05");
-            IERC20 _rewardToken = IERC20(_rewardTokenAddress);
             require(
-                _rewardToken.balanceOf(address(this)) >= _rewardAmount,
+                IERC20(_rewardTokenAddress).balanceOf(address(this)) >=
+                    _rewardAmount,
                 "SRD06"
             );
             rewards.push(
@@ -124,7 +176,7 @@ contract ERC20StakingRewardsDistribution {
                     token: _rewardTokenAddress,
                     amount: _rewardAmount,
                     perStakedToken: 0,
-                    recoverableSeconds: 0,
+                    recoverableAmount: 0,
                     claimed: 0
                 })
             );
@@ -136,7 +188,9 @@ contract ERC20StakingRewardsDistribution {
         owner = msg.sender;
         factory = msg.sender;
         startingTimestamp = _startingTimestamp;
-        endingTimestamp = _endingTimestamp;
+        endingTimestamp = _epochEndingTimestamps[
+            _epochEndingTimestamps.length - 1
+        ];
         lastConsolidationTimestamp = _startingTimestamp;
         locked = _locked;
         stakingCap = _stakingCap;
@@ -146,9 +200,9 @@ contract ERC20StakingRewardsDistribution {
         emit Initialized(
             _rewardTokenAddresses,
             _stakableTokenAddress,
-            _rewardAmounts,
-            _startingTimestamp,
-            _endingTimestamp,
+            _epochStartingTimestamps,
+            _epochEndingTimestamps,
+            _epochRewardsBreakdown,
             _locked,
             _stakingCap
         );
@@ -159,9 +213,10 @@ contract ERC20StakingRewardsDistribution {
         require(block.timestamp < startingTimestamp, "SRD08");
         for (uint256 _i; _i < rewards.length; _i++) {
             Reward storage _reward = rewards[_i];
-            IERC20(_reward.token).safeTransfer(
+            address _rewardTokenAddress = _reward.token;
+            IERC20(_rewardTokenAddress).safeTransfer(
                 owner,
-                IERC20(_reward.token).balanceOf(address(this))
+                IERC20(_rewardTokenAddress).balanceOf(address(this))
             );
         }
         canceled = true;
@@ -175,18 +230,21 @@ contract ERC20StakingRewardsDistribution {
         bool _atLeastOneNonZeroRecovery = false;
         for (uint256 _i; _i < rewards.length; _i++) {
             Reward storage _reward = rewards[_i];
+            address _rewardTokenAddress = _reward.token; // gas savings, avoids double read from storage
             // recoverable rewards are going to be recovered in this tx (if it does not revert),
             // so we add them to the claimed rewards right now
-            _reward.claimed += ((_reward.recoverableSeconds * _reward.amount) /
-                (uint256(secondsDuration) * MULTIPLIER));
-            delete _reward.recoverableSeconds;
+            _reward.claimed += _reward.recoverableAmount / MULTIPLIER;
+            delete _reward.recoverableAmount;
             uint256 _recoverableRewards =
-                IERC20(_reward.token).balanceOf(address(this)) -
+                IERC20(_rewardTokenAddress).balanceOf(address(this)) -
                     (_reward.amount - _reward.claimed);
             if (!_atLeastOneNonZeroRecovery && _recoverableRewards > 0)
                 _atLeastOneNonZeroRecovery = true;
             _recoveredUnassignedRewards[_i] = _recoverableRewards;
-            IERC20(_reward.token).safeTransfer(owner, _recoverableRewards);
+            IERC20(_rewardTokenAddress).safeTransfer(
+                owner,
+                _recoverableRewards
+            );
         }
         require(_atLeastOneNonZeroRecovery, "SRD22");
         emit Recovered(_recoveredUnassignedRewards);
@@ -204,6 +262,7 @@ contract ERC20StakingRewardsDistribution {
         consolidateReward();
         Staker storage _staker = stakers[msg.sender];
         _staker.stake += _amount;
+        _staker.lastConsolidationEpoch = activeEpochIndex;
         totalStakedTokensAmount += _amount;
         stakableToken.safeTransferFrom(msg.sender, address(this), _amount);
         emit Staked(msg.sender, _amount);
@@ -278,30 +337,63 @@ contract ERC20StakingRewardsDistribution {
         withdraw(stakers[msg.sender].stake);
     }
 
+    function currentEpoch() private returns (Epoch storage) {
+        Epoch storage _currentEpoch = epochs[activeEpochIndex];
+        // check if current epoch is still active, otherwise, if there's another one, switch to the next
+        return
+            uint64(block.timestamp) > _currentEpoch.endingTimestamp &&
+                activeEpochIndex + 1 < epochs.length
+                ? epochs[++activeEpochIndex] // active epoch index gets updated
+                : _currentEpoch;
+    }
+
     function consolidateReward() private {
+        // gas savings
+        uint256 _lastConsolidationTimestamp = lastConsolidationTimestamp;
+        uint256 _rewardsLength = rewards.length;
+        uint256 _activeEpochIndex = activeEpochIndex;
+
+        Epoch storage _currentEpoch = currentEpoch();
+
         uint64 _consolidationTimestamp =
-            uint64(Math.min(block.timestamp, endingTimestamp));
+            uint64(Math.min(block.timestamp, _currentEpoch.endingTimestamp));
         uint256 _lastPeriodDuration =
-            uint256(_consolidationTimestamp - lastConsolidationTimestamp);
-        Staker storage _staker = stakers[msg.sender];
-        for (uint256 _i; _i < rewards.length; _i++) {
-            Reward storage _reward = rewards[_i];
-            StakerRewardInfo storage _stakerRewardInfo =
-                _staker.rewardInfo[_reward.token];
-            if (_lastPeriodDuration > 0) {
-                if (totalStakedTokensAmount == 0) {
-                    _reward.recoverableSeconds +=
-                        _lastPeriodDuration *
-                        MULTIPLIER;
-                    // no need to update the reward per staked token since in this period
-                    // there have been no staked tokens, so no reward has been given out to stakers
-                } else {
-                    _reward.perStakedToken += ((_lastPeriodDuration *
-                        _reward.amount *
-                        MULTIPLIER) /
-                        (totalStakedTokensAmount * secondsDuration));
+            uint256(_consolidationTimestamp - _lastConsolidationTimestamp);
+
+        // update global data for each involved epoch. If last period duration is 0, nothing needs to be changed
+        if (_lastPeriodDuration > 0) {
+            uint256 _involvedEpochs =
+                _activeEpochIndex - lastConsolidationEpoch;
+            for (uint256 _i = _involvedEpochs; _i >= 0; _i--) {
+                Epoch storage _epoch = epochs[_activeEpochIndex - _i];
+                uint256 _epochPeriodDuration =
+                    Math.min(_epoch.endingTimestamp, _consolidationTimestamp) -
+                        Math.max(
+                            _epoch.startingTimestamp,
+                            _lastConsolidationTimestamp
+                        );
+                for (uint256 _j; _j < _rewardsLength; _j++) {
+                    Reward storage _reward = rewards[_j];
+                    uint256 _assignedRewardInEpochPeriod =
+                        ((_epochPeriodDuration *
+                            _epoch.rewardAmount *
+                            MULTIPLIER) /
+                            (totalStakedTokensAmount * _epoch.secondsDuration));
+                    if (totalStakedTokensAmount == 0) {
+                        _reward
+                            .recoverableAmount += _assignedRewardInEpochPeriod;
+                    } else {
+                        _reward.perStakedToken += _assignedRewardInEpochPeriod;
+                    }
                 }
             }
+        }
+
+        Staker storage _staker = stakers[msg.sender];
+        for (uint256 _j; _j < _rewardsLength; _j++) {
+            Reward storage _reward = rewards[_j];
+            StakerRewardInfo storage _stakerRewardInfo =
+                _staker.rewardInfo[_reward.token];
             uint256 _rewardSinceLastConsolidation =
                 (_staker.stake *
                     (_reward.perStakedToken -
@@ -313,10 +405,12 @@ contract ERC20StakingRewardsDistribution {
             _stakerRewardInfo.consolidatedPerStakedToken = _reward
                 .perStakedToken;
         }
+
         lastConsolidationTimestamp = _consolidationTimestamp;
+        lastConsolidationEpoch = _activeEpochIndex;
     }
 
-    function claimableRewards(address _account)
+    function claimableRewards(address _acLength)
         public
         view
         returns (uint256[] memory)
@@ -328,7 +422,7 @@ contract ERC20StakingRewardsDistribution {
             }
             return _outstandingRewards;
         }
-        Staker storage _staker = stakers[_account];
+        Staker storage _staker = stakers[_acLength];
         uint64 _consolidationTimestamp =
             uint64(Math.min(block.timestamp, endingTimestamp));
         uint256 _lastPeriodDuration =
@@ -403,13 +497,11 @@ contract ERC20StakingRewardsDistribution {
         for (uint256 _i = 0; _i < rewards.length; _i++) {
             Reward storage _reward = rewards[_i];
             if (_reward.token == _rewardToken) {
-                uint256 _nonRequiredFunds =
-                    _reward.claimed +
-                        ((_reward.recoverableSeconds * _reward.amount) /
-                            (uint256(secondsDuration) * MULTIPLIER));
+                uint256 _nontotalFunds =
+                    _reward.claimed + _reward.recoverableAmount / MULTIPLIER;
                 return
                     IERC20(_reward.token).balanceOf(address(this)) -
-                    (_reward.amount - _nonRequiredFunds);
+                    (_reward.amount - _nontotalFunds);
             }
         }
         return 0;
