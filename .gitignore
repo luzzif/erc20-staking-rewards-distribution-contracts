@@ -10,3 +10,5 @@ yarn-error.log
 /*.sol
 *.tgz
 /interfaces
+
+/fuzzing/flattened

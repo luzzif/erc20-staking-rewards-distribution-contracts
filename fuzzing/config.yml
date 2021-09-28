@@ -1,0 +1,3 @@
+checkAsserts: true
+coverage: true
+testLimit: 3000

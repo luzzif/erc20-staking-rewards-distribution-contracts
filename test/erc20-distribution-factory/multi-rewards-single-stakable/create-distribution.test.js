@@ -28,10 +28,11 @@ contract(
             const accounts = await web3.eth.getAccounts();
             ownerAddress = accounts[1];
             const implementation = await ERC20StakingRewardsDistribution.new();
-            erc20DistributionFactoryInstance = await ERC20StakingRewardsDistributionFactory.new(
-                implementation.address,
-                { from: ownerAddress }
-            );
+            erc20DistributionFactoryInstance =
+                await ERC20StakingRewardsDistributionFactory.new(
+                    implementation.address,
+                    { from: ownerAddress }
+                );
             firstRewardsTokenInstance = await FirstRewardERC20.new();
             secondRewardsTokenInstance = await SecondRewardERC20.new();
             stakableTokenInstance = await FirstStakableERC20.new();
@@ -218,17 +219,21 @@ contract(
             expect(
                 await erc20DistributionFactoryInstance.getDistributionsAmount()
             ).to.be.equalBn(new BN(1));
-            const createdDistributionAddress = await erc20DistributionFactoryInstance.distributions(
-                0
-            );
-            const erc20DistributionInstance = await ERC20StakingRewardsDistribution.at(
-                createdDistributionAddress
-            );
+            const createdDistributionAddress =
+                await erc20DistributionFactoryInstance.distributions(0);
+            const erc20DistributionInstance =
+                await ERC20StakingRewardsDistribution.at(
+                    createdDistributionAddress
+                );
 
-            const onchainRewardTokens = await erc20DistributionInstance.getRewardTokens();
-            const onchainStakableToken = await erc20DistributionInstance.stakableToken();
-            const onchainStartingTimestamp = await erc20DistributionInstance.startingTimestamp();
-            const onchainEndingTimestamp = await erc20DistributionInstance.endingTimestamp();
+            const onchainRewardTokens =
+                await erc20DistributionInstance.getRewardTokens();
+            const onchainStakableToken =
+                await erc20DistributionInstance.stakableToken();
+            const onchainStartingTimestamp =
+                await erc20DistributionInstance.startingTimestamp();
+            const onchainEndingTimestamp =
+                await erc20DistributionInstance.endingTimestamp();
 
             expect(onchainRewardTokens).to.have.length(rewardTokens.length);
             expect(onchainStakableToken).to.be.equal(
@@ -294,7 +299,8 @@ contract(
             );
 
             // upgrading implementation
-            const upgradedDistribution = await UpgradedERC20StakingRewardsDistribution.new();
+            const upgradedDistribution =
+                await UpgradedERC20StakingRewardsDistribution.new();
             await erc20DistributionFactoryInstance.upgradeImplementation(
                 upgradedDistribution.address,
                 { from: ownerAddress }
@@ -314,18 +320,14 @@ contract(
             expect(
                 await erc20DistributionFactoryInstance.getDistributionsAmount()
             ).to.be.equalBn(new BN(2));
-            const proxy1Address = await erc20DistributionFactoryInstance.distributions(
-                0
-            );
-            const proxy2Address = await erc20DistributionFactoryInstance.distributions(
-                1
-            );
-            const distribution1Instance = await UpgradedERC20StakingRewardsDistribution.at(
-                proxy1Address
-            );
-            const distribution2Instance = await UpgradedERC20StakingRewardsDistribution.at(
-                proxy2Address
-            );
+            const proxy1Address =
+                await erc20DistributionFactoryInstance.distributions(0);
+            const proxy2Address =
+                await erc20DistributionFactoryInstance.distributions(1);
+            const distribution1Instance =
+                await UpgradedERC20StakingRewardsDistribution.at(proxy1Address);
+            const distribution2Instance =
+                await UpgradedERC20StakingRewardsDistribution.at(proxy2Address);
 
             try {
                 await distribution1Instance.isUpgraded();

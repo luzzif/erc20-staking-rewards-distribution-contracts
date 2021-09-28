@@ -20,7 +20,9 @@
         "test:gasreport": "truffle test --gas-report",
         "compile": "truffle compile",
         "prepack": "cp ./contracts/*.sol ./ && mkdir ./interfaces && cp ./contracts/interfaces/*.sol ./interfaces",
-        "postpack": "rm -rf ./*.sol rm -rf ./interfaces"
+        "postpack": "rm -rf ./*.sol rm -rf ./interfaces",
+        "prepare-fuzzing": "hardhat flatten ./contracts/test/TestDependencies.sol > ./fuzzing/flattened/TestDependencies.sol && hardhat flatten ./contracts/ERC20StakingRewardsDistribution.sol > ./fuzzing/flattened/ERC20StakingRewardsDistribution.sol && hardhat flatten ./contracts/ERC20StakingRewardsDistributionFactory.sol > ./fuzzing/flattened/ERC20StakingRewardsDistributionFactory.sol && node ./scripts/fix-spdx-license-identifiers.js",
+        "est:run": "docker run -it -v `pwd`/fuzzing:/tested trailofbits/eth-security-toolbox"
     },
     "author": "Federico Luzzi <fedeluzzi00@gmail.com>",
     "license": "GPL-3.0",
@@ -37,6 +39,7 @@
         "eth-gas-reporter": "^0.2.20",
         "ganache-cli": "^6.12.1",
         "husky": "^4.3.0",
+        "luxon": "^2.0.2",
         "prettier": "^2.1.2",
         "prettier-plugin-solidity": "^1.0.0-beta.2",
         "solhint-plugin-prettier": "^0.0.5",

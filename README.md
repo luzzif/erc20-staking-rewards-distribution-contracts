@@ -73,6 +73,18 @@ yarn test:gasreport
 **Warning**: collecting coverage or gas consumption data while performing tests
 might slow down the entire process.
 
+Fuzzing with Echidna is also set up on the distribution contract, and is
+executed through Trail of Bits' Ethereum security toolbox. In order to run it,
+start by install Docker and starting the daemon, then run:
+
+`yarn prepare-fuzzing && yarn est:run`
+
+This flattens all the tested contracts, makes them ready to be analyzed by
+Echidna, and boots up the Ethereum security toolbox. When the toolbox is
+running, run the following command to start fuzzing:
+
+`echidna-test /tested/ERC20StakingRewardsDistributionFuzzer.sol --contract ERC20StakingRewardsDistributionFuzzer --config /tested/config.yml`
+
 Linting and "prettification" on Solidity code is performed using
 `prettier-plugin-solidity` and `solhint-plugin-prettier`. Test code is simply
 checked using `eslint` and `prettier`.
