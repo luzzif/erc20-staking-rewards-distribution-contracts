@@ -1,31 +1,34 @@
-const { expect } = require("chai");
+const { expect, use } = require("chai");
+const { provider, solidity } = require("hardhat").waffle;
+const { getContractFactory } = require("hardhat").ethers;
 
-const ERC20StakingRewardsDistributionFactory = artifacts.require(
-    "ERC20StakingRewardsDistributionFactory"
-);
-const ERC20StakingRewardsDistribution = artifacts.require(
-    "ERC20StakingRewardsDistribution"
-);
+use(solidity);
 
-contract("ERC20StakingRewardsDistributionFactory - Pause staking", () => {
-    let erc20DistributionFactoryInstance,
-        erc20DistributionInstance,
-        ownerAddress;
+describe("ERC20StakingRewardsDistributionFactory - Pause staking", () => {
+    const [owner, other] = provider.getWallets();
+    let erc20DistributionFactoryInstance, erc20DistributionInstance;
 
     beforeEach(async () => {
-        const accounts = await web3.eth.getAccounts();
-        ownerAddress = accounts[1];
-        erc20DistributionInstance = await ERC20StakingRewardsDistribution.new();
-        erc20DistributionFactoryInstance = await ERC20StakingRewardsDistributionFactory.new(
-            erc20DistributionInstance.address,
-            { from: ownerAddress }
+        const ERC20StakingRewardsDistributionFactory = await getContractFactory(
+            "ERC20StakingRewardsDistributionFactory",
+            owner
+        );
+        const ERC20StakingRewardsDistribution = await getContractFactory(
+            "ERC20StakingRewardsDistribution"
+        );
+
+        erc20DistributionInstance = await ERC20StakingRewardsDistribution.deploy();
+        erc20DistributionFactoryInstance = await ERC20StakingRewardsDistributionFactory.deploy(
+            erc20DistributionInstance.address
         );
     });
 
     it("should fail when the caller is not the owner", async () => {
         try {
             // by default the first account is used, which is not the owner
-            await erc20DistributionFactoryInstance.pauseStaking();
+            await erc20DistributionFactoryInstance
+                .connect(other)
+                .pauseStaking();
             throw new Error("should have failed");
         } catch (error) {
             expect(error.message).to.contain(
@@ -36,11 +39,11 @@ contract("ERC20StakingRewardsDistributionFactory - Pause staking", () => {
 
     it("should fail when the owner already paused the staking", async () => {
         await erc20DistributionFactoryInstance.pauseStaking({
-            from: ownerAddress,
+            from: owner.address,
         });
         try {
             await erc20DistributionFactoryInstance.pauseStaking({
-                from: ownerAddress,
+                from: owner.address,
             });
             throw new Error("should have failed");
         } catch (error) {
@@ -52,7 +55,7 @@ contract("ERC20StakingRewardsDistributionFactory - Pause staking", () => {
         expect(await erc20DistributionFactoryInstance.stakingPaused()).to.be
             .false;
         await erc20DistributionFactoryInstance.pauseStaking({
-            from: ownerAddress,
+            from: owner.address,
         });
         expect(await erc20DistributionFactoryInstance.stakingPaused()).to.be
             .true;

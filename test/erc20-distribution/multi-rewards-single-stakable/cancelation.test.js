@@ -1,143 +1,134 @@
-const BN = require("bn.js");
-const { expect } = require("chai");
-const { ZERO_BN } = require("../../constants");
+const { expect, use } = require("chai");
+const { ZERO } = require("../../constants");
 const { initializeDistribution } = require("../../utils");
-const { toWei } = require("../../utils/conversion");
 const { getEvmTimestamp } = require("../../utils/network");
+const { provider, solidity } = require("hardhat").waffle;
+const {
+    getContractFactory,
+    utils: { parseEther },
+} = require("hardhat").ethers;
 
-const ERC20StakingRewardsDistribution = artifacts.require(
-    "ERC20StakingRewardsDistribution"
-);
-const ERC20StakingRewardsDistributionFactory = artifacts.require(
-    "ERC20StakingRewardsDistributionFactory"
-);
-const FirstRewardERC20 = artifacts.require("FirstRewardERC20");
-const SecondRewardERC20 = artifacts.require("SecondRewardERC20");
-const FirstStakableERC20 = artifacts.require("FirstStakableERC20");
+use(solidity);
 
-contract(
-    "ERC20StakingRewardsDistribution - Multi rewards, single stakable token - Cancelation",
-    () => {
-        let erc20DistributionFactoryInstance,
+describe("ERC20StakingRewardsDistribution - Multi rewards, single stakable token - Cancelation", () => {
+    const [owner] = provider.getWallets();
+
+    let erc20DistributionFactoryInstance,
+        firstRewardsTokenInstance,
+        secondRewardsTokenInstance,
+        stakableTokenInstance;
+
+    beforeEach(async () => {
+        const ERC20StakingRewardsDistribution = await getContractFactory(
+            "ERC20StakingRewardsDistribution"
+        );
+        const ERC20StakingRewardsDistributionFactory = await getContractFactory(
+            "ERC20StakingRewardsDistributionFactory"
+        );
+        const FirstRewardERC20 = await getContractFactory("FirstRewardERC20");
+        const SecondRewardERC20 = await getContractFactory("SecondRewardERC20");
+        const FirstStakableERC20 = await getContractFactory(
+            "FirstStakableERC20"
+        );
+
+        const erc20DistributionInstance = await ERC20StakingRewardsDistribution.connect(
+            owner
+        ).deploy();
+        erc20DistributionFactoryInstance = await ERC20StakingRewardsDistributionFactory.connect(
+            owner
+        ).deploy(erc20DistributionInstance.address);
+        firstRewardsTokenInstance = await FirstRewardERC20.deploy();
+        secondRewardsTokenInstance = await SecondRewardERC20.deploy();
+        stakableTokenInstance = await FirstStakableERC20.deploy();
+    });
+
+    it("should succeed in the right conditions", async () => {
+        const rewardAmounts = [parseEther("10"), parseEther("100")];
+        const rewardTokens = [
             firstRewardsTokenInstance,
             secondRewardsTokenInstance,
-            stakableTokenInstance,
-            ownerAddress;
-
-        beforeEach(async () => {
-            const accounts = await web3.eth.getAccounts();
-            ownerAddress = accounts[0];
-            const erc20DistributionInstance = await ERC20StakingRewardsDistribution.new(
-                { from: ownerAddress }
+        ];
+        // if not specified, the distribution starts 10 seconds from
+        // now, so we have the time to cancel it
+        const { erc20DistributionInstance } = await initializeDistribution({
+            from: owner,
+            erc20DistributionFactoryInstance,
+            stakableToken: stakableTokenInstance,
+            rewardTokens,
+            rewardAmounts,
+            duration: 2,
+        });
+        await erc20DistributionInstance.cancel({ from: owner.address });
+        for (let i = 0; i < rewardTokens.length; i++) {
+            const rewardToken = rewardTokens[i];
+            const rewardAmount = rewardAmounts[i];
+            expect(
+                await rewardToken.balanceOf(erc20DistributionInstance.address)
+            ).to.be.equal(ZERO);
+            expect(await rewardToken.balanceOf(owner.address)).to.be.equal(
+                rewardAmount
             );
-            erc20DistributionFactoryInstance = await ERC20StakingRewardsDistributionFactory.new(
-                erc20DistributionInstance.address,
-                { from: ownerAddress }
+        }
+        expect(await erc20DistributionInstance.initialized()).to.be.true;
+        expect(await erc20DistributionInstance.canceled()).to.be.true;
+    });
+
+    it("shouldn't allow for a second initialization on success", async () => {
+        const rewardAmounts = [parseEther("10"), parseEther("10")];
+        const rewardTokens = [
+            firstRewardsTokenInstance,
+            secondRewardsTokenInstance,
+        ];
+        // if not specified, the distribution starts 10 seconds from
+        // now, so we have the time to cancel it
+        const { erc20DistributionInstance } = await initializeDistribution({
+            from: owner,
+            erc20DistributionFactoryInstance,
+            stakableToken: stakableTokenInstance,
+            rewardTokens,
+            rewardAmounts,
+            duration: 2,
+        });
+        await erc20DistributionInstance.cancel({ from: owner.address });
+        try {
+            const currentTimestamp = await getEvmTimestamp();
+            await erc20DistributionInstance.initialize(
+                rewardTokens.map((token) => token.address),
+                stakableTokenInstance.address,
+                rewardAmounts,
+                currentTimestamp.add(10),
+                currentTimestamp.add(20),
+                false,
+                0
             );
-            firstRewardsTokenInstance = await FirstRewardERC20.new();
-            secondRewardsTokenInstance = await SecondRewardERC20.new();
-            stakableTokenInstance = await FirstStakableERC20.new();
-        });
+            throw new Error("should have failed");
+        } catch (error) {
+            expect(error.message).to.contain("SRD18");
+        }
+    });
 
-        it("should succeed in the right conditions", async () => {
-            const rewardAmounts = [
-                await toWei(10, firstRewardsTokenInstance),
-                await toWei(100, secondRewardsTokenInstance),
-            ];
-            const rewardTokens = [
-                firstRewardsTokenInstance,
-                secondRewardsTokenInstance,
-            ];
-            // if not specified, the distribution starts 10 seconds from
-            // now, so we have the time to cancel it
-            const { erc20DistributionInstance } = await initializeDistribution({
-                from: ownerAddress,
-                erc20DistributionFactoryInstance,
-                stakableToken: stakableTokenInstance,
-                rewardTokens,
-                rewardAmounts,
-                duration: 2,
-            });
-            await erc20DistributionInstance.cancel({ from: ownerAddress });
-            for (let i = 0; i < rewardTokens.length; i++) {
-                const rewardToken = rewardTokens[i];
-                const rewardAmount = rewardAmounts[i];
-                expect(
-                    await rewardToken.balanceOf(
-                        erc20DistributionInstance.address
-                    )
-                ).to.be.equalBn(ZERO_BN);
-                expect(await rewardToken.balanceOf(ownerAddress)).to.be.equalBn(
-                    rewardAmount
-                );
-            }
-            expect(await erc20DistributionInstance.initialized()).to.be.true;
-            expect(await erc20DistributionInstance.canceled()).to.be.true;
+    it("shouldn't allow for a second cancelation on success", async () => {
+        const rewardAmounts = [parseEther("10"), parseEther("10")];
+        const rewardTokens = [
+            firstRewardsTokenInstance,
+            secondRewardsTokenInstance,
+        ];
+        // if not specified, the distribution starts 10 seconds from
+        // now, so we have the time to cancel it
+        const { erc20DistributionInstance } = await initializeDistribution({
+            from: owner,
+            erc20DistributionFactoryInstance,
+            stakableToken: stakableTokenInstance,
+            rewardTokens,
+            rewardAmounts,
+            duration: 2,
         });
-
-        it("shouldn't allow for a second initialization on success", async () => {
-            const rewardAmounts = [
-                await toWei(10, firstRewardsTokenInstance),
-                await toWei(10, firstRewardsTokenInstance),
-            ];
-            const rewardTokens = [
-                firstRewardsTokenInstance,
-                secondRewardsTokenInstance,
-            ];
-            // if not specified, the distribution starts 10 seconds from
-            // now, so we have the time to cancel it
-            const { erc20DistributionInstance } = await initializeDistribution({
-                from: ownerAddress,
-                erc20DistributionFactoryInstance,
-                stakableToken: stakableTokenInstance,
-                rewardTokens,
-                rewardAmounts,
-                duration: 2,
-            });
-            await erc20DistributionInstance.cancel({ from: ownerAddress });
-            try {
-                const currentTimestamp = await getEvmTimestamp();
-                await erc20DistributionInstance.initialize(
-                    rewardTokens.map((token) => token.address),
-                    stakableTokenInstance.address,
-                    rewardAmounts,
-                    currentTimestamp.add(new BN(10)),
-                    currentTimestamp.add(new BN(20)),
-                    false,
-                    0
-                );
-                throw new Error("should have failed");
-            } catch (error) {
-                expect(error.message).to.contain("SRD18");
-            }
-        });
-
-        it("shouldn't allow for a second cancelation on success", async () => {
-            const rewardAmounts = [
-                await toWei(10, firstRewardsTokenInstance),
-                await toWei(10, firstRewardsTokenInstance),
-            ];
-            const rewardTokens = [
-                firstRewardsTokenInstance,
-                secondRewardsTokenInstance,
-            ];
-            // if not specified, the distribution starts 10 seconds from
-            // now, so we have the time to cancel it
-            const { erc20DistributionInstance } = await initializeDistribution({
-                from: ownerAddress,
-                erc20DistributionFactoryInstance,
-                stakableToken: stakableTokenInstance,
-                rewardTokens,
-                rewardAmounts,
-                duration: 2,
-            });
-            await erc20DistributionInstance.cancel({ from: ownerAddress });
-            try {
-                await erc20DistributionInstance.cancel({ from: ownerAddress });
-                throw new Error("should have failed");
-            } catch (error) {
-                expect(error.message).to.contain("SRD19");
-            }
-        });
-    }
-);
+        await erc20DistributionInstance.cancel({ from: owner.address });
+        try {
+            await erc20DistributionInstance.cancel({ from: owner.address });
+            throw new Error("should have failed");
+        } catch (error) {
+            expect(error.message).to.contain("SRD19");
+        }
+    });
+});

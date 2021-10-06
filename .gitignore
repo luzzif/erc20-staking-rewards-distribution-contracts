@@ -12,3 +12,5 @@ yarn-error.log
 /interfaces
 
 /fuzzing/flattened
+
+.env*
