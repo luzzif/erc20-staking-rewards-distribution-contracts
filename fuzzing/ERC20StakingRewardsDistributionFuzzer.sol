@@ -51,6 +51,11 @@ contract MockUser {
     function recoverUnassignedRewards() public {
         distribution.recoverUnassignedRewards();
     }
+
+    // Test addRewards function
+    function addRewards(address rewardToken, uint256 amount) public {
+        distribution.addRewards(rewardToken, amount);
+    }
 }
 
 contract ERC20StakingRewardsDistributionFuzzer {
@@ -379,6 +384,80 @@ contract ERC20StakingRewardsDistributionFuzzer {
         if (
             (ownerRewardBalancesBefore2 + recoverableRewards2) >
             ownerRewardBalancesAfter2
+        ) {
+            emit AssertionFailed();
+        }
+    }
+
+    function addRewards(uint256 seed, uint256 amount) public {
+        address rewardToken;
+        if (seed % 2 == 0) {
+            rewardToken = address(rewardToken1);
+        } else {
+            rewardToken = address(rewardToken2);
+        }
+        uint256 distributionRewardAmountBefore =
+            distribution.rewardAmount(rewardToken);
+        uint256 distributionRewardBalanceBefore =
+            ERC20PresetMinterPauser(rewardToken).balanceOf(
+                address(distribution)
+            );
+        distribution.addRewards(rewardToken, amount);
+        uint256 distributionRewardAmountAfter =
+            distribution.rewardAmount(rewardToken);
+        uint256 distributionRewardBalanceAfter =
+            ERC20PresetMinterPauser(rewardToken).balanceOf(
+                address(distribution)
+            );
+
+        // Assert that tracked reward amount is correctly increased
+        if (
+            distributionRewardAmountBefore + amount !=
+            distributionRewardAmountAfter
+        ) {
+            emit AssertionFailed();
+        }
+        // Assert that distribution reward balance is properly increased
+        if (
+            distributionRewardBalanceBefore + amount !=
+            distributionRewardBalanceAfter
+        ) {
+            emit AssertionFailed();
+        }
+    }
+
+    function addRewardsAsUser(uint256 seed, uint256 amount) public {
+        address rewardToken;
+        if (seed % 2 == 0) {
+            rewardToken = address(rewardToken1);
+        } else {
+            rewardToken = address(rewardToken2);
+        }
+        uint256 distributionRewardAmountBefore =
+            distribution.rewardAmount(rewardToken);
+        uint256 distributionRewardBalanceBefore =
+            ERC20PresetMinterPauser(rewardToken).balanceOf(
+                address(distribution)
+            );
+        mockUser.addRewards(rewardToken, amount);
+        uint256 distributionRewardAmountAfter =
+            distribution.rewardAmount(rewardToken);
+        uint256 distributionRewardBalanceAfter =
+            ERC20PresetMinterPauser(rewardToken).balanceOf(
+                address(distribution)
+            );
+
+        // Assert that tracked reward amount is correctly increased
+        if (
+            distributionRewardAmountBefore + amount !=
+            distributionRewardAmountAfter
+        ) {
+            emit AssertionFailed();
+        }
+        // Assert that distribution reward balance is properly increased
+        if (
+            distributionRewardBalanceBefore + amount !=
+            distributionRewardBalanceAfter
         ) {
             emit AssertionFailed();
         }

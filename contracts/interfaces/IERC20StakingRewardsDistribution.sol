@@ -53,4 +53,6 @@ interface IERC20StakingRewardsDistribution {
     function renounceOwnership() external;
 
     function transferOwnership(address _newOwner) external;
+
+    function addRewards(address _token, uint256 _amount) external;
 }
