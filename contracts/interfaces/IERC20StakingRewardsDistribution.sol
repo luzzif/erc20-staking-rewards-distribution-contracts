@@ -43,8 +43,6 @@ interface IERC20StakingRewardsDistribution {
 
     function exit(address _recipient) external;
 
-    function consolidateReward() external;
-
     function claimableRewards(address _staker)
         external
         view

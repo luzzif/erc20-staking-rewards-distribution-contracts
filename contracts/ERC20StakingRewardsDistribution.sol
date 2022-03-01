@@ -1,11 +1,12 @@
 // SPDX-License-Identifier: GPL-3.0
 
-pragma solidity ^0.8.4;
+pragma solidity 0.8.12;
 
 import "@openzeppelin/contracts/utils/math/Math.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "./interfaces/IERC20StakingRewardsDistributionFactory.sol";
+import "./interfaces/IERC20StakingRewardsDistribution.sol";
 
 /**
  * Errors codes:
@@ -36,8 +37,10 @@ import "./interfaces/IERC20StakingRewardsDistributionFactory.sol";
  * SRD24: no rewards are claimable while manually claiming an arbitrary amount of rewards
  * SRD25: staking is currently paused
  * SRD26: no rewards were added
+ * SRD27: maximum number of reward tokens breached
+ * SRD28: duplicated reward tokens
  */
-contract ERC20StakingRewardsDistribution {
+contract ERC20StakingRewardsDistribution is IERC20StakingRewardsDistribution {
     using SafeERC20 for IERC20;
 
     uint224 constant MULTIPLIER = 2**112;
@@ -66,7 +69,6 @@ contract ERC20StakingRewardsDistribution {
     mapping(address => Staker) public stakers;
     uint64 public startingTimestamp;
     uint64 public endingTimestamp;
-    uint64 public secondsDuration;
     uint64 public lastConsolidationTimestamp;
     IERC20 public stakableToken;
     address public owner;
@@ -105,15 +107,25 @@ contract ERC20StakingRewardsDistribution {
         uint64 _endingTimestamp,
         bool _locked,
         uint256 _stakingCap
-    ) external onlyUninitialized {
+    ) external override onlyUninitialized {
         require(_startingTimestamp > block.timestamp, "SRD01");
         require(_endingTimestamp > _startingTimestamp, "SRD02");
         require(_rewardTokenAddresses.length == _rewardAmounts.length, "SRD03");
+        require(_rewardTokenAddresses.length <= 5, "SRD27");
 
-        secondsDuration = _endingTimestamp - _startingTimestamp;
         // Initializing reward tokens and amounts
-        for (uint32 _i = 0; _i < _rewardTokenAddresses.length; _i++) {
+        for (uint8 _i = 0; _i < _rewardTokenAddresses.length; _i++) {
             address _rewardTokenAddress = _rewardTokenAddresses[_i];
+
+            // checking for duplicates
+            for (uint8 _j = 0; _j < _rewardTokenAddresses.length; _j++) {
+                if (_i == _j) continue;
+                require(
+                    _rewardTokenAddress != _rewardTokenAddresses[_j],
+                    "SRD28"
+                );
+            }
+
             uint256 _rewardAmount = _rewardAmounts[_i];
             require(_rewardTokenAddress != address(0), "SRD04");
             require(_rewardAmount > 0, "SRD05");
@@ -158,7 +170,7 @@ contract ERC20StakingRewardsDistribution {
         );
     }
 
-    function cancel() external onlyOwner {
+    function cancel() external override onlyOwner {
         require(initialized && !canceled, "SRD19");
         require(block.timestamp < startingTimestamp, "SRD08");
         for (uint256 _i; _i < rewards.length; _i++) {
@@ -172,7 +184,7 @@ contract ERC20StakingRewardsDistribution {
         emit Canceled();
     }
 
-    function recoverUnassignedRewards() external onlyStarted {
+    function recoverUnassignedRewards() external override onlyStarted {
         consolidateReward();
         uint256[] memory _recoveredUnassignedRewards =
             new uint256[](rewards.length);
@@ -189,13 +201,14 @@ contract ERC20StakingRewardsDistribution {
             if (!_atLeastOneNonZeroRecovery && _recoverableRewards > 0)
                 _atLeastOneNonZeroRecovery = true;
             _recoveredUnassignedRewards[_i] = _recoverableRewards;
-            IERC20(_reward.token).safeTransfer(owner, _recoverableRewards);
+            if (_recoverableRewards > 0)
+                IERC20(_reward.token).safeTransfer(owner, _recoverableRewards);
         }
         require(_atLeastOneNonZeroRecovery, "SRD22");
         emit Recovered(_recoveredUnassignedRewards);
     }
 
-    function stake(uint256 _amount) external onlyRunning {
+    function stake(uint256 _amount) external override onlyRunning {
         require(
             !IERC20StakingRewardsDistributionFactory(factory).stakingPaused(),
             "SRD25"
@@ -212,7 +225,7 @@ contract ERC20StakingRewardsDistribution {
         emit Staked(msg.sender, _amount);
     }
 
-    function withdraw(uint256 _amount) public onlyStarted {
+    function withdraw(uint256 _amount) public override onlyStarted {
         require(_amount > 0, "SRD11");
         if (locked) {
             require(block.timestamp > endingTimestamp, "SRD12");
@@ -228,6 +241,7 @@ contract ERC20StakingRewardsDistribution {
 
     function claim(uint256[] memory _amounts, address _recipient)
         external
+        override
         onlyStarted
     {
         require(_amounts.length == rewards.length, "SRD14");
@@ -254,7 +268,7 @@ contract ERC20StakingRewardsDistribution {
         emit Claimed(msg.sender, _claimedRewards);
     }
 
-    function claimAll(address _recipient) public onlyStarted {
+    function claimAll(address _recipient) public override onlyStarted {
         consolidateReward();
         Staker storage _staker = stakers[msg.sender];
         uint256[] memory _claimedRewards = new uint256[](rewards.length);
@@ -276,16 +290,20 @@ contract ERC20StakingRewardsDistribution {
         emit Claimed(msg.sender, _claimedRewards);
     }
 
-    function exit(address _recipient) external onlyStarted {
+    function exit(address _recipient) external override {
         claimAll(_recipient);
         withdraw(stakers[msg.sender].stake);
     }
 
-    function addRewards(address _token, uint256 _amount) external {
+    function addRewards(address _token, uint256 _amount)
+        external
+        override
+        onlyStarted
+    {
         consolidateReward();
         uint256[] memory _updatedAmounts = new uint256[](rewards.length);
         bool _atLeastOneUpdate = false;
-        for (uint32 _i = 0; _i < rewards.length; _i++) {
+        for (uint8 _i = 0; _i < rewards.length; _i++) {
             Reward storage _reward = rewards[_i];
             if (_reward.token == _token) {
                 _reward.amount += _amount;
@@ -345,15 +363,12 @@ contract ERC20StakingRewardsDistribution {
     function claimableRewards(address _account)
         public
         view
+        override
         returns (uint256[] memory)
     {
         uint256[] memory _outstandingRewards = new uint256[](rewards.length);
-        if (!initialized || block.timestamp < startingTimestamp) {
-            for (uint256 _i; _i < rewards.length; _i++) {
-                _outstandingRewards[_i] = 0;
-            }
+        if (!initialized || block.timestamp < startingTimestamp)
             return _outstandingRewards;
-        }
         Staker storage _staker = stakers[_account];
         uint64 _consolidationTimestamp =
             uint64(Math.min(block.timestamp, endingTimestamp));
@@ -384,7 +399,12 @@ contract ERC20StakingRewardsDistribution {
         return _outstandingRewards;
     }
 
-    function getRewardTokens() external view returns (address[] memory) {
+    function getRewardTokens()
+        external
+        view
+        override
+        returns (address[] memory)
+    {
         address[] memory _rewardTokens = new address[](rewards.length);
         for (uint256 _i = 0; _i < rewards.length; _i++) {
             _rewardTokens[_i] = rewards[_i].token;
@@ -395,6 +415,7 @@ contract ERC20StakingRewardsDistribution {
     function rewardAmount(address _rewardToken)
         external
         view
+        override
         returns (uint256)
     {
         for (uint256 _i = 0; _i < rewards.length; _i++) {
@@ -404,7 +425,12 @@ contract ERC20StakingRewardsDistribution {
         return 0;
     }
 
-    function stakedTokensOf(address _staker) external view returns (uint256) {
+    function stakedTokensOf(address _staker)
+        external
+        view
+        override
+        returns (uint256)
+    {
         return stakers[_staker].stake;
     }
 
@@ -427,6 +453,7 @@ contract ERC20StakingRewardsDistribution {
     function recoverableUnassignedReward(address _rewardToken)
         external
         view
+        override
         returns (uint256)
     {
         for (uint256 _i = 0; _i < rewards.length; _i++) {
@@ -445,6 +472,7 @@ contract ERC20StakingRewardsDistribution {
     function getClaimedRewards(address _claimer)
         external
         view
+        override
         returns (uint256[] memory)
     {
         Staker storage _staker = stakers[_claimer];
@@ -456,12 +484,12 @@ contract ERC20StakingRewardsDistribution {
         return _claimedRewards;
     }
 
-    function renounceOwnership() public onlyOwner {
+    function renounceOwnership() external override onlyOwner {
         owner = address(0);
         emit OwnershipTransferred(owner, address(0));
     }
 
-    function transferOwnership(address _newOwner) public onlyOwner {
+    function transferOwnership(address _newOwner) external override onlyOwner {
         require(_newOwner != address(0), "SRD16");
         emit OwnershipTransferred(owner, _newOwner);
         owner = _newOwner;

@@ -354,7 +354,7 @@ describe("ERC20StakingRewardsDistribution - Single reward/stakable token - Rewar
         await withdrawAtTimestamp(
             erc20DistributionInstance,
             firstStaker,
-            [1],
+            1,
             withdrawTimestamp
         );
         await fastForwardTo({ timestamp: endingTimestamp });
@@ -457,7 +457,7 @@ describe("ERC20StakingRewardsDistribution - Single reward/stakable token - Rewar
         await withdrawAtTimestamp(
             erc20DistributionInstance,
             firstStaker,
-            [1],
+            1,
             firstWithdrawTimestamp
         );
 
@@ -489,7 +489,7 @@ describe("ERC20StakingRewardsDistribution - Single reward/stakable token - Rewar
         await withdrawAtTimestamp(
             erc20DistributionInstance,
             firstStaker,
-            [1],
+            1,
             secondWithdrawTimestamp
         );
 
@@ -568,7 +568,7 @@ describe("ERC20StakingRewardsDistribution - Single reward/stakable token - Rewar
         await withdrawAtTimestamp(
             erc20DistributionInstance,
             firstStaker,
-            [1],
+            1,
             firstWithdrawTimestamp
         );
 
@@ -608,7 +608,7 @@ describe("ERC20StakingRewardsDistribution - Single reward/stakable token - Rewar
         await withdrawAtTimestamp(
             erc20DistributionInstance,
             firstStaker,
-            [1],
+            1,
             secondWithdrawTimestamp
         );
 

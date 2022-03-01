@@ -45,10 +45,12 @@ describe("ERC20StakingRewardsDistribution - Multi rewards, single stakable token
             "FirstStakableERC20"
         );
 
-        const erc20DistributionInstance = await ERC20StakingRewardsDistribution.deploy();
-        erc20DistributionFactoryInstance = await ERC20StakingRewardsDistributionFactory.deploy(
-            erc20DistributionInstance.address
-        );
+        const erc20DistributionInstance =
+            await ERC20StakingRewardsDistribution.deploy();
+        erc20DistributionFactoryInstance =
+            await ERC20StakingRewardsDistributionFactory.deploy(
+                erc20DistributionInstance.address
+            );
         firstRewardsTokenInstance = await FirstRewardERC20.deploy();
         secondRewardsTokenInstance = await SecondRewardERC20.deploy();
         stakableTokenInstance = await FirstStakableERC20.deploy();
@@ -60,17 +62,15 @@ describe("ERC20StakingRewardsDistribution - Multi rewards, single stakable token
             secondRewardsTokenInstance,
         ];
         const rewardAmounts = [parseEther("100"), parseEther("10")];
-        const {
-            endingTimestamp,
-            erc20DistributionInstance,
-        } = await initializeDistribution({
-            from: owner,
-            erc20DistributionFactoryInstance,
-            stakableToken: stakableTokenInstance,
-            rewardTokens,
-            rewardAmounts,
-            duration: 10,
-        });
+        const { endingTimestamp, erc20DistributionInstance } =
+            await initializeDistribution({
+                from: owner,
+                erc20DistributionFactoryInstance,
+                stakableToken: stakableTokenInstance,
+                rewardTokens,
+                rewardAmounts,
+                duration: 10,
+            });
         // at the start of the distribution, the owner deposited the rewards
         // into the staking contract, so their balance must be 0
         expect(
@@ -79,7 +79,8 @@ describe("ERC20StakingRewardsDistribution - Multi rewards, single stakable token
         expect(
             await secondRewardsTokenInstance.balanceOf(owner.address)
         ).to.be.equal(ZERO);
-        const onchainEndingTimestmp = await erc20DistributionInstance.endingTimestamp();
+        const onchainEndingTimestmp =
+            await erc20DistributionInstance.endingTimestamp();
         expect(onchainEndingTimestmp).to.be.equal(endingTimestamp);
         await fastForwardTo({ timestamp: endingTimestamp });
         await erc20DistributionInstance.recoverUnassignedRewards();
@@ -103,17 +104,15 @@ describe("ERC20StakingRewardsDistribution - Multi rewards, single stakable token
             secondRewardsTokenInstance,
         ];
         const rewardAmounts = [parseEther("100"), parseEther("10")];
-        const {
-            endingTimestamp,
-            erc20DistributionInstance,
-        } = await initializeDistribution({
-            from: owner,
-            erc20DistributionFactoryInstance,
-            stakableToken: stakableTokenInstance,
-            rewardTokens,
-            rewardAmounts,
-            duration: 10,
-        });
+        const { endingTimestamp, erc20DistributionInstance } =
+            await initializeDistribution({
+                from: owner,
+                erc20DistributionFactoryInstance,
+                stakableToken: stakableTokenInstance,
+                rewardTokens,
+                rewardAmounts,
+                duration: 10,
+            });
         // at the start of the distribution, the owner deposited the rewards
         // into the staking contract, so their balance must be 0
         expect(
@@ -123,7 +122,8 @@ describe("ERC20StakingRewardsDistribution - Multi rewards, single stakable token
             await secondRewardsTokenInstance.balanceOf(owner.address)
         ).to.be.equal(ZERO);
         await fastForwardTo({ timestamp: endingTimestamp });
-        const onchainEndingTimestmp = await erc20DistributionInstance.endingTimestamp();
+        const onchainEndingTimestmp =
+            await erc20DistributionInstance.endingTimestamp();
         expect(onchainEndingTimestmp).to.be.equal(endingTimestamp);
         await erc20DistributionInstance
             .connect(firstStaker)
@@ -186,7 +186,8 @@ describe("ERC20StakingRewardsDistribution - Multi rewards, single stakable token
         );
         expect(await getEvmTimestamp()).to.be.equal(stakingStartingTimestamp);
         await fastForwardTo({ timestamp: endingTimestamp });
-        const distributionEndingTimestamp = await erc20DistributionInstance.endingTimestamp();
+        const distributionEndingTimestamp =
+            await erc20DistributionInstance.endingTimestamp();
         // staker staked for 5 seconds
         expect(
             distributionEndingTimestamp.sub(stakingStartingTimestamp)
@@ -259,11 +260,18 @@ describe("ERC20StakingRewardsDistribution - Multi rewards, single stakable token
         expect(await getEvmTimestamp()).to.be.equal(stakingTimestamp);
         await startMining();
         await fastForwardTo({ timestamp: endingTimestamp });
-        const onchainEndingTimestamp = await erc20DistributionInstance.endingTimestamp();
+        const onchainEndingTimestamp =
+            await erc20DistributionInstance.endingTimestamp();
         // each staker staked for 10 seconds
         expect(onchainEndingTimestamp.sub(stakingTimestamp)).to.be.equal(10);
         // stakers claim their reward
-        const secondsDuration = await erc20DistributionInstance.secondsDuration();
+        const onChainStartingTimestamp =
+            await erc20DistributionInstance.startingTimestamp();
+        const onChainEndingTimestamp =
+            await erc20DistributionInstance.endingTimestamp();
+        const secondsDuration = onChainEndingTimestamp.sub(
+            onChainStartingTimestamp
+        );
         const firstRewardPerSecond = rewardAmounts[0].div(secondsDuration);
         const secondRewardPerSecond = rewardAmounts[1].div(secondsDuration);
         const expectedFirstReward = firstRewardPerSecond.div(2).mul(10);
@@ -339,7 +347,8 @@ describe("ERC20StakingRewardsDistribution - Multi rewards, single stakable token
         );
         expect(await getEvmTimestamp()).to.be.equal(stakingTimestamp);
         await fastForwardTo({ timestamp: endingTimestamp });
-        const distributionEndingTimestamp = await erc20DistributionInstance.endingTimestamp();
+        const distributionEndingTimestamp =
+            await erc20DistributionInstance.endingTimestamp();
         expect(distributionEndingTimestamp.sub(stakingTimestamp)).to.be.equal(
             8
         );
@@ -409,7 +418,7 @@ describe("ERC20StakingRewardsDistribution - Multi rewards, single stakable token
         await withdrawAtTimestamp(
             erc20DistributionInstance,
             firstStaker,
-            [1],
+            1,
             withdrawTimestamp
         );
         expect(await getEvmTimestamp()).to.be.equal(withdrawTimestamp);
@@ -480,7 +489,8 @@ describe("ERC20StakingRewardsDistribution - Multi rewards, single stakable token
         );
         expect(await getEvmTimestamp()).to.be.equal(stakingTimestamp);
         await fastForwardTo({ timestamp: endingTimestamp });
-        const distributionEndingTimestamp = await erc20DistributionInstance.endingTimestamp();
+        const distributionEndingTimestamp =
+            await erc20DistributionInstance.endingTimestamp();
         expect(distributionEndingTimestamp.sub(stakingTimestamp)).to.be.equal(
             4
         );
