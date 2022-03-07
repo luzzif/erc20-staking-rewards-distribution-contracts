@@ -66,7 +66,7 @@ describe("ERC20StakingRewardsDistribution - Multi rewards, single stakable token
         }
     });
 
-    it("should fail when more than 10 reward tokens are specified", async () => {
+    it("should fail when more than 5 reward tokens are specified", async () => {
         try {
             const erc20DistributionInstance =
                 await ERC20StakingRewardsDistribution.deploy();
