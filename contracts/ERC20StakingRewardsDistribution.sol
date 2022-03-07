@@ -118,13 +118,11 @@ contract ERC20StakingRewardsDistribution is IERC20StakingRewardsDistribution {
             address _rewardTokenAddress = _rewardTokenAddresses[_i];
 
             // checking for duplicates
-            for (uint8 _j = 0; _j < _rewardTokenAddresses.length; _j++) {
-                if (_i == _j) continue;
+            for (uint8 _j = _i + 1; _j < _rewardTokenAddresses.length; _j++)
                 require(
                     _rewardTokenAddress != _rewardTokenAddresses[_j],
                     "SRD28"
                 );
-            }
 
             uint256 _rewardAmount = _rewardAmounts[_i];
             require(_rewardTokenAddress != address(0), "SRD04");
