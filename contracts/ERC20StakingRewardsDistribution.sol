@@ -340,7 +340,7 @@ contract ERC20StakingRewardsDistribution is IERC20StakingRewardsDistribution {
     }
 
     function claimAllSpecific(address _token, address _recipient)
-        public
+        external
         override
         onlyStarted
     {
