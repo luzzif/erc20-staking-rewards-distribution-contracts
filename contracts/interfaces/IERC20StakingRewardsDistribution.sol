@@ -31,7 +31,11 @@ interface IERC20StakingRewardsDistribution {
 
     function cancel() external;
 
+    function recoverRewardAfterCancel(address _token) external;
+
     function recoverUnassignedRewards() external;
+
+    function recoverSpecificUnassignedRewards(address _token) external;
 
     function stake(uint256 _amount) external;
 
@@ -40,6 +44,8 @@ interface IERC20StakingRewardsDistribution {
     function claim(uint256[] memory _amounts, address _recipient) external;
 
     function claimAll(address _recipient) external;
+
+    function claimAllSpecific(address _token, address _recipient) external;
 
     function exit(address _recipient) external;
 

@@ -39,6 +39,7 @@ import "./interfaces/IERC20StakingRewardsDistribution.sol";
  * SRD26: no rewards were added
  * SRD27: maximum number of reward tokens breached
  * SRD28: duplicated reward tokens
+ * SRD29: distribution must be canceled
  */
 contract ERC20StakingRewardsDistribution is IERC20StakingRewardsDistribution {
     using SafeERC20 for IERC20;
@@ -97,6 +98,7 @@ contract ERC20StakingRewardsDistribution is IERC20StakingRewardsDistribution {
     event Withdrawn(address indexed withdrawer, uint256 amount);
     event Claimed(address indexed claimer, uint256[] amounts);
     event Recovered(uint256[] amounts);
+    event RecoveredAfterCancel(address token, uint256 amount);
     event UpdatedRewards(uint256[] amounts);
 
     function initialize(
@@ -182,11 +184,28 @@ contract ERC20StakingRewardsDistribution is IERC20StakingRewardsDistribution {
         emit Canceled();
     }
 
+    function recoverRewardAfterCancel(address _token)
+        external
+        override
+        onlyOwner
+    {
+        require(canceled, "SRD29");
+        for (uint256 _i; _i < rewards.length; _i++) {
+            Reward memory _reward = rewards[_i];
+            if (_reward.token == _token) {
+                uint256 _recoveredAmount =
+                    IERC20(_reward.token).balanceOf(address(this));
+                IERC20(_reward.token).safeTransfer(owner, _recoveredAmount);
+                emit RecoveredAfterCancel(_token, _recoveredAmount);
+                break;
+            }
+        }
+    }
+
     function recoverUnassignedRewards() external override onlyStarted {
         consolidateReward();
         uint256[] memory _recoveredUnassignedRewards =
             new uint256[](rewards.length);
-        bool _atLeastOneNonZeroRecovery = false;
         for (uint256 _i; _i < rewards.length; _i++) {
             Reward storage _reward = rewards[_i];
             // recoverable rewards are going to be recovered in this tx (if it does not revert),
@@ -196,13 +215,42 @@ contract ERC20StakingRewardsDistribution is IERC20StakingRewardsDistribution {
             uint256 _recoverableRewards =
                 IERC20(_reward.token).balanceOf(address(this)) -
                     (_reward.amount - _reward.claimed);
-            if (!_atLeastOneNonZeroRecovery && _recoverableRewards > 0)
-                _atLeastOneNonZeroRecovery = true;
-            _recoveredUnassignedRewards[_i] = _recoverableRewards;
-            if (_recoverableRewards > 0)
+            if (_recoverableRewards > 0) {
+                _recoveredUnassignedRewards[_i] = _recoverableRewards;
                 IERC20(_reward.token).safeTransfer(owner, _recoverableRewards);
+            }
         }
-        require(_atLeastOneNonZeroRecovery, "SRD22");
+        emit Recovered(_recoveredUnassignedRewards);
+    }
+
+    function recoverSpecificUnassignedRewards(address _token)
+        external
+        override
+        onlyStarted
+    {
+        consolidateReward();
+        uint256[] memory _recoveredUnassignedRewards =
+            new uint256[](rewards.length);
+        for (uint256 _i; _i < rewards.length; _i++) {
+            Reward storage _reward = rewards[_i];
+            address _rewardToken = _reward.token;
+            if (_token == _rewardToken) {
+                // recoverable rewards are going to be recovered in this tx (if it does not revert),
+                // so we add them to the claimed rewards right now
+                _reward.claimed += _reward.recoverableAmount / MULTIPLIER;
+                delete _reward.recoverableAmount;
+                uint256 _recoverableRewards =
+                    IERC20(_rewardToken).balanceOf(address(this)) -
+                        (_reward.amount - _reward.claimed);
+                _recoveredUnassignedRewards[_i] = _recoverableRewards;
+                if (_recoverableRewards > 0)
+                    IERC20(_rewardToken).safeTransfer(
+                        owner,
+                        _recoverableRewards
+                    );
+                break;
+            }
+        }
         emit Recovered(_recoveredUnassignedRewards);
     }
 
@@ -246,7 +294,6 @@ contract ERC20StakingRewardsDistribution is IERC20StakingRewardsDistribution {
         consolidateReward();
         Staker storage _staker = stakers[msg.sender];
         uint256[] memory _claimedRewards = new uint256[](rewards.length);
-        bool _atLeastOneNonZeroClaim = false;
         for (uint256 _i; _i < rewards.length; _i++) {
             Reward storage _reward = rewards[_i];
             StakerRewardInfo storage _stakerRewardInfo =
@@ -255,14 +302,13 @@ contract ERC20StakingRewardsDistribution is IERC20StakingRewardsDistribution {
                 _stakerRewardInfo.earned - _stakerRewardInfo.claimed;
             uint256 _wantedAmount = _amounts[_i];
             require(_claimableReward >= _wantedAmount, "SRD15");
-            if (!_atLeastOneNonZeroClaim && _wantedAmount > 0)
-                _atLeastOneNonZeroClaim = true;
-            _stakerRewardInfo.claimed += _wantedAmount;
-            _reward.claimed += _wantedAmount;
-            IERC20(_reward.token).safeTransfer(_recipient, _wantedAmount);
-            _claimedRewards[_i] = _wantedAmount;
+            if (_wantedAmount > 0) {
+                _stakerRewardInfo.claimed += _wantedAmount;
+                _reward.claimed += _wantedAmount;
+                IERC20(_reward.token).safeTransfer(_recipient, _wantedAmount);
+                _claimedRewards[_i] = _wantedAmount;
+            }
         }
-        require(_atLeastOneNonZeroClaim, "SRD24");
         emit Claimed(msg.sender, _claimedRewards);
     }
 
@@ -270,21 +316,51 @@ contract ERC20StakingRewardsDistribution is IERC20StakingRewardsDistribution {
         consolidateReward();
         Staker storage _staker = stakers[msg.sender];
         uint256[] memory _claimedRewards = new uint256[](rewards.length);
-        bool _atLeastOneNonZeroClaim = false;
         for (uint256 _i; _i < rewards.length; _i++) {
             Reward storage _reward = rewards[_i];
+            address _rewardToken = _reward.token;
             StakerRewardInfo storage _stakerRewardInfo =
-                _staker.rewardInfo[_reward.token];
+                _staker.rewardInfo[_rewardToken];
             uint256 _claimableReward =
                 _stakerRewardInfo.earned - _stakerRewardInfo.claimed;
-            if (!_atLeastOneNonZeroClaim && _claimableReward > 0)
-                _atLeastOneNonZeroClaim = true;
-            _stakerRewardInfo.claimed += _claimableReward;
-            _reward.claimed += _claimableReward;
-            IERC20(_reward.token).safeTransfer(_recipient, _claimableReward);
-            _claimedRewards[_i] = _claimableReward;
+            if (_claimableReward > 0) {
+                _stakerRewardInfo.claimed += _claimableReward;
+                _reward.claimed += _claimableReward;
+                IERC20(_rewardToken).safeTransfer(_recipient, _claimableReward);
+                _claimedRewards[_i] = _claimableReward;
+            }
         }
-        require(_atLeastOneNonZeroClaim, "SRD23");
+        emit Claimed(msg.sender, _claimedRewards);
+    }
+
+    function claimAllSpecific(address _token, address _recipient)
+        public
+        override
+        onlyStarted
+    {
+        consolidateReward();
+        Staker storage _staker = stakers[msg.sender];
+        uint256[] memory _claimedRewards = new uint256[](rewards.length);
+        for (uint256 _i; _i < rewards.length; _i++) {
+            Reward storage _reward = rewards[_i];
+            address _rewardToken = _reward.token;
+            if (_token == _rewardToken) {
+                StakerRewardInfo storage _stakerRewardInfo =
+                    _staker.rewardInfo[_rewardToken];
+                uint256 _claimableReward =
+                    _stakerRewardInfo.earned - _stakerRewardInfo.claimed;
+                if (_claimableReward > 0) {
+                    _stakerRewardInfo.claimed += _claimableReward;
+                    _reward.claimed += _claimableReward;
+                    IERC20(_rewardToken).safeTransfer(
+                        _recipient,
+                        _claimableReward
+                    );
+                    _claimedRewards[_i] = _claimableReward;
+                }
+                break;
+            }
+        }
         emit Claimed(msg.sender, _claimedRewards);
     }
 

@@ -117,38 +117,6 @@ describe("ERC20StakingRewardsDistribution - Single stakable, multi reward tokens
         expect(secondStakerRewardsTokenBalance).to.equal(secondRewardAmount);
     });
 
-    it("should fail when claiming zero rewards (claimAll)", async () => {
-        const stakedAmount = parseEther("20");
-        const firstRewardsAmount = parseEther("10");
-        const secondRewardsAmount = parseEther("20");
-        const {
-            startingTimestamp,
-            erc20DistributionInstance,
-        } = await initializeDistribution({
-            from: owner,
-            erc20DistributionFactoryInstance,
-            stakableToken: stakableTokenInstance,
-            rewardTokens: [firstRewardTokenInstance, secondRewardTokenInstance],
-            rewardAmounts: [firstRewardsAmount, secondRewardsAmount],
-            duration: 10,
-        });
-        await initializeStaker({
-            erc20DistributionInstance,
-            stakableTokenInstance,
-            staker: firstStaker,
-            stakableAmount: stakedAmount,
-        });
-        await fastForwardTo({ timestamp: startingTimestamp });
-        try {
-            await erc20DistributionInstance
-                .connect(firstStaker)
-                .claimAll(firstStaker.address);
-            throw new Error("should have failed");
-        } catch (error) {
-            expect(error.message).to.contain("SRD23");
-        }
-    });
-
     it("should succeed when claiming zero first rewards and all of the second rewards", async () => {
         const stakedAmount = parseEther("20");
         const firstRewardsAmount = parseEther("10");
@@ -674,54 +642,6 @@ describe("ERC20StakingRewardsDistribution - Single stakable, multi reward tokens
         expect(
             await secondRewardTokenInstance.balanceOf(firstStaker.address)
         ).to.be.equal(parseEther("10"));
-    });
-
-    it("should fail in claiming 0 rewards if a staker stakes at the last second (literally)", async () => {
-        const stakedAmount = parseEther("10");
-        const duration = 10;
-        const firstRewardsAmount = parseEther("10");
-        const secondRewardsAmount = parseEther("10");
-        const {
-            endingTimestamp,
-            erc20DistributionInstance,
-        } = await initializeDistribution({
-            from: owner,
-            erc20DistributionFactoryInstance,
-            stakableToken: stakableTokenInstance,
-            rewardTokens: [firstRewardTokenInstance, secondRewardTokenInstance],
-            rewardAmounts: [firstRewardsAmount, secondRewardsAmount],
-            duration,
-        });
-        await initializeStaker({
-            erc20DistributionInstance,
-            stakableTokenInstance,
-            staker: firstStaker,
-            stakableAmount: stakedAmount,
-        });
-        await fastForwardTo({
-            timestamp: endingTimestamp.sub(1),
-        });
-        const stakerStartingTimestamp = endingTimestamp;
-        await stakeAtTimestamp(
-            erc20DistributionInstance,
-            firstStaker,
-            stakedAmount,
-            stakerStartingTimestamp
-        );
-        expect(stakerStartingTimestamp).to.be.equal(await getEvmTimestamp());
-        await fastForwardTo({ timestamp: endingTimestamp });
-        const campaignEndingTimestamp = await erc20DistributionInstance.endingTimestamp();
-        expect(
-            campaignEndingTimestamp.sub(stakerStartingTimestamp)
-        ).to.be.equal(ZERO);
-        try {
-            await erc20DistributionInstance
-                .connect(firstStaker)
-                .claimAll(firstStaker.address);
-            throw new Error("should have failed");
-        } catch (error) {
-            expect(error.message).to.contain("SRD23");
-        }
     });
 
     it("should succeed in claiming one rewards if a staker stakes at the last valid distribution second", async () => {
