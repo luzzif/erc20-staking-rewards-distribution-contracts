@@ -202,7 +202,12 @@ contract ERC20StakingRewardsDistribution is IERC20StakingRewardsDistribution {
         }
     }
 
-    function recoverUnassignedRewards() external override onlyStarted {
+    function recoverUnassignedRewards()
+        external
+        override
+        onlyOwner
+        onlyStarted
+    {
         consolidateReward();
         uint256[] memory _recoveredUnassignedRewards =
             new uint256[](rewards.length);
@@ -226,6 +231,7 @@ contract ERC20StakingRewardsDistribution is IERC20StakingRewardsDistribution {
     function recoverSpecificUnassignedRewards(address _token)
         external
         override
+        onlyOwner
         onlyStarted
     {
         consolidateReward();

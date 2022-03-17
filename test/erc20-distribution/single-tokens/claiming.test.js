@@ -1,5 +1,5 @@
 const { expect, use } = require("chai");
-const { MAXIMUM_VARIANCE, ZERO } = require("../../constants");
+const { MAXIMUM_VARIANCE } = require("../../constants");
 const {
     initializeDistribution,
     initializeStaker,
