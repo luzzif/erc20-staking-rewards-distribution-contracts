@@ -441,7 +441,7 @@ contract ERC20StakingRewardsDistribution is IERC20StakingRewardsDistribution {
     }
 
     function claimableRewards(address _account)
-        public
+        external
         view
         override
         returns (uint256[] memory)
