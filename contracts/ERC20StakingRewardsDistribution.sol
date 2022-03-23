@@ -236,10 +236,13 @@ contract ERC20StakingRewardsDistribution is IERC20StakingRewardsDistribution {
         emit Recovered(_recoveredUnassignedRewards);
     }
 
-    function sendAllTokens(address _token, address _recipient)
-        internal
-        returns (uint256[] memory)
+    function recoverSpecificUnassignedRewards(address _token)
+        external
+        override
+        onlyOwner
+        onlyStarted
     {
+        consolidateReward();
         uint256[] memory _recoveredUnassignedRewards =
             new uint256[](rewards.length);
         for (uint256 _i; _i < rewards.length; _i++) {
@@ -256,24 +259,14 @@ contract ERC20StakingRewardsDistribution is IERC20StakingRewardsDistribution {
                 if (_recoverableRewards > 0) {
                     _recoveredUnassignedRewards[_i] = _recoverableRewards;
                     IERC20(_rewardToken).safeTransfer(
-                        _recipient,
+                        owner,
                         _recoverableRewards
                     );
                 }
                 break;
             }
         }
-        return _recoveredUnassignedRewards;
-    }
-
-    function recoverSpecificUnassignedRewards(address _token)
-        external
-        override
-        onlyOwner
-        onlyStarted
-    {
-        consolidateReward();
-        emit Recovered(sendAllTokens(_token, owner));
+        emit Recovered(_recoveredUnassignedRewards);
     }
 
     function stake(uint256 _amount) external override onlyRunning {
@@ -361,7 +354,29 @@ contract ERC20StakingRewardsDistribution is IERC20StakingRewardsDistribution {
         onlyStarted
     {
         consolidateReward();
-        emit Claimed(msg.sender, sendAllTokens(_token, _recipient));
+        Staker storage _staker = stakers[msg.sender];
+        uint256[] memory _claimedRewards = new uint256[](rewards.length);
+        for (uint256 _i; _i < rewards.length; _i++) {
+            Reward storage _reward = rewards[_i];
+            address _rewardToken = _reward.token;
+            if (_token == _rewardToken) {
+                StakerRewardInfo storage _stakerRewardInfo =
+                    _staker.rewardInfo[_rewardToken];
+                uint256 _claimableReward =
+                    _stakerRewardInfo.earned - _stakerRewardInfo.claimed;
+                if (_claimableReward > 0) {
+                    _stakerRewardInfo.claimed += _claimableReward;
+                    _reward.claimed += _claimableReward;
+                    IERC20(_rewardToken).safeTransfer(
+                        _recipient,
+                        _claimableReward
+                    );
+                    _claimedRewards[_i] = _claimableReward;
+                }
+                break;
+            }
+        }
+        emit Claimed(msg.sender, _claimedRewards);
     }
 
     function exit(address _recipient) external override {
