@@ -31,6 +31,8 @@ interface IERC20StakingRewardsDistribution {
 
     function cancel() external;
 
+    function recoverRewardsAfterCancel(address _token) external;
+
     function recoverRewardAfterCancel(address _token) external;
 
     function recoverUnassignedRewards() external;

@@ -113,9 +113,9 @@ describe("ERC20StakingRewardsDistribution - Single reward/stakable token - Cance
             const rewardToken = rewardTokens[i];
             expect(
                 await rewardToken.balanceOf(erc20DistributionInstance.address)
-            ).to.be.equal(ZERO);
+            ).to.be.equal(rewardsAmount);
             expect(await rewardToken.balanceOf(owner.address)).to.be.equal(
-                rewardsAmount
+                ZERO
             );
             expect(
                 await erc20DistributionInstance.rewardAmount(
