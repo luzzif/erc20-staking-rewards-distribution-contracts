@@ -248,12 +248,13 @@ contract ERC20StakingRewardsDistribution is IERC20StakingRewardsDistribution {
                 uint256 _recoverableRewards =
                     IERC20(_rewardToken).balanceOf(address(this)) -
                         (_reward.amount - _reward.claimed);
-                _recoveredUnassignedRewards[_i] = _recoverableRewards;
-                if (_recoverableRewards > 0)
+                if (_recoverableRewards > 0) {
+                    _recoveredUnassignedRewards[_i] = _recoverableRewards;
                     IERC20(_rewardToken).safeTransfer(
                         owner,
                         _recoverableRewards
                     );
+                }
                 break;
             }
         }
