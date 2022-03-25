@@ -32,7 +32,6 @@ import "./interfaces/IERC20StakingRewardsDistribution.sol";
  * SRD19: invalid state for cancel to be called
  * SRD20: not started
  * SRD21: already ended
- * SRD22: no rewards are recoverable
  * SRD23: no rewards are claimable while claiming all
  * SRD24: no rewards are claimable while manually claiming an arbitrary amount of rewards
  * SRD25: staking is currently paused
