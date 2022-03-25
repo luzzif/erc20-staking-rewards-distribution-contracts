@@ -198,7 +198,8 @@ contract ERC20StakingRewardsDistribution is IERC20StakingRewardsDistribution {
             if (_reward.token == _token) {
                 uint256 _recoveredAmount =
                     IERC20(_reward.token).balanceOf(address(this));
-                IERC20(_reward.token).safeTransfer(owner, _recoveredAmount);
+                if (_recoveredAmount > 0)
+                    IERC20(_reward.token).safeTransfer(owner, _recoveredAmount);
                 emit RecoveredAfterCancel(_token, _recoveredAmount);
                 break;
             }
