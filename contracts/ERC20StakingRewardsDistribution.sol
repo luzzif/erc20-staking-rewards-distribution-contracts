@@ -176,11 +176,7 @@ contract ERC20StakingRewardsDistribution is IERC20StakingRewardsDistribution {
         emit Canceled();
     }
 
-    function recoverRewardsAfterCancel(address _token)
-        external
-        override
-        onlyOwner
-    {
+    function recoverRewardsAfterCancel() external override onlyOwner {
         require(canceled, "SRD29");
         for (uint256 _i; _i < rewards.length; _i++) {
             Reward storage _reward = rewards[_i];
