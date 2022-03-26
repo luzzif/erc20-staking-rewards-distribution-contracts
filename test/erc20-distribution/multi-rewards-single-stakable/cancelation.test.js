@@ -64,9 +64,9 @@ describe("ERC20StakingRewardsDistribution - Multi rewards, single stakable token
             const rewardAmount = rewardAmounts[i];
             expect(
                 await rewardToken.balanceOf(erc20DistributionInstance.address)
-            ).to.be.equal(ZERO);
+            ).to.be.equal(rewardAmount);
             expect(await rewardToken.balanceOf(owner.address)).to.be.equal(
-                rewardAmount
+                ZERO
             );
         }
         expect(await erc20DistributionInstance.initialized()).to.be.true;

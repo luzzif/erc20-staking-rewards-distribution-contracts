@@ -6,6 +6,7 @@ const { provider, solidity } = require("hardhat").waffle;
 const {
     getContractFactory,
     utils: { parseEther },
+    Wallet,
 } = require("hardhat").ethers;
 
 use(solidity);
@@ -32,10 +33,12 @@ describe("ERC20StakingRewardsDistribution - Multi rewards, single stakable token
             "FirstStakableERC20"
         );
 
-        const erc20DistributionInstance = await ERC20StakingRewardsDistribution.deploy();
-        erc20DistributionFactoryInstance = await ERC20StakingRewardsDistributionFactory.deploy(
-            erc20DistributionInstance.address
-        );
+        const erc20DistributionInstance =
+            await ERC20StakingRewardsDistribution.deploy();
+        erc20DistributionFactoryInstance =
+            await ERC20StakingRewardsDistributionFactory.deploy(
+                erc20DistributionInstance.address
+            );
         firstRewardsTokenInstance = await FirstRewardERC20.deploy();
         secondRewardsTokenInstance = await SecondRewardERC20.deploy();
         stakableTokenInstance = await FirstStakableERC20.deploy();
@@ -43,7 +46,8 @@ describe("ERC20StakingRewardsDistribution - Multi rewards, single stakable token
 
     it("should fail when reward tokens/amounts arrays have inconsistent lengths", async () => {
         try {
-            const erc20DistributionInstance = await ERC20StakingRewardsDistribution.deploy();
+            const erc20DistributionInstance =
+                await ERC20StakingRewardsDistribution.deploy();
             await erc20DistributionInstance.initialize(
                 [
                     firstRewardsTokenInstance.address,
@@ -62,9 +66,58 @@ describe("ERC20StakingRewardsDistribution - Multi rewards, single stakable token
         }
     });
 
+    it("should fail when more than 5 reward tokens are specified", async () => {
+        try {
+            const erc20DistributionInstance =
+                await ERC20StakingRewardsDistribution.deploy();
+            await erc20DistributionInstance.initialize(
+                [
+                    firstRewardsTokenInstance.address,
+                    secondRewardsTokenInstance.address,
+                    Wallet.createRandom().address,
+                    Wallet.createRandom().address,
+                    Wallet.createRandom().address,
+                    Wallet.createRandom().address,
+                ],
+                stakableTokenInstance.address,
+                [11, 1, 1, 1, 1, 1],
+                100000000000,
+                1000000000000,
+                false,
+                0
+            );
+            throw new Error("should have failed");
+        } catch (error) {
+            expect(error.message).to.contain("SRD27");
+        }
+    });
+
+    it("should fail when duplicates are specified in the reward tokens", async () => {
+        try {
+            const erc20DistributionInstance =
+                await ERC20StakingRewardsDistribution.deploy();
+            await erc20DistributionInstance.initialize(
+                [
+                    firstRewardsTokenInstance.address,
+                    firstRewardsTokenInstance.address,
+                ],
+                stakableTokenInstance.address,
+                [11, 1],
+                100000000000,
+                1000000000000,
+                false,
+                0
+            );
+            throw new Error("should have failed");
+        } catch (error) {
+            expect(error.message).to.contain("SRD28");
+        }
+    });
+
     it("should fail when funding for the first reward token has not been sent to the contract before calling initialize", async () => {
         try {
-            const erc20DistributionInstance = await ERC20StakingRewardsDistribution.deploy();
+            const erc20DistributionInstance =
+                await ERC20StakingRewardsDistribution.deploy();
             await erc20DistributionInstance.initialize(
                 [
                     firstRewardsTokenInstance.address,
@@ -85,7 +138,8 @@ describe("ERC20StakingRewardsDistribution - Multi rewards, single stakable token
 
     it("should fail when funding for the second reward token has not been sent to the contract before calling initialize", async () => {
         try {
-            const erc20DistributionInstance = await ERC20StakingRewardsDistribution.deploy();
+            const erc20DistributionInstance =
+                await ERC20StakingRewardsDistribution.deploy();
             await firstRewardsTokenInstance.mint(
                 erc20DistributionInstance.address,
                 11
@@ -110,7 +164,8 @@ describe("ERC20StakingRewardsDistribution - Multi rewards, single stakable token
 
     it("should fail when passing a 0-address second reward token", async () => {
         try {
-            const erc20DistributionInstance = await ERC20StakingRewardsDistribution.deploy();
+            const erc20DistributionInstance =
+                await ERC20StakingRewardsDistribution.deploy();
             await firstRewardsTokenInstance.mint(
                 erc20DistributionInstance.address,
                 11
@@ -175,20 +230,19 @@ describe("ERC20StakingRewardsDistribution - Multi rewards, single stakable token
             firstRewardsTokenInstance,
             secondRewardsTokenInstance,
         ];
-        const {
-            startingTimestamp,
-            erc20DistributionInstance,
-        } = await initializeDistribution({
-            from: owner,
-            erc20DistributionFactoryInstance,
-            stakableToken: stakableTokenInstance,
-            rewardTokens,
-            rewardAmounts,
-            duration,
-        });
+        const { startingTimestamp, erc20DistributionInstance } =
+            await initializeDistribution({
+                from: owner,
+                erc20DistributionFactoryInstance,
+                stakableToken: stakableTokenInstance,
+                rewardTokens,
+                rewardAmounts,
+                duration,
+            });
 
         expect(await erc20DistributionInstance.initialized()).to.be.true;
-        const onchainRewardTokens = await erc20DistributionInstance.getRewardTokens();
+        const onchainRewardTokens =
+            await erc20DistributionInstance.getRewardTokens();
         expect(onchainRewardTokens).to.have.length(2);
         expect(onchainRewardTokens[0]).to.be.equal(
             firstRewardsTokenInstance.address
@@ -196,7 +250,8 @@ describe("ERC20StakingRewardsDistribution - Multi rewards, single stakable token
         expect(onchainRewardTokens[1]).to.be.equal(
             secondRewardsTokenInstance.address
         );
-        const onchainStakableToken = await erc20DistributionInstance.stakableToken();
+        const onchainStakableToken =
+            await erc20DistributionInstance.stakableToken();
         expect(onchainStakableToken).to.be.equal(stakableTokenInstance.address);
         for (let i = 0; i < rewardTokens.length; i++) {
             const rewardAmount = rewardAmounts[i];
@@ -210,9 +265,11 @@ describe("ERC20StakingRewardsDistribution - Multi rewards, single stakable token
                 )
             ).to.be.equal(rewardAmount);
         }
-        const onchainStartingTimestamp = await erc20DistributionInstance.startingTimestamp();
+        const onchainStartingTimestamp =
+            await erc20DistributionInstance.startingTimestamp();
         expect(onchainStartingTimestamp).to.be.equal(startingTimestamp);
-        const onchainEndingTimestamp = await erc20DistributionInstance.endingTimestamp();
+        const onchainEndingTimestamp =
+            await erc20DistributionInstance.endingTimestamp();
         expect(
             onchainEndingTimestamp.sub(onchainStartingTimestamp)
         ).to.be.equal(duration);

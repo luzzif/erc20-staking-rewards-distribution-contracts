@@ -55,6 +55,22 @@ describe("ERC20StakingRewardsDistribution - Single reward/stakable token - Rewar
             const erc20DistributionInstance = await ERC20StakingRewardsDistribution.connect(
                 owner
             ).deploy();
+            const startingTimestamp = (await getEvmTimestamp()) + 10;
+            await rewardsTokenInstance.mint(
+                erc20DistributionInstance.address,
+                1
+            );
+            await erc20DistributionInstance
+                .connect(owner)
+                .initialize(
+                    [rewardsTokenInstance.address],
+                    stakableTokenInstance.address,
+                    [1],
+                    startingTimestamp,
+                    startingTimestamp + 10,
+                    false,
+                    0
+                );
             await erc20DistributionInstance.recoverUnassignedRewards();
             throw new Error("should have failed");
         } catch (error) {
@@ -127,36 +143,6 @@ describe("ERC20StakingRewardsDistribution - Single reward/stakable token - Rewar
                 rewardsTokenInstance.address
             )
         ).to.be.equal(ZERO);
-    });
-
-    it("should always send funds to the contract's owner, even when called by another account", async () => {
-        const rewardsAmount = parseEther("100");
-        const {
-            endingTimestamp,
-            erc20DistributionInstance,
-        } = await initializeDistribution({
-            from: owner,
-            erc20DistributionFactoryInstance,
-            stakableToken: stakableTokenInstance,
-            rewardTokens: [rewardsTokenInstance],
-            rewardAmounts: [rewardsAmount],
-            duration: 10,
-        });
-        // at the start of the distribution, the owner deposited the reward
-        // into the staking contract, so theur balance is 0
-        expect(await rewardsTokenInstance.balanceOf(owner.address)).to.be.equal(
-            ZERO
-        );
-        await fastForwardTo({ timestamp: endingTimestamp });
-        await erc20DistributionInstance
-            .connect(secondStaker)
-            .recoverUnassignedRewards();
-        expect(
-            await rewardsTokenInstance.balanceOf(secondStaker.address)
-        ).to.be.equal(ZERO);
-        expect(await rewardsTokenInstance.balanceOf(owner.address)).to.be.equal(
-            rewardsAmount
-        );
     });
 
     it("should recover half of the rewards when only one staker joined for half of the duration", async () => {
@@ -354,7 +340,7 @@ describe("ERC20StakingRewardsDistribution - Single reward/stakable token - Rewar
         await withdrawAtTimestamp(
             erc20DistributionInstance,
             firstStaker,
-            [1],
+            1,
             withdrawTimestamp
         );
         await fastForwardTo({ timestamp: endingTimestamp });
@@ -457,7 +443,7 @@ describe("ERC20StakingRewardsDistribution - Single reward/stakable token - Rewar
         await withdrawAtTimestamp(
             erc20DistributionInstance,
             firstStaker,
-            [1],
+            1,
             firstWithdrawTimestamp
         );
 
@@ -489,7 +475,7 @@ describe("ERC20StakingRewardsDistribution - Single reward/stakable token - Rewar
         await withdrawAtTimestamp(
             erc20DistributionInstance,
             firstStaker,
-            [1],
+            1,
             secondWithdrawTimestamp
         );
 
@@ -568,7 +554,7 @@ describe("ERC20StakingRewardsDistribution - Single reward/stakable token - Rewar
         await withdrawAtTimestamp(
             erc20DistributionInstance,
             firstStaker,
-            [1],
+            1,
             firstWithdrawTimestamp
         );
 
@@ -608,7 +594,7 @@ describe("ERC20StakingRewardsDistribution - Single reward/stakable token - Rewar
         await withdrawAtTimestamp(
             erc20DistributionInstance,
             firstStaker,
-            [1],
+            1,
             secondWithdrawTimestamp
         );
 

@@ -1,12 +1,13 @@
 // SPDX-License-Identifier: GPL-3.0
 
-pragma solidity ^0.8.4;
+pragma solidity 0.8.12;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/proxy/Clones.sol";
 import "./interfaces/IERC20StakingRewardsDistribution.sol";
+import "./interfaces/IERC20StakingRewardsDistributionFactory.sol";
 
 /**
  * Errors codes:
@@ -14,12 +15,15 @@ import "./interfaces/IERC20StakingRewardsDistribution.sol";
  * SRF01: cannot pause staking (already paused)
  * SRF02: cannot resume staking (already active)
  */
-contract ERC20StakingRewardsDistributionFactory is Ownable {
+contract ERC20StakingRewardsDistributionFactory is
+    IERC20StakingRewardsDistributionFactory,
+    Ownable
+{
     using SafeERC20 for IERC20;
 
-    address public implementation;
-    bool public stakingPaused;
-    IERC20StakingRewardsDistribution[] public distributions;
+    address public override implementation;
+    bool public override stakingPaused;
+    IERC20StakingRewardsDistribution[] public override distributions;
 
     event DistributionCreated(address owner, address deployedAt);
 
@@ -27,16 +31,20 @@ contract ERC20StakingRewardsDistributionFactory is Ownable {
         implementation = _implementation;
     }
 
-    function upgradeImplementation(address _implementation) external onlyOwner {
+    function upgradeImplementation(address _implementation)
+        external
+        override
+        onlyOwner
+    {
         implementation = _implementation;
     }
 
-    function pauseStaking() external onlyOwner {
+    function pauseStaking() external override onlyOwner {
         require(!stakingPaused, "SRF01");
         stakingPaused = true;
     }
 
-    function resumeStaking() external onlyOwner {
+    function resumeStaking() external override onlyOwner {
         require(stakingPaused, "SRF02");
         stakingPaused = false;
     }
@@ -49,7 +57,7 @@ contract ERC20StakingRewardsDistributionFactory is Ownable {
         uint64 _endingTimestamp,
         bool _locked,
         uint256 _stakingCap
-    ) public virtual {
+    ) public override {
         address _distributionProxy = Clones.clone(implementation);
         for (uint256 _i; _i < _rewardTokenAddresses.length; _i++) {
             IERC20(_rewardTokenAddresses[_i]).safeTransferFrom(
@@ -74,7 +82,7 @@ contract ERC20StakingRewardsDistributionFactory is Ownable {
         emit DistributionCreated(msg.sender, address(_distribution));
     }
 
-    function getDistributionsAmount() external view returns (uint256) {
+    function getDistributionsAmount() external view override returns (uint256) {
         return distributions.length;
     }
 }

@@ -2,6 +2,8 @@
 
 pragma solidity >=0.8.0;
 
+import "./IERC20StakingRewardsDistribution.sol";
+
 interface IERC20StakingRewardsDistributionFactory {
     function createDistribution(
         address[] calldata _rewardTokenAddresses,
@@ -17,9 +19,16 @@ interface IERC20StakingRewardsDistributionFactory {
 
     function implementation() external view returns (address);
 
-    function upgradeTo(address newImplementation) external;
+    function upgradeImplementation(address _newImplementation) external;
 
-    function distributions(uint256 _index) external returns (address);
+    function distributions(uint256 _index)
+        external
+        view
+        returns (IERC20StakingRewardsDistribution);
 
-    function stakingPaused() external returns (bool);
+    function stakingPaused() external view returns (bool);
+
+    function pauseStaking() external;
+
+    function resumeStaking() external;
 }

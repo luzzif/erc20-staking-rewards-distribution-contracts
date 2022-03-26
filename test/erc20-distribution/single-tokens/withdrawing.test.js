@@ -35,19 +35,20 @@ describe("ERC20StakingRewardsDistribution - Single reward/stakable token - Withd
             "FirstStakableERC20"
         );
 
-        const erc20DistributionInstance = await ERC20StakingRewardsDistribution.deploy();
-        erc20DistributionFactoryInstance = await ERC20StakingRewardsDistributionFactory.deploy(
-            erc20DistributionInstance.address
-        );
+        const erc20DistributionInstance =
+            await ERC20StakingRewardsDistribution.deploy();
+        erc20DistributionFactoryInstance =
+            await ERC20StakingRewardsDistributionFactory.deploy(
+                erc20DistributionInstance.address
+            );
         rewardsTokenInstance = await FirstRewardERC20.deploy();
         stakableTokenInstance = await FirstStakableERC20.deploy();
     });
 
     it("should fail when initialization has not been done", async () => {
         try {
-            const erc20DistributionInstance = await ERC20StakingRewardsDistribution.connect(
-                owner
-            ).deploy();
+            const erc20DistributionInstance =
+                await ERC20StakingRewardsDistribution.connect(owner).deploy();
             await erc20DistributionInstance.withdraw(0);
             throw new Error("should have failed");
         } catch (error) {
@@ -74,17 +75,15 @@ describe("ERC20StakingRewardsDistribution - Single reward/stakable token - Withd
 
     it("should fail when the staker tries to withdraw more than what they staked", async () => {
         try {
-            const {
-                startingTimestamp,
-                erc20DistributionInstance,
-            } = await initializeDistribution({
-                from: owner,
-                erc20DistributionFactoryInstance,
-                stakableToken: stakableTokenInstance,
-                rewardTokens: [rewardsTokenInstance],
-                rewardAmounts: [20],
-                duration: 10,
-            });
+            const { startingTimestamp, erc20DistributionInstance } =
+                await initializeDistribution({
+                    from: owner,
+                    erc20DistributionFactoryInstance,
+                    stakableToken: stakableTokenInstance,
+                    rewardTokens: [rewardsTokenInstance],
+                    rewardAmounts: [20],
+                    duration: 10,
+                });
             await initializeStaker({
                 erc20DistributionInstance,
                 stakableTokenInstance,
@@ -106,17 +105,15 @@ describe("ERC20StakingRewardsDistribution - Single reward/stakable token - Withd
 
     it("should succeed in the right conditions, when the distribution has not yet ended", async () => {
         const stakedAmount = parseEther("10");
-        const {
-            startingTimestamp,
-            erc20DistributionInstance,
-        } = await initializeDistribution({
-            from: owner,
-            erc20DistributionFactoryInstance,
-            stakableToken: stakableTokenInstance,
-            rewardTokens: [rewardsTokenInstance],
-            rewardAmounts: [parseEther("1")],
-            duration: 10,
-        });
+        const { startingTimestamp, erc20DistributionInstance } =
+            await initializeDistribution({
+                from: owner,
+                erc20DistributionFactoryInstance,
+                stakableToken: stakableTokenInstance,
+                rewardTokens: [rewardsTokenInstance],
+                rewardAmounts: [parseEther("1")],
+                duration: 10,
+            });
         await initializeStaker({
             erc20DistributionInstance,
             stakableTokenInstance,
@@ -187,18 +184,16 @@ describe("ERC20StakingRewardsDistribution - Single reward/stakable token - Withd
     it("should fail when trying to withdraw from a non-ended locked distribution, right in the middle of it", async () => {
         try {
             const stakedAmount = parseEther("10");
-            const {
-                startingTimestamp,
-                erc20DistributionInstance,
-            } = await initializeDistribution({
-                from: owner,
-                erc20DistributionFactoryInstance,
-                stakableToken: stakableTokenInstance,
-                rewardTokens: [rewardsTokenInstance],
-                rewardAmounts: [parseEther("1")],
-                duration: 10,
-                locked: true,
-            });
+            const { startingTimestamp, erc20DistributionInstance } =
+                await initializeDistribution({
+                    from: owner,
+                    erc20DistributionFactoryInstance,
+                    stakableToken: stakableTokenInstance,
+                    rewardTokens: [rewardsTokenInstance],
+                    rewardAmounts: [parseEther("1")],
+                    duration: 10,
+                    locked: true,
+                });
             await initializeStaker({
                 erc20DistributionInstance,
                 stakableTokenInstance,
@@ -263,13 +258,11 @@ describe("ERC20StakingRewardsDistribution - Single reward/stakable token - Withd
             expect(
                 await erc20DistributionInstance.stakedTokensOf(staker.address)
             ).to.be.equal(stakedAmount);
-            // fast-forward to the middle of the distribution
-            const withdrawingTimestamp = endingTimestamp;
-            await fastForwardTo({ timestamp: withdrawingTimestamp.sub(1) });
-            await withdraw(
+            await withdrawAtTimestamp(
                 erc20DistributionInstance,
                 staker,
-                stakedAmount.div(2)
+                stakedAmount.div(2),
+                endingTimestamp
             );
             throw new Error("should have failed");
         } catch (error) {
